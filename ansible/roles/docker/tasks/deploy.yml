@@ -1,0 +1,112 @@
+- name: Copier le fichier .env
+  copy:
+    src: templates/.env
+    dest: /home/ubuntu/.env
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Attendre que le fichier .env soit bien écrit
+  pause:
+    seconds: 2
+
+- name: Afficher le contenu brut du fichier .env
+  command: cat /home/ubuntu/.env
+  register: env_raw
+  changed_when: false
+
+- name: Afficher le contenu du fichier .env
+  debug:
+    msg: "{{ env_raw.stdout_lines }}"
+
+- name: Vérifier si le fichier .env existe
+  stat:
+    path: /home/ubuntu/.env
+  register: env_file_status
+
+- name: Afficher le statut du fichier .env
+  debug:
+    msg: "{{ env_file_status }}"
+
+- name: Charger les variables depuis le fichier .env
+  shell: cat /home/ubuntu/.env | grep -v '^#' | grep '='
+  register: env_output
+
+- name: Convertir en dictionnaire correctement
+  set_fact:
+    env_variables: "{{ dict(env_output.stdout | regex_findall('^([^=]+)=(.*)$', multiline=True)) }}"
+
+- name: Afficher toutes les clés extraites
+  debug:
+    msg: "{{ env_variables.keys() }}"
+
+- name: Vérifier les variables chargées
+  debug:
+    msg: "{{ env_variables }}"
+
+- name: Copier le fichier traefik_entrypoint.sh
+  copy:
+    src: templates/traefik_entrypoint.sh
+    dest: /home/ubuntu/traefik_entrypoint.sh
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755'
+
+- name: Créer le répertoire letsencrypt
+  file:
+    path: /home/ubuntu/letsencrypt
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755'
+
+- name: Copier le dossier letsencrypt/acme.json
+  copy:
+    src: templates/letsencrypt/acme.json
+    dest: /home/ubuntu/letsencrypt/acme.json
+    owner: ubuntu
+    group: ubuntu
+    mode: '0600'
+
+#- name: Copier le fichier apache-config.conf pour wp
+#  copy:
+#    src: templates/apache-config.conf
+#    dest: /home/ubuntu/apache-config.conf
+#    owner: ubuntu
+#    group: ubuntu
+#    mode: '0644'
+
+- name: Copier et templater docker-compose.yml
+  template:
+    src: templates/docker-compose.yml.j2
+    dest: /home/ubuntu/compose.yml
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+  vars:
+    env: "{{ env_variables }}"
+  notify: Restart Docker Compose
+
+
+- name: Vérifier la syntaxe de Docker Compose avant le lancement
+  shell: docker compose -f /home/ubuntu/compose.yml config
+  args:
+    chdir: /home/ubuntu
+  register: compose_check
+  changed_when: false
+
+- name: Afficher le résultat de la vérification Docker Compose
+  debug:
+    msg: "{{ compose_check.stdout_lines }}"
+
+- name: Attendre 3s pour redemarer compose
+  pause:
+    seconds: 3
+
+- name: Lancer le redémarrage de Docker Compose (down-up)
+  shell: |
+
+    docker compose -f /home/ubuntu/compose.yml up -d
+  args:
+    chdir: /home/ubuntu
+

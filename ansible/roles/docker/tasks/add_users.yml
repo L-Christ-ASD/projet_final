@@ -1,0 +1,20 @@
+- name: Créer un deuxième utilisateur avec accès SSH
+  user:
+    name: user1  # Remplace par le nom souhaité
+    shell: /bin/bash
+    groups: sudo
+    append: yes
+    createhome: yes
+    password: "{{ 'SuperMotDePasse' | password_hash('sha512') }}"  # Remplace avec un mot de passe sécurisé
+
+- name: Ajouter la clé SSH de user1
+  authorized_key:
+    user: user1
+    state: present
+    key: "{{ lookup('file', '/home/ubuntu/.ssh/id_rsa.pub') }}"  # Remplace avec le chemin de ta clé publique
+
+- name: Autoriser user1 à exécuter sudo sans mot de passe
+  copy:
+    dest: "/etc/sudoers.d/user1"
+    content: "user1 ALL=(ALL) NOPASSWD:ALL"
+    mode: '0440'

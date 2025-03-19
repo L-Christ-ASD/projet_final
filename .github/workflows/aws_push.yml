@@ -1,0 +1,107 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout du code
+      uses: actions/checkout@v4
+
+    - name: Installer Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: latest
+
+    - name: Vérifier l'installation de terraform
+      run: |
+        terraform --version
+
+    - name: Installer Ansible
+      run: sudo apt update && sudo apt install -y ansible
+
+    - name: Vérifier l'installation d'Ansible
+      run: |
+        ansible --version
+
+    - name: Valider le format Terraform
+      run: terraform fmt -check
+      working-directory: ./terraform
+      
+    - name: Valider la configuration Terraform
+      run: terraform validate
+      working-directory: ./terraform
+
+    - name: Initialiser Terraform
+      run: terraform init
+      working-directory: ./terraform  # Assure-toi d'ajuster ce chemin
+
+    - name: Exporter les identifiants AWS
+      run: |
+        export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+        export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        echo "Identifiants AWS exportés."
+    
+    - name: Plan Terraform
+      run: terraform plan
+      working-directory: ./terraform
+
+    - name: Appliquer Terraform 
+      run: terraform apply -auto-approve
+      working-directory: ./terraform
+
+    - name: Sauvegarder la clé SSH
+      uses: actions/upload-artifact@v3
+      with:
+        name: vockey.pem
+        path: ./terraform/vockey.pem
+
+    - name: Vérifier le contenu du fichier inventory.ini
+      run: |
+        ls ./ansible/
+        cat ./ansible/inventory.ini
+      #working-directory: ./ansible
+
+    - name: Exécuter le playbook Ansible
+      run: ansible-playbook -i inventory.ini ansible/playbook.yml
+
+
+
+# Explications
+#    Artefact pour la clé SSH :
+#    
+#    L'étape actions/upload-artifact@v3 permet de sauvegarder la clé privée SSH (vockey.pem) générée par Terraform en tant qu'artefact.
+#    
+#    Cet artefact sera accessible depuis l'interface GitHub dans la section Actions après l'exécution du workflow.
+#    
+#    Téléchargement manuel de l'artefact :
+#    
+#    Une fois le workflow terminé, allez dans l'onglet Actions du repository GitHub.
+#    
+#    Sélectionnez le workflow correspondant.
+#    
+#    Téléchargez l'artefact nommé ssh-key.
+
+# Étape 14 : Ajouter l'hôte EC2 aux hôtes connus
+# - name: Ajouter l'hôte aux known_hosts
+#   run: ssh-keyscan -H $(terraform output -raw public_ip) >> ~/.ssh/known_hosts
+
+#Configuration des Secrets GitHub
+
+#Ajoute ces secrets dans les paramètres de ton repo GitHub → Settings → Secrets → Actions :
+#AWS_ACCESS_KEY_ID
+#AWS_SECRET_ACCESS_KEY
+#SSH_PRIVATE_KEY (Ta clé privée pour accéder à l'instance)
+
+# Explication du Workflow
+
+#Clone le repo
+#Installe Terraform et applique la config
+#Récupère l'IP de l'instance AWS créée
+#Ajoute la clé SSH pour la connexion
+#Installe Ansible et exécute le playbook sur l'instance

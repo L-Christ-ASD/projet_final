@@ -1,0 +1,8 @@
+---
+    
+- name: Installer Docker et déployer Docker Compose
+  hosts: docker
+  become: yes
+  roles:
+    - docker
+    

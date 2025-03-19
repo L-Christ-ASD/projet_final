@@ -1,0 +1,200 @@
+
+services:
+  traefik:
+    image: "traefik:v3.3"
+    container_name: "traefik"
+    hostname: "traefik"
+    restart: unless-stopped
+
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "/home/ubuntu/letsencrypt/acme.json:/letsencrypt/acme.json"
+      - "/home/ubuntu/traefik_entrypoint.sh:/traefik_entrypoint.sh:rw"
+    entrypoint: ["/traefik_entrypoint.sh"]
+    
+    command:
+      - "--api.insecure=true"
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.dnschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.dnschallenge.provider=duckdns"
+      - "--certificatesresolvers.myresolver.acme.dnschallenge.delayBeforeCheck=2s"
+      - "--certificatesresolvers.myresolver.acme.email=christ.lumu@oclock.school"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.myresolver.acme.dnschallenge.resolvers=8.8.8.8:53,8.8.4.4:53"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=false"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge=false"
+      - "--certificatesresolvers.myresolver.acme.dnschallenge.disablePropagationCheck=true"
+    environment:
+      DUCKDNS_TOKEN: "{{ env.DNS_TOKEN }}"
+      BASIC_AUTH_USER: "{{ env.BASIC_AUTH_USER }}"
+      BASIC_AUTH_PASSWORD_HASH: "{{ env.BASIC_AUTH_PASSWORD_HASH }}"
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.christ-devops.duckdns.org`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.tls.certresolver=myresolver"
+      - "traefik.http.routers.traefik.tls.domains[0].main=christ-devops.duckdns.org"
+      - "traefik.http.routers.traefik.tls.domains[0].sans=*.christ-devops.duckdns.org"
+      - "traefik.http.routers.traefik.middlewares=traefik-auth"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=christ:$$2y$$05$$Co15qfBcqfYzxZA17ru.huyPPYxDTtN54pt6O9k86bFRmQX8f5Pc6"
+      # HTTP -> HTTPS
+      - "traefik.http.routers.http-to-https.rule=Host(`christ-devops.duckdns.org`)"
+      - "traefik.http.routers.http-to-https.entrypoints=web"
+      - "traefik.http.routers.http-to-https.service=api@internal"
+      - "traefik.http.routers.http-to-https.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
+    networks:
+      - wp-network
+      - traefik-network
+      #- dns-wp_traefik-external-network
+      
+
+  wordpress:
+    image: wordpress:6.7
+    container_name: wordpress
+    hostname: wordpress
+    restart: unless-stopped
+    environment:
+      WORDPRESS_DB_HOST: "{{ env.WP_DB_HOST }}"
+      WORDPRESS_DB_USER: "{{ env.WP_DB_USER }}"
+      WORDPRESS_DB_PASSWORD: "{{ env.WP_DB_PASSWORD }}"
+      WORDPRESS_DB_NAME: "{{ env.WP_DB_NAME }}"
+    volumes:
+      - wordpress_data:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+    labels:
+       - "traefik.enable=true"
+       - "traefik.http.routers.wordpress.rule=Host(`wordpress.christ-devops.duckdns.org`)"
+       - "traefik.http.routers.wordpress.entrypoints=websecure"
+       - "traefik.http.routers.wordpress.tls.certresolver=myresolver"
+       #- "traefik.http.routers.wordpress.tls=true
+       
+    networks:
+      - wp-network
+      - traefik-network
+
+  db:
+    image: mysql:8.0
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: "{{ env.MYSQL_DB }}"
+      MYSQL_USER: "{{ env.MYSQL_USER }}"
+      MYSQL_PASSWORD: "{{ env.MYSQL_PASSWORD }}"
+      MYSQL_ROOT_PASSWORD: "{{ env.MYSQL_RT_PASSWORD }}"
+    volumes:
+      - db_data:/var/lib/mysql
+    depends_on:
+      - traefik
+    networks:
+      - wp-network   
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-u", "${MYSQL_USER}", "-p${MYSQL_PASSWORD}", "-h", "db"]
+      interval: 20s
+      timeout: 20s
+      retries: 5
+      start_period: 30s
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5.2.1
+    container_name: phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: "{{ env.PMA_HOST }}"
+      MYSQL_ROOT_PASSWORD: "{{ env.MYSQL_RT_PASSWORD }}"
+    depends_on:    
+      db:
+        condition: service_healthy
+    labels:
+       - "traefik.enable=true"
+       - "traefik.http.routers.phpmyadmin.rule=Host(`phpmyadmin.christ-devops.duckdns.org`)"
+       - "traefik.http.routers.phpmyadmin.entrypoints=websecure"     
+       - "traefik.http.routers.phpmyadmin.tls.certresolver=myresolver"
+       #- "traefik.http.routers.phpmyadmin.tls=true"
+      
+    networks:
+      - wp-network
+      - traefik-network
+
+  sonarqube:
+    image: sonarqube:lts
+    container_name: sonarqube
+    restart: unless-stopped
+
+    environment:
+      - SONARQUBE_JDBC_URL=jdbc:postgresql://sonar_db:5432/sonar
+      - SONARQUBE_JDBC_USERNAME="{{ env.USERNAME }}"
+      - SONARQUBE_JDBC_PASSWORD="{{ env.PASSWORD }}"
+
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions 
+      - sonarqube_logs:/opt/sonarqube/logs
+
+    depends_on:
+      sonar_db:
+        condition: service_healthy
+
+    labels:
+       - "traefik.enable=true"
+       - "traefik.http.routers.sonarqube.rule=Host(`sonarqube.christ-devops.duckdns.org`)"
+       - "traefik.http.routers.sonarqube.entrypoints=websecure"
+       - "traefik.http.routers.sonarqube.tls.certresolver=myresolver"
+       
+    networks:
+      - sonar_network
+      - traefik-network
+    
+
+
+
+  sonar_db:
+    image: postgres:alpine
+    container_name: sonar_db
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - sonar_network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data:rw
+    depends_on:
+      - traefik
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "sonar"]
+      interval: 10s
+      timeout: 15s
+      retries: 5 
+      start_period: 30s
+    
+
+volumes:
+  postgres_data:
+  wordpress_data:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
+  db_data:
+
+networks:
+  #dns-wp_traefik-external-network:
+    #external: true
+  traefik-network:
+    driver: bridge
+  sonar_network:
+    driver: bridge
+  wp-network:
+    driver: bridge

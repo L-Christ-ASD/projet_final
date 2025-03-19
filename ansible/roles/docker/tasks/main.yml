@@ -1,0 +1,9 @@
+---
+- name: Installer Docker et Docker Compose
+  include_tasks: install.yml
+
+- name: Déployer le stack Docker
+  include_tasks: deploy.yml
+
+- name: Ajouter des utilisateurs admin-ssh
+  include_tasks: add-users.yml
