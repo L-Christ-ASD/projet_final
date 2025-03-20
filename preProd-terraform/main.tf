@@ -94,7 +94,7 @@ resource "null_resource" "generate_ansible_inventory" {
     command = <<EOT
       mkdir -p ../ansible
       echo "[docker]" > ../ansible/inventory.ini
-      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=${path.module}/terrafom_preprod/vockey-${random_string.suffix.result}.pem >> ../ansible/inventory.ini", aws_instance.terrafom[*].public_ip))}
+      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=${path.module}/terrafom_preprod/vockey-${random_string.suffix.result}.pem >> ../ansible/inventory.ini", aws_instance.terrafom_preprod[*].public_ip))}
     EOT
   }
 }
@@ -138,7 +138,7 @@ variable "mon_ip" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
-  security_group_id = aws_security_group.admin_ssh.id
+  security_group_id = aws_security_group.admin_ssh[0].id
   cidr_ipv4         = "${var.mon_ip}/24"
   from_port         = 22
   ip_protocol       = "tcp"
@@ -147,7 +147,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
 
 resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in" {
   for_each          = toset(var.admin-ips)
-  security_group_id = aws_security_group.admin_ssh.id
+  security_group_id = aws_security_group.admin_ssh[0].id
   cidr_ipv4         = "${each.value}/24"
   from_port         = 22
   ip_protocol       = "tcp"
@@ -156,7 +156,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in" {
 
 
 resource "aws_vpc_security_group_egress_rule" "allow_ssh_out" {
-  security_group_id = aws_security_group.admin_ssh.id
+  security_group_id = aws_security_group.admin_ssh[0].id
   ip_protocol       = "-1"
   cidr_ipv4         = "0.0.0.0/0"
 }
