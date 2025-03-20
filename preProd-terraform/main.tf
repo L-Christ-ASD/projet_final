@@ -16,6 +16,20 @@ variable "counterInstance_preprod" {
   default = 1
 }
 
+# Variable autorisation des ip (Innstance pre-prod)
+variable "admin-ips" {
+  description = "les ip's des admins"
+  default     = ["192.168.1.0", "77.207.199.0"]
+}
+
+variable "mon_ip" {
+  description = "Les adresses acceptéés"
+  type        = string
+  default     = "176.172.132.0"
+}
+
+
+
 # ======================================
 resource "aws_instance" "terrafom_preprod" {
 
@@ -127,6 +141,7 @@ resource "aws_security_group" "admin_ssh" {
     Name = "admin-ssh"
   }
 }
+
 
 # utilisation de la fonction `element()` pour éviter l'accès à un élément inexistant
 resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
