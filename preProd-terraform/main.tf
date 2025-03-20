@@ -88,13 +88,13 @@ output "ssh_private_key_filename" {
 
 # exportation d'IPs
 resource "null_resource" "generate_ansible_inventory" {
-  depends_on = [aws_instance.terrafom]
+  depends_on = [aws_instance.terrafom_preprod]
 
   provisioner "local-exec" {
     command = <<EOT
       mkdir -p ../ansible
       echo "[docker]" > ../ansible/inventory.ini
-      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=~/dns-wp/terraform/vockey-${random_string.suffix.result}.pem >> ../ansible/inventory.ini", aws_instance.terrafom[*].public_ip))}
+      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=${path.module}/terrafom_preprod/vockey-${random_string.suffix.result}.pem >> ../ansible/inventory.ini", aws_instance.terrafom[*].public_ip))}
     EOT
   }
 }
@@ -112,7 +112,7 @@ data "aws_security_group" "existing_admin_ssh" {
 }
 
 resource "aws_security_group" "admin_ssh" {
-  count = length(data.aws_security_group.existing_admin_ssh.ids) > 0 ? 0 : 1 # ajout
+  count = length(data.aws_security_group.existing_admin_ssh.id) > 0 ? 0 : 1 # ajout
   name  = "admin-ssh"
   #description = "groupe-de sécurité pour accès ssh"
   vpc_id = "vpc-09c4b38653df63f28"
