@@ -33,13 +33,13 @@ variable "mon_ip" {
 # ======================================
 resource "aws_instance" "terrafom_preprod" {
 
-  count         = var.counterInstance_preprod # creation multiple des instances
-  ami           = "ami-04b4f1a9cf54c11d0"
-  instance_type = var.ec2_type_preprod
-  key_name      = aws_key_pair.vockey.key_name
+  count                  = var.counterInstance_preprod # creation multiple des instances
+  ami                    = "ami-04b4f1a9cf54c11d0"
+  instance_type          = var.ec2_type_preprod
+  key_name               = aws_key_pair.vockey.key_name
   vpc_security_group_ids = [aws_security_group.admin_ssh.id]
 
- 
+
   lifecycle {
     create_before_destroy = true
   }
@@ -113,7 +113,7 @@ resource "null_resource" "generate_ansible_inventory" {
 
 # Création du groupe de sécurité s'il n'existe pas déjà
 resource "aws_security_group" "admin_ssh" {
-  name  = "admin-ssh"
+  name = "admin-ssh"
   #description = "groupe-de sécurité pour accès ssh"
   vpc_id = "vpc-013d1e316d56835ef" # The chosen vpc
 
