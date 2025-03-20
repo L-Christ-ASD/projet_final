@@ -54,21 +54,32 @@ jobs:
       run: terraform fmt -check
       working-directory: ./preProd-terraform
 
-    - name: Supprimer la clé existante 
-      run: aws ec2 delete-key-pair --key-name "vockey.pem" --region us-east-1
-
     - name: Lister les clés existantes 
       run: aws ec2 describe-key-pairs --query 'KeyPairs[*].KeyName'
 
-    - name: Nettoyer l’état de Terraform 
-      run: terraform state rm aws_key_pair.vockey
+    - name: Supprimer les clés existantes 
+      run: |
+        aws ec2 delete-key-pair --key-name "vockey.pem" --region us-east-1
+        aws ec2 delete-key-pair --key-name "vockey-h5ep" --region us-east-1
+        aws ec2 delete-key-pair --key-name "vockey-y810" --region us-east-1
+
+    - name: Lister les clés existantes 
+      run: aws ec2 describe-key-pairs --query 'KeyPairs[*].KeyName'
 
     - name: Lister les groupe de sécurité sur AWS
       run: aws ec2 describe-security-groups --query "SecurityGroups[*].{Name:GroupName, ID:GroupId}"
 
     - name: Initialiser Terraform
       run: terraform init
-      working-directory: ./preProd-terraform  
+      working-directory: ./preProd-terraform
+
+    - name: Nettoyer l’état de Terraform 
+      run: terraform state rm aws_key_pair.vockey
+      working-directory: ./preProd-terraform
+
+    - name: Initialiser Terraform
+      run: terraform init
+      working-directory: ./preProd-terraform
 
     - name: Valider la configuration Terraform
       run: terraform validate
