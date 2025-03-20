@@ -116,8 +116,8 @@ jobs:
         cat ./ansible/inventory
     
     - name: Exécuter le playbook Ansible
-      run: ansible-playbook -i inventory ansible/playbook.yml -e 'ansible_ssh_extra_args="-o StrictHostKeyChecking=no"'
-      working-directory: ./ansible
+      run: ansible-playbook -i inventory playbook.yml -e 'ansible_ssh_extra_args="-o StrictHostKeyChecking=no"'
+      working-directory: ./ansible/
 
 
 
