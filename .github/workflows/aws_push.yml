@@ -127,10 +127,10 @@ jobs:
     # éviter la confirmation manuelle de l'empreinte de l'instance 
     # lors de l'exécution de l'Ansible playbook via SSH, 
     # garantissant ainsi une connexion sans intervention
-    - name: Ajouter l'hôte EC2 aux hôtes connus de la VM Ubuntu utilisée par GitHub Actions
-      run: |
-        ssh-keyscan -H $(terraform output -raw public_ip) >> ~/.ssh/known_hosts
-
+    #- name: Ajouter l'hôte EC2 aux hôtes connus de la VM Ubuntu utilisée par GitHub Actions
+    #  run: |
+    #    ssh-keyscan -H $(terraform output -raw public_ip) >> ~/.ssh/known_hosts
+#
     - name: Exécuter le playbook Ansible
       run: ansible-playbook -i inventory.ini ansible/playbook.yml
 
