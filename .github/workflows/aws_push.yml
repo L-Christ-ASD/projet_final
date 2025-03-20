@@ -33,13 +33,13 @@ jobs:
       run: terraform fmt -check
       working-directory: ./terraform
       
+    - name: Initialiser Terraform
+      run: terraform init
+      working-directory: ./terraform  
+
     - name: Valider la configuration Terraform
       run: terraform validate
       working-directory: ./terraform
-
-    - name: Initialiser Terraform
-      run: terraform init
-      working-directory: ./terraform  # Assure-toi d'ajuster ce chemin
 
     - name: Exporter les identifiants AWS
       run: |
