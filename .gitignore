@@ -1,5 +1,4 @@
 acme.json
-main.tf
 Makefile
 markdown_to_pdf.sh
 aws
@@ -20,3 +19,5 @@ terraform-provider-aws_*
 awscliv2.zip
 .terraform/
 awscliv2.zip
+terraform.tfstate
+vockey.pem
