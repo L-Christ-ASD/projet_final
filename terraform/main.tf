@@ -19,10 +19,10 @@ variable "counterInstance" {
 #=================================================
 resource "aws_instance" "terrafom" {
 
-  count         = var.counterInstance # creation multiple des instances
-  ami           = "ami-04b4f1a9cf54c11d0"
-  instance_type = var.ec2_type
-  key_name      = aws_key_pair.vockey.key_name
+  count                  = var.counterInstance # creation multiple des instances
+  ami                    = "ami-04b4f1a9cf54c11d0"
+  instance_type          = var.ec2_type
+  key_name               = aws_key_pair.vockey.key_name
   vpc_security_group_ids = [aws_security_group.admin_ssh.id]
 
   depends_on = [aws_security_group.admin_ssh, aws_key_pair.vockey] # Assure l'ordre de création

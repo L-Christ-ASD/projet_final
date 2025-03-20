@@ -20,4 +20,5 @@ awscliv2.zip
 .terraform/
 awscliv2.zip
 terraform.tfstate
-vockey.pem
+terraform/vockey.pem
+terraform/terraform.tfstate
