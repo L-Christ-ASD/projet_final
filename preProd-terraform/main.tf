@@ -37,15 +37,9 @@ resource "aws_instance" "terrafom_preprod" {
   ami           = "ami-04b4f1a9cf54c11d0"
   instance_type = var.ec2_type_preprod
   key_name      = aws_key_pair.vockey.key_name
-  #vpc_security_group_ids = [aws_security_group.admin_ssh.id]
+  vpc_security_group_ids = [aws_security_group.admin_ssh.id]
 
-  # utilisation de coalesce pour récupérer l'ID :
-  vpc_security_group_ids = [
-    lookup(
-      aws_security_group.admin_ssh[0], "id", ""
-    )
-  ]
-
+ 
   lifecycle {
     create_before_destroy = true
   }
@@ -117,22 +111,11 @@ resource "null_resource" "generate_ansible_inventory" {
 #_____________Creation de security group___________
 # =================================================
 
-# Utilise data "aws_security_group" pour récupérer l'ID si le SG existe déjà :
-
-# Recherche du groupe de sécurité existant
-data "aws_security_group" "existing_admin_ssh" {
-  filter {
-    name   = "group-name"
-    values = ["admin-ssh"]
-  }
-}
-
 # Création du groupe de sécurité s'il n'existe pas déjà
 resource "aws_security_group" "admin_ssh" {
-  count = length(data.aws_security_group.existing_admin_ssh.id) == 0 ? 1 : 0 # Créé si non existant
   name  = "admin-ssh"
   #description = "groupe-de sécurité pour accès ssh"
-  vpc_id = "vpc-09c4b38653df63f28"
+  vpc_id = "vpc-013d1e316d56835ef" # The chosen vpc
 
   lifecycle {
     ignore_changes = [name] # Ignore si le groupe existe déjà
@@ -143,10 +126,8 @@ resource "aws_security_group" "admin_ssh" {
   }
 }
 
-
-# utilisation de la fonction `element()` pour éviter l'accès à un élément inexistant
 resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
-  security_group_id = lookup(aws_security_group.admin_ssh[0], "id", "")
+  security_group_id = aws_security_group.admin_ssh
   cidr_ipv4         = "${var.mon_ip}/24"
   from_port         = 22
   ip_protocol       = "tcp"
@@ -155,7 +136,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
 
 resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in" {
   for_each          = toset(var.admin-ips)
-  security_group_id = lookup(aws_security_group.admin_ssh[0], "id", "")
+  security_group_id = aws_security_group.admin_ssh
   cidr_ipv4         = "${each.value}/24"
   from_port         = 22
   ip_protocol       = "tcp"
@@ -163,7 +144,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in" {
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_ssh_out" {
-  security_group_id = lookup(aws_security_group.admin_ssh[0], "id", "")
+  security_group_id = aws_security_group.admin_ssh
   ip_protocol       = "-1"
   cidr_ipv4         = "0.0.0.0/0"
 }
