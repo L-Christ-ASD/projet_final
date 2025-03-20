@@ -114,7 +114,7 @@ data "aws_security_group" "existing_admin_ssh" {
 
 # Création du groupe de sécurité s'il n'existe pas déjà
 resource "aws_security_group" "admin_ssh" {
-  count = length(data.aws_security_group.existing_admin_ssh.ids) == 0 ? 1 : 0 # Créé si non existant
+  count = length(data.aws_security_group.existing_admin_ssh.id) == 0 ? 1 : 0 # Créé si non existant
   name  = "admin-ssh"
   #description = "groupe-de sécurité pour accès ssh"
   vpc_id = "vpc-09c4b38653df63f28"
