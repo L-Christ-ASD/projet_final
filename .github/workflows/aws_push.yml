@@ -67,8 +67,8 @@ jobs:
     - name: Lister les groupes de sécurité sur AWS
       run: aws ec2 describe-security-groups --query "SecurityGroups[*].{Name:GroupName, ID:GroupId}"
 
-    - name: rm le groupe de sécurité sur AWS
-      run: aws ec2 delete-security-group --group-id <sg-id> --region us-east-1
+    #- name: rm le groupe de sécurité sur AWS
+    #  run: aws ec2 delete-security-group --group-id <sg-id> --region us-east-1
 
     - name: Initialiser Terraform
       run: terraform init
