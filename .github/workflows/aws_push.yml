@@ -103,10 +103,13 @@ jobs:
         name: vockey.pem
         path: ./preProd-terraform/vockey.pem
 
-    - name: Vérifier le contenu du fichier inventory.ini
+    - name: Vérifier le contenu du dossier ansible
       run: |
         ls ./ansible/
-        cat ./ansible/inventory.ini
+
+    - name: Vérifier le contenu du fichier inventory
+      run: |
+        cat ./ansible/inventory
     
     - name: Exécuter le playbook Ansible
       run: ansible-playbook -i inventory.ini ansible/playbook.yml

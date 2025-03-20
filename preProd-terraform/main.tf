@@ -103,7 +103,7 @@ resource "null_resource" "generate_ansible_inventory" {
   provisioner "local-exec" {
     command = <<EOT
       mkdir -p ../ansible
-      echo "[docker]" > ../ansible/inventory.ini
+      echo "[docker]" > ../ansible/inventory
       ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=${path.module}/vockey.pem >> ../ansible/inventory", aws_instance.terrafom_preprod[*].public_ip))}
     EOT
   }
