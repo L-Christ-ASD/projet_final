@@ -64,8 +64,11 @@ jobs:
     - name: Lister les clés existantes 
       run: aws ec2 describe-key-pairs --query 'KeyPairs[*].KeyName'
 
-    - name: Lister les groupe de sécurité sur AWS
+    - name: Lister les groupes de sécurité sur AWS
       run: aws ec2 describe-security-groups --query "SecurityGroups[*].{Name:GroupName, ID:GroupId}"
+
+    - name: rm le groupe de sécurité sur AWS
+      run: aws ec2 delete-security-group --group-id <sg-id> --region us-east-1
 
     - name: Initialiser Terraform
       run: terraform init
@@ -93,27 +96,27 @@ jobs:
       run: terraform plan -no-color
       working-directory: ./preProd-terraform
 
-    - name: Appliquer Terraform 
+    - name: Lancer Terraform apply
       run: terraform apply -auto-approve
       working-directory: ./preProd-terraform
-
-    #- name: Sauvegarder la clé SSH
-    #  uses: actions/upload-artifact@v4
-    #  with:
-    #    name: vockey.pem
-    #    path: ./terraform/vockey.pem
-
-    - name: Récupérer le nom de la clé SSH
-      run: echo "SSH_KEY_NAME=$(terraform output -raw ssh_key_name)" >> $GITHUB_ENV
-
-    - name: Récupérer le nom du fichier de la clé privée
-      run: echo "SSH_KEY_FILE=$(terraform output -raw ssh_private_key_filename)" >> $GITHUB_ENV
 
     - name: Sauvegarder la clé SSH
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.SSH_KEY_NAME }}.pem
-        path: ${{ env.SSH_KEY_FILE }}
+        name: vockey.pem
+        path: ./preProd-terraform/vockey.pem
+
+    #- name: Récupérer le nom de la clé SSH
+    #  run: echo "SSH_KEY_NAME=$(terraform output -raw ssh_key_name)" >> $GITHUB_ENV
+#
+    #- name: Récupérer le nom du fichier de la clé privée
+    #  run: echo "SSH_KEY_FILE=$(terraform output -raw ssh_private_key_filename)" >> $GITHUB_ENV
+#
+    #- name: Sauvegarder la clé SSH
+    #  uses: actions/upload-artifact@v4
+    #  with:
+    #    name: ${{ env.SSH_KEY_NAME }.pem
+    #    path: ${{ env.SSH_KEY_FILE }
 
 
     - name: Vérifier le contenu du fichier inventory.ini
