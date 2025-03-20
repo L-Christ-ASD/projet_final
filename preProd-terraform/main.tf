@@ -23,7 +23,13 @@ resource "aws_instance" "terrafom_preprod" {
   ami                    = "ami-04b4f1a9cf54c11d0"
   instance_type          = var.ec2_type_preprod
   key_name               = aws_key_pair.vockey.key_name
-  vpc_security_group_ids = [aws_security_group.admin_ssh.id]
+  #vpc_security_group_ids = [aws_security_group.admin_ssh.id]
+
+  # utilisation de coalesce pour récupérer l'ID :
+  vpc_security_group_ids = [coalesce(
+    try(aws_security_group.admin_ssh[0].id, ""),
+    try(data.aws_security_group.existing_admin_ssh.id, "")
+  )]
 
   lifecycle {
     create_before_destroy = true
@@ -37,6 +43,13 @@ resource "aws_instance" "terrafom_preprod" {
 
 }
 #création de la clé SSH dans
+
+# Ajout d'un random_string pour générer un nom unique :
+resource "random_string" "suffix" {
+  length  = 4
+  special = false
+  upper   = false
+}
 # tls_private_key → Génère une clé privée.
 resource "tls_private_key" "vockey" {
   algorithm = "RSA"
@@ -44,7 +57,7 @@ resource "tls_private_key" "vockey" {
 }
 #aws_key_pair → Crée la clé publique sur AWS.
 resource "aws_key_pair" "vockey" {
-  key_name   = "vockey"
+  key_name   = "vockey-${random_string.suffix.result}" #"vockey" avec sufix
   public_key = tls_private_key.vockey.public_key_openssh
 
   lifecycle {
@@ -53,7 +66,7 @@ resource "aws_key_pair" "vockey" {
 }
 # local_file → Stocke la clé privée (vockey.pem) localement.
 resource "local_file" "vockey_pem" {
-  filename        = "${path.module}/vockey.pem"
+  filename        = "${path.module}/vockey-${random_string.suffix.result}.pem"
   content         = tls_private_key.vockey.private_key_pem
   file_permission = "0600"
 }
@@ -63,9 +76,29 @@ output "instance_info_preprod" {
     PreProd_public_ip = aws_instance.terrafom_preprod[*].public_ip
   }
 }
+
+output "ssh_key_name" {
+  value = aws_key_pair.vockey.key_name
+}
+
+output "ssh_private_key_filename" {
+  value = local_file.vockey_pem.filename
+}
+
 #_____________Creation de security group___________
 # =================================================
+
+# Utilise data "aws_security_group" pour récupérer l'ID si le SG existe déjà :
+
+data "aws_security_group" "existing_admin_ssh" {
+  filter {
+    name   = "group-name"
+    values = ["admin-ssh"]
+  }
+}
+
 resource "aws_security_group" "admin_ssh" {
+  count = length(data.aws_security_group.existing_admin_ssh.ids) > 0 ? 0 : 1 # ajout
   name        = "admin-ssh"
   #description = "groupe-de sécurité pour accès ssh"
   vpc_id      = "vpc-09c4b38653df63f28"

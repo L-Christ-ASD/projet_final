@@ -76,11 +76,24 @@ jobs:
       run: terraform apply -auto-approve
       working-directory: ./terraform
 
+    #- name: Sauvegarder la clé SSH
+    #  uses: actions/upload-artifact@v4
+    #  with:
+    #    name: vockey.pem
+    #    path: ./terraform/vockey.pem
+
+    - name: Récupérer le nom de la clé SSH
+      run: echo "SSH_KEY_NAME=$(terraform output -raw ssh_key_name)" >> $GITHUB_ENV
+
+    - name: Récupérer le nom du fichier de la clé privée
+      run: echo "SSH_KEY_FILE=$(terraform output -raw ssh_private_key_filename)" >> $GITHUB_ENV
+
     - name: Sauvegarder la clé SSH
       uses: actions/upload-artifact@v4
       with:
-        name: vockey.pem
-        path: ./terraform/vockey.pem
+        name: ${{ env.SSH_KEY_NAME }}.pem
+        path: ${{ env.SSH_KEY_FILE }}
+
 
     - name: Vérifier le contenu du fichier inventory.ini
       run: |
