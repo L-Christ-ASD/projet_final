@@ -1,5 +1,5 @@
 provider "aws" {
-    region = "us-east-1"
+  region = "us-east-1"
 }
 
 # Variable Innstance pre-prod
@@ -11,18 +11,18 @@ variable "ec2_type_preprod" {
 }
 
 variable "counterInstance_preprod" {
-    description = "Nombre d'instance a creer"
-    #type = string
-    default = 1
+  description = "Nombre d'instance a creer"
+  #type = string
+  default = 1
 }
 
 # ======================================
 resource "aws_instance" "terrafom_preprod" {
 
-  count = var.counterInstance_preprod # creation multiple des instances
-  ami                    = "ami-04b4f1a9cf54c11d0"
-  instance_type          = var.ec2_type_preprod
-  key_name               = aws_key_pair.vockey.key_name
+  count         = var.counterInstance_preprod # creation multiple des instances
+  ami           = "ami-04b4f1a9cf54c11d0"
+  instance_type = var.ec2_type_preprod
+  key_name      = aws_key_pair.vockey.key_name
   #vpc_security_group_ids = [aws_security_group.admin_ssh.id]
 
   # utilisation de coalesce pour récupérer l'ID :
@@ -35,8 +35,8 @@ resource "aws_instance" "terrafom_preprod" {
     create_before_destroy = true
   }
 
-  depends_on = [aws_security_group.admin_ssh, aws_key_pair.vockey]  # Assure l'ordre de création
-  
+  depends_on = [aws_security_group.admin_ssh, aws_key_pair.vockey] # Assure l'ordre de création
+
   tags = {
     Name = "terrafom-${count.index}"
   }
@@ -61,7 +61,7 @@ resource "aws_key_pair" "vockey" {
   public_key = tls_private_key.vockey.public_key_openssh
 
   lifecycle {
-    ignore_changes = [key_name]  # Ignore si la clé existe déjà
+    ignore_changes = [key_name] # Ignore si la clé existe déjà
   }
 }
 # local_file → Stocke la clé privée (vockey.pem) localement.
@@ -113,12 +113,12 @@ data "aws_security_group" "existing_admin_ssh" {
 
 resource "aws_security_group" "admin_ssh" {
   count = length(data.aws_security_group.existing_admin_ssh.ids) > 0 ? 0 : 1 # ajout
-  name        = "admin-ssh"
+  name  = "admin-ssh"
   #description = "groupe-de sécurité pour accès ssh"
-  vpc_id      = "vpc-09c4b38653df63f28"
+  vpc_id = "vpc-09c4b38653df63f28"
 
   lifecycle {
-    ignore_changes = [name]  # Ignore si le groupe existe déjà
+    ignore_changes = [name] # Ignore si le groupe existe déjà
   }
 
   tags = {
@@ -128,13 +128,13 @@ resource "aws_security_group" "admin_ssh" {
 
 variable "admin-ips" {
   description = "les ip's des admins"
-  default = ["192.168.1.0", "77.207.199.0"]
+  default     = ["192.168.1.0", "77.207.199.0"]
 }
 
 variable "mon_ip" {
   description = "Les adresses acceptéés"
-  type = string
-  default = "176.172.132.0"
+  type        = string
+  default     = "176.172.132.0"
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
@@ -146,7 +146,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in" {
-  for_each = toset(var.admin-ips)
+  for_each          = toset(var.admin-ips)
   security_group_id = aws_security_group.admin_ssh.id
   cidr_ipv4         = "${each.value}/24"
   from_port         = 22
@@ -158,5 +158,5 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in" {
 resource "aws_vpc_security_group_egress_rule" "allow_ssh_out" {
   security_group_id = aws_security_group.admin_ssh.id
   ip_protocol       = "-1"
-  cidr_ipv4 = "0.0.0.0/0"
+  cidr_ipv4         = "0.0.0.0/0"
 }
