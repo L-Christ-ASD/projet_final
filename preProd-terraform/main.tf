@@ -37,7 +37,7 @@ resource "aws_instance" "terrafom_preprod" {
   ami                    = "ami-04b4f1a9cf54c11d0"
   instance_type          = var.ec2_type_preprod
   key_name               = aws_key_pair.vockey.key_name
-  subnet_id     = "subnet-0c90a1be41664ad8e"  #  sous-réseau appartenant à vpc-013d1e316d56835ef
+  subnet_id              = "subnet-0c90a1be41664ad8e" #  sous-réseau appartenant à vpc-013d1e316d56835ef
   vpc_security_group_ids = [aws_security_group.admin_ssh.id]
 
 
