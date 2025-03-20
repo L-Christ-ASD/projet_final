@@ -103,13 +103,6 @@ resource "null_resource" "generate_ansible_inventory" {
 # =================================================
 
 # Utilise data "aws_security_group" pour récupérer l'ID si le SG existe déjà :
-# Recherche du groupe de sécurité existant
-data "aws_security_group" "existing_admin_ssh" {
-  filter {
-    name   = "group-name"
-    values = ["admin-ssh"]
-  }
-}
 
 # Recherche du groupe de sécurité existant
 data "aws_security_group" "existing_admin_ssh" {
