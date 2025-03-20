@@ -56,7 +56,7 @@ jobs:
       working-directory: ./terraform
 
     - name: Sauvegarder la clé SSH
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: vockey.pem
         path: ./terraform/vockey.pem
@@ -86,6 +86,10 @@ jobs:
 #    Sélectionnez le workflow correspondant.
 #    
 #    Téléchargez l'artefact nommé ssh-key.
+
+# ou utiliser la commande bash sur la machine locale:
+  # gh run download -R L-Christ-ASD/projet_final -n vockey.pem
+
 
 # Étape 14 : Ajouter l'hôte EC2 aux hôtes connus
 # - name: Ajouter l'hôte aux known_hosts

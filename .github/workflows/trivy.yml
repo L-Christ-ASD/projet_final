@@ -8,7 +8,7 @@
     jobs:
       scan:
         name: Scan Docker Image
-        runs-on: self-hosted
+        runs-on: ubuntu-latest
         steps:
           - name: Checkout Code
             uses: actions/checkout@v4
@@ -37,13 +37,13 @@
               output: 'config-scan-results-${{ github.sha }}.sarif'
               severity: 'CRITICAL,HIGH,MEDIUM,LOW'
     
-          - name: Upload Trivy Image Scan Results
+          - name: Upload Trivy Image Scan Results.txt
             uses: actions/upload-artifact@v4
             with:
               name: trivy-image-report
               path: image-scan-results-${{ github.sha }}.txt
     
-          - name: Upload Trivy Config Scan Results
+          - name: Upload Trivy Config Scan Results.sarif
             uses: actions/upload-artifact@v4
             with:
               name: trivy-config-report
