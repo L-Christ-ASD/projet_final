@@ -67,7 +67,7 @@ resource "tls_private_key" "vockey" {
 }
 #aws_key_pair → Crée la clé publique sur AWS.
 resource "aws_key_pair" "vockey" {
-  key_name   = "vockey-${random_string.suffix.result}" #"vockey" avec sufix
+  key_name   = "vockey"
   public_key = tls_private_key.vockey.public_key_openssh
 
   lifecycle {
@@ -76,7 +76,7 @@ resource "aws_key_pair" "vockey" {
 }
 # local_file → Stocke la clé privée (vockey.pem) localement.
 resource "local_file" "vockey_pem" {
-  filename        = "${path.module}/vockey-${random_string.suffix.result}.pem"
+  filename        = "${path.module}/vockey.pem"
   content         = tls_private_key.vockey.private_key_pem
   file_permission = "0600"
 }
@@ -104,7 +104,7 @@ resource "null_resource" "generate_ansible_inventory" {
     command = <<EOT
       mkdir -p ../ansible
       echo "[docker]" > ../ansible/inventory.ini
-      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=${path.module}/terrafom_preprod/vockey-${random_string.suffix.result}.pem >> ../ansible/inventory.ini", aws_instance.terrafom_preprod[*].public_ip))}
+      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=${path.module}/vockey.pem >> ../ansible/inventory.ini", aws_instance.terrafom_preprod[*].public_ip))}
     EOT
   }
 }
