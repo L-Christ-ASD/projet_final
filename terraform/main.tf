@@ -46,6 +46,10 @@ resource "tls_private_key" "vockey" {
 resource "aws_key_pair" "vockey" {
   key_name   = "vockey"
   public_key = tls_private_key.vockey.public_key_openssh
+
+  lifecycle {
+    ignore_changes = [key_name]  # Ignore si la clé existe déjà
+  }
 }
 # local_file → Stocke la clé privée (vockey.pem) localement.
 resource "local_file" "vockey_pem" {
@@ -87,6 +91,9 @@ resource "aws_security_group" "admin_ssh" {
   #description = "groupe-de sécurité pour accès ssh"
   vpc_id = "vpc-09c4b38653df63f28"
 
+  lifecycle {
+    ignore_changes = [name]  # Ignore si le groupe existe déjà
+  }
 
   tags = {
     Name = "admin-ssh"
