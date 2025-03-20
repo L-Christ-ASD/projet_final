@@ -123,17 +123,18 @@ jobs:
     - name: Contenu du dossier terraform et arbo
       run: |
         pwd
-        ls ./terraform_preprod/
-        ls -l ./terrafrom_preprod/vockey.pem
+        ls
+        ls ./preProd-terraform/
+        ls -l ./preProd-terraform/vockey.pem
         ls -R
 
-    - name: Chmod 400 sur .prm
+    - name: Chmod 400 sur .pem
       run: |
-        chmod 400 ./terraform_preprod/vockey.pem
+        chmod 400 ./preProd-terraform/vockey.pem
     
     - name: Contenu du dossier terraform
       run: |
-        ls -l ./terrafom_preprod/vockey.pem
+        ls -l ./preProd-terraform/vockey.pem
     
     - name: Exécuter le playbook Ansible
       run: |

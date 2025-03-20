@@ -7,7 +7,7 @@ provider "aws" {
 variable "ec2_type_preprod" {
   description = "le type d'instance souhaité"
   type        = string
-  default     = "t3.micro"
+  default     = "c5n.2xlarge"
 }
 
 variable "counterInstance_preprod" {
