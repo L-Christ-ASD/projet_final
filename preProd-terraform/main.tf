@@ -45,7 +45,7 @@ resource "aws_instance" "terrafom_preprod" {
     create_before_destroy = true
   }
 
-  depends_on = [aws_security_group.admin_ssh, aws_key_pair.vockey] # Assure l'ordre de création
+  depends_on = [aws_security_group.admin_ssh_preprod, aws_key_pair.vockey] # Assure l'ordre de création
 
   tags = {
     Name = "terrafom-${count.index}"
