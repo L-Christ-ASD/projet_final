@@ -116,7 +116,7 @@ resource "null_resource" "generate_ansible_inventory" {
 resource "aws_security_group" "admin_ssh" {
   name = "admin-ssh"
   #description = "groupe-de sécurité pour accès ssh"
-  vpc_id = "vpc-013d1e316d56835ef" # The chosen vpc
+  vpc_id = "vpc-09c4b38653df63f28" # The chosen vpc
 
   lifecycle {
     ignore_changes = [name] # Ignore si le groupe existe déjà
