@@ -114,10 +114,24 @@ jobs:
     - name: Vérifier le contenu du fichier inventory
       run: |
         cat ./ansible/inventory
+
+    - name: Autoriser SSH depuis n'importe où (temporaire)
+      run: |
+        aws ec2 authorize-security-group-ingress --group-name admin_ssh_preprod \
+          --protocol tcp --port 22 --cidr 0.0.0.0/0 --region us-east-1
+
     
     - name: Exécuter le playbook Ansible
-      run: ansible-playbook -i inventory playbook.yml 
+      run: |
+        chmod 400 ../terrafom_preprod/vockey.pem
+        ansible-playbook -i inventory playbook.yml 
       working-directory: ./ansible/
+
+    - name: Désactiver l'accès SSH depuis n'importe où
+      run: |
+        aws ec2 revoke-security-group-ingress --group-name admin_ssh_preprod \
+          --protocol tcp --port 22 --cidr 0.0.0.0/0 --region us-east-1
+
 
 
 
