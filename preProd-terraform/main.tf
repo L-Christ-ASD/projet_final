@@ -127,7 +127,7 @@ resource "aws_security_group" "admin_ssh" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
-  security_group_id = aws_security_group.admin_ssh
+  security_group_id = aws_security_group.admin_ssh.id
   cidr_ipv4         = "${var.mon_ip}/24"
   from_port         = 22
   ip_protocol       = "tcp"
@@ -136,7 +136,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
 
 resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in" {
   for_each          = toset(var.admin-ips)
-  security_group_id = aws_security_group.admin_ssh
+  security_group_id = aws_security_group.admin_ssh.id
   cidr_ipv4         = "${each.value}/24"
   from_port         = 22
   ip_protocol       = "tcp"
@@ -144,7 +144,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in" {
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_ssh_out" {
-  security_group_id = aws_security_group.admin_ssh
+  security_group_id = aws_security_group.admin_ssh.id
   ip_protocol       = "-1"
   cidr_ipv4         = "0.0.0.0/0"
 }
