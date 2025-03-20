@@ -59,9 +59,7 @@ jobs:
 
     - name: Supprimer les clés existantes 
       run: |
-        aws ec2 delete-key-pair --key-name "vockey.pem" --region us-east-1
-        aws ec2 delete-key-pair --key-name "vockey-h5ep" --region us-east-1
-        aws ec2 delete-key-pair --key-name "vockey-y810" --region us-east-1
+        aws ec2 delete-key-pair --key-name "vockey" --region us-east-1
 
     - name: Lister les clés existantes 
       run: aws ec2 describe-key-pairs --query 'KeyPairs[*].KeyName'
@@ -73,13 +71,13 @@ jobs:
       run: terraform init
       working-directory: ./preProd-terraform
 
-    - name: Nettoyer l’état de Terraform 
-      run: terraform state rm aws_key_pair.vockey
-      working-directory: ./preProd-terraform
-
-    - name: Initialiser Terraform
-      run: terraform init
-      working-directory: ./preProd-terraform
+    #- name: Nettoyer l’état de Terraform 
+    #  run: terraform state rm aws_key_pair.vockey
+    #  working-directory: ./preProd-terraform
+#
+    #- name: Initialiser Terraform
+    #  run: terraform init
+    #  working-directory: ./preProd-terraform
 
     - name: Valider la configuration Terraform
       run: terraform validate
