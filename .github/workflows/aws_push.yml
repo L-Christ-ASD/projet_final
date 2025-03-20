@@ -53,6 +53,10 @@ jobs:
     - name: Valider le format Terraform
       run: terraform fmt -check
       working-directory: ./preProd-terraform
+
+    - name: Supprimer la clé existante 
+      run: aws ec2 delete-key-pair --key-name "vockey.pem" --region us-east-1
+
     
     - name: Initialiser Terraform
       run: terraform init
