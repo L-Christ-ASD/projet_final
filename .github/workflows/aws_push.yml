@@ -70,6 +70,10 @@ jobs:
     #- name: rm le groupe de sécurité sur AWS
     #  run: aws ec2 delete-security-group --group-id <sg-id> --region us-east-1
 
+    - name: Tout detruire !!
+      run: terraform destroy -auto-approve
+      working-directory: ./preProd-terraform
+
     - name: Initialiser Terraform
       run: terraform init
       working-directory: ./preProd-terraform
