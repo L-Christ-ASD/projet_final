@@ -110,7 +110,7 @@ resource "null_resource" "generate_ansible_inventory" {
 }
 
 #_____________Creation de security group___________
-# =================================================
+# =================================================.
 
 # Création du groupe de sécurité s'il n'existe pas déjà
 resource "aws_security_group" "admin_ssh_preprod" {
