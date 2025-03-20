@@ -120,15 +120,16 @@ jobs:
         aws ec2 authorize-security-group-ingress --group-name admin_ssh_preprod \
           --protocol tcp --port 22 --cidr 0.0.0.0/0 --region us-east-1
 
-    - name: Contenu du dossier terraform
+    - name: Contenu du dossier terraform et arbo
       run: |
         pwd
-        ls ./terrafom_preprod/
-        ls -l ./terrafom_preprod/vockey.pem
+        ls ./terraform_preprod/
+        ls -l ./terrafrom_preprod/vockey.pem
+        ls -R
 
     - name: Chmod 400 sur .prm
       run: |
-        chmod 400 ./terrafom_preprod/vockey.pem
+        chmod 400 ./terraform_preprod/vockey.pem
     
     - name: Contenu du dossier terraform
       run: |
