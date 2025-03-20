@@ -107,12 +107,17 @@ jobs:
       run: |
         ls ./ansible/
 
+    - name: Vérifier le contenu du dossier ansible
+      run: |
+        ls ./ansible/
+
     - name: Vérifier le contenu du fichier inventory
       run: |
         cat ./ansible/inventory
     
     - name: Exécuter le playbook Ansible
-      run: ansible-playbook -i inventory.ini ansible/playbook.yml
+      run: ansible-playbook -i inventory ansible/playbook.yml -e 'ansible_ssh_extra_args="-o StrictHostKeyChecking=no"'
+      working-directory: ./ansible
 
 
 

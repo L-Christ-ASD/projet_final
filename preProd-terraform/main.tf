@@ -104,7 +104,7 @@ resource "null_resource" "generate_ansible_inventory" {
     command = <<EOT
       mkdir -p ../ansible
       echo "[docker]" > ../ansible/inventory
-      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=${path.module}/vockey.pem >> ../ansible/inventory", aws_instance.terrafom_preprod[*].public_ip))}
+      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../terrafom_preprod/vockey.pem >> ../ansible/inventory", aws_instance.terrafom_preprod[*].public_ip))}
     EOT
   }
 }
