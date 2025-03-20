@@ -85,6 +85,20 @@ output "ssh_private_key_filename" {
   value = local_file.vockey_pem.filename
 }
 
+
+# exportation d'IPs
+resource "null_resource" "generate_ansible_inventory" {
+  depends_on = [aws_instance.terrafom]
+
+  provisioner "local-exec" {
+    command = <<EOT
+      mkdir -p ../ansible
+      echo "[docker]" > ../ansible/inventory.ini
+      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=~/dns-wp/terraform/vockey-${random_string.suffix.result}.pem >> ../ansible/inventory.ini", aws_instance.terrafom[*].public_ip))}
+    EOT
+  }
+}
+
 #_____________Creation de security group___________
 # =================================================
 

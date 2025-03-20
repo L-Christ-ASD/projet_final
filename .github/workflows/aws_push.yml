@@ -52,15 +52,15 @@ jobs:
 
     - name: Valider le format Terraform
       run: terraform fmt -check
-      working-directory: ./terraform
+      working-directory: ./preProd-terraform
       
     - name: Initialiser Terraform
       run: terraform init
-      working-directory: ./terraform  
+      working-directory: ./preProd-terraform  
 
     - name: Valider la configuration Terraform
       run: terraform validate
-      working-directory: ./terraform
+      working-directory: ./preProd-terraform
       #=========================================
     #- name: Import existing AWS key pair
     #  run: terraform import aws_key_pair.vockey vockey || echo "Key Pair already imported"
@@ -70,11 +70,11 @@ jobs:
         #============================================
     - name: Plan Terraform
       run: terraform plan -no-color
-      working-directory: ./terraform
+      working-directory: ./preProd-terraform
 
     - name: Appliquer Terraform 
       run: terraform apply -auto-approve
-      working-directory: ./terraform
+      working-directory: ./preProd-terraform
 
     #- name: Sauvegarder la clé SSH
     #  uses: actions/upload-artifact@v4
