@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "us-east-1"
+  region                  = "us-east-1"
   skip_metadata_api_check = true # force Terraform à utiliser les variables d’environnement githubaction
 }
 
