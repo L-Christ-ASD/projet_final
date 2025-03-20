@@ -40,10 +40,11 @@ resource "aws_instance" "terrafom_preprod" {
   #vpc_security_group_ids = [aws_security_group.admin_ssh.id]
 
   # utilisation de coalesce pour récupérer l'ID :
-  vpc_security_group_ids = [coalesce(
-    try(aws_security_group.admin_ssh[0].id, ""),
-    try(data.aws_security_group.existing_admin_ssh.id, "")
-  )]
+  vpc_security_group_ids = [
+    lookup(
+      aws_security_group.admin_ssh[0], "id", ""
+    )
+  ]
 
   lifecycle {
     create_before_destroy = true
@@ -145,7 +146,7 @@ resource "aws_security_group" "admin_ssh" {
 
 # utilisation de la fonction `element()` pour éviter l'accès à un élément inexistant
 resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
-  security_group_id = element(aws_security_group.admin_ssh.*.id, 0)
+  security_group_id = lookup(aws_security_group.admin_ssh[0], "id", "")
   cidr_ipv4         = "${var.mon_ip}/24"
   from_port         = 22
   ip_protocol       = "tcp"
@@ -154,7 +155,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
 
 resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in" {
   for_each          = toset(var.admin-ips)
-  security_group_id = element(aws_security_group.admin_ssh.*.id, 0)
+  security_group_id = lookup(aws_security_group.admin_ssh[0], "id", "")
   cidr_ipv4         = "${each.value}/24"
   from_port         = 22
   ip_protocol       = "tcp"
@@ -162,7 +163,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in" {
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_ssh_out" {
-  security_group_id = element(aws_security_group.admin_ssh.*.id, 0)
+  security_group_id = lookup(aws_security_group.admin_ssh[0], "id", "")
   ip_protocol       = "-1"
   cidr_ipv4         = "0.0.0.0/0"
 }
