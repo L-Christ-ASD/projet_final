@@ -38,7 +38,7 @@ resource "aws_instance" "terrafom_preprod" {
   instance_type = var.ec2_type_preprod
   key_name      = aws_key_pair.vockey.key_name
   #subnet_id              = "subnet-0c90a1be41664ad8e" #  sous-réseau appartenant à vpc-013d1e316d56835ef
-  vpc_security_group_ids = [aws_security_group.admin_ssh.id]
+  vpc_security_group_ids = [aws_security_group.admin_ssh_preprod.id]
 
 
   lifecycle {
@@ -113,8 +113,8 @@ resource "null_resource" "generate_ansible_inventory" {
 # =================================================
 
 # Création du groupe de sécurité s'il n'existe pas déjà
-resource "aws_security_group" "admin_ssh" {
-  name = "admin-ssh"
+resource "aws_security_group" "admin_ssh_preprod" {
+  name = "admin_ssh_preprod"
   #description = "groupe-de sécurité pour accès ssh"
   vpc_id = "vpc-09c4b38653df63f28" # The chosen vpc
 
@@ -123,12 +123,12 @@ resource "aws_security_group" "admin_ssh" {
   }
 
   tags = {
-    Name = "admin-ssh"
+    Name = "admin_ssh_preprod"
   }
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
-  security_group_id = aws_security_group.admin_ssh.id
+  security_group_id = aws_security_group.admin_ssh_preprod.id
   cidr_ipv4         = "${var.mon_ip}/24"
   from_port         = 22
   ip_protocol       = "tcp"
@@ -137,7 +137,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
 
 resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in" {
   for_each          = toset(var.admin-ips)
-  security_group_id = aws_security_group.admin_ssh.id
+  security_group_id = aws_security_group.admin_ssh_preprod.id
   cidr_ipv4         = "${each.value}/24"
   from_port         = 22
   ip_protocol       = "tcp"
@@ -145,7 +145,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in" {
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_ssh_out" {
-  security_group_id = aws_security_group.admin_ssh.id
+  security_group_id = aws_security_group.admin_ssh_preprod.id
   ip_protocol       = "-1"
   cidr_ipv4         = "0.0.0.0/0"
 }
