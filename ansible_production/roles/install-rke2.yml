@@ -1,4 +1,4 @@
-- name: Installer et configurer RKE2 (HA)
+- name: Installer et configurer RKE2 haute disponibilité (HA)
   hosts: all
   become: true
   tasks:
