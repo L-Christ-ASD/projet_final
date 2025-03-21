@@ -13,7 +13,7 @@ variable "ec2_type_preprod" {
 variable "counterInstance_preprod" {
   description = "Nombre d'instance a creer"
   #type = string
-  default = 1
+  default = 3
 }
 
 # Variable autorisation des ip (Innstance pre-prod)
@@ -32,91 +32,46 @@ variable "mon_ip" {
 # Cluster rke2 instances
 # ======================================
 
-# Master1
-resource "aws_instance" "Master1" {
+# 3 Masters
+resource "aws_instance" "masters" {
 
   count         = var.counterInstance_preprod # creation multiple des instances
   ami           = "ami-04b4f1a9cf54c11d0"
   instance_type = var.ec2_type_preprod
   key_name      = aws_key_pair.vockey.key_name
   #subnet_id              = "subnet-0c90a1be41664ad8e" #  sous-réseau appartenant à vpc-013d1e316d56835ef
-  vpc_security_group_ids = [aws_security_group.admin_ssh_preprod.id]
+  vpc_security_group_ids = [aws_security_group.admin_ssh_production.id]
 
 
   lifecycle {
     create_before_destroy = true
   }
 
-  depends_on = [aws_security_group.admin_ssh_preprod, aws_key_pair.vockey] # Assure l'ordre de création
+  depends_on = [aws_security_group.admin_ssh_production, aws_key_pair.vockey] # Assure l'ordre de création
 
   tags = {
-    Name = "master1-tf-${count.index}"
+    Name = "master-tf-${count.index}"
   }
 
 }
 
-# Master2
-resource "aws_instance" "Master2" {
-
-  count         = var.counterInstance_preprod # creation multiple des instances
-  ami           = "ami-04b4f1a9cf54c11d0"
-  instance_type = var.ec2_type_preprod
-  key_name      = aws_key_pair.vockey.key_name
-  #subnet_id              = "subnet-0c90a1be41664ad8e" #  sous-réseau appartenant à vpc-013d1e316d56835ef
-  vpc_security_group_ids = [aws_security_group.admin_ssh_preprod.id]
-
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  depends_on = [aws_security_group.admin_ssh_preprod, aws_key_pair.vockey] # Assure l'ordre de création
-
-  tags = {
-    Name = "master2-tf-${count.index}"
-  }
-
-}
-
-# Master3
-resource "aws_instance" "Master3" {
-
-  count         = var.counterInstance_preprod # creation multiple des instances
-  ami           = "ami-04b4f1a9cf54c11d0"
-  instance_type = var.ec2_type_preprod
-  key_name      = aws_key_pair.vockey.key_name
-  #subnet_id              = "subnet-0c90a1be41664ad8e" #  sous-réseau appartenant à vpc-013d1e316d56835ef
-  vpc_security_group_ids = [aws_security_group.admin_ssh_preprod.id]
-
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  depends_on = [aws_security_group.admin_ssh_preprod, aws_key_pair.vockey] # Assure l'ordre de création
-
-  tags = {
-    Name = "master3-tf-${count.index}"
-  }
-
-}
 
 # morker1
 resource "aws_instance" "morker1" {
 
-  count         = var.counterInstance_preprod # creation multiple des instances
+  #count         = var.counterInstance_preprod # creation multiple des instances
   ami           = "ami-04b4f1a9cf54c11d0"
   instance_type = var.ec2_type_preprod
   key_name      = aws_key_pair.vockey.key_name
   #subnet_id              = "subnet-0c90a1be41664ad8e" #  sous-réseau appartenant à vpc-013d1e316d56835ef
-  vpc_security_group_ids = [aws_security_group.admin_ssh_preprod.id]
+  vpc_security_group_ids = [aws_security_group.admin_ssh_production.id]
 
 
   lifecycle {
     create_before_destroy = true
   }
 
-  depends_on = [aws_security_group.admin_ssh_preprod, aws_key_pair.vockey] # Assure l'ordre de création
+  depends_on = [aws_security_group.admin_ssh_production, aws_key_pair.vockey] # Assure l'ordre de création
 
   tags = {
     Name = "worker1-tf-${count.index}"
@@ -170,44 +125,19 @@ output "ssh_private_key_filename" {
 }
 
 
-# exportation d'IP master1
-resource "null_resource" "generate_ansible_inventory-m1" {
-  depends_on = [aws_instance.master1]
+# exportation d'IP masters
+resource "null_resource" "generate_ansible_inventory-masters" {
+  depends_on = [aws_instance.masters]
 
   provisioner "local-exec" {
     command = <<EOT
       mkdir -p ../ansible
-      echo "[Master1]" > ../ansible/inventory
-      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../preProd-terraform/vockey.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible/inventory", aws_instance.Master1[*].public_ip))}
+      echo "[masters]" > ../ansible/inventory
+      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../preProd-terraform/vockey.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible/inventory", aws_instance.masters[*].public_ip))}
     EOT
   }
 }
 
-#
-# exportation d'IP master2
-resource "null_resource" "generate_ansible_inventory_m2" {
-  depends_on = [aws_instance.master2]
-
-  provisioner "local-exec" {
-    command = <<EOT
-      mkdir -p ../ansible
-      echo "[master2]" > ../ansible/inventory
-      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../preProd-terraform/vockey.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible/inventory", aws_instance.Master2[*].public_ip))}
-    EOT
-  }
-}
-# exportation d'IP master3
-resource "null_resource" "generate_ansible_inventory_m3" {
-  depends_on = [aws_instance.master3]
-
-  provisioner "local-exec" {
-    command = <<EOT
-      mkdir -p ../ansible
-      echo "[master3]" > ../ansible/inventory
-      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../preProd-terraform/vockey.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible/inventory", aws_instance.master3[*].public_ip))}
-    EOT
-  }
-}
 # exportation d'IP worker1
 resource "null_resource" "generate_ansible_inventory_w1" {
   depends_on = [aws_instance.worker1]
@@ -226,8 +156,8 @@ resource "null_resource" "generate_ansible_inventory_w1" {
 # =================================================.
 
 # Création du groupe de sécurité s'il n'existe pas déjà
-resource "aws_security_group" "admin_ssh_preprod" {
-  name = "admin_ssh_preprod"
+resource "aws_security_group" "admin_ssh_production" {
+  name = "admin_ssh_production"
   #description = "groupe-de sécurité pour accès ssh"
   vpc_id = "vpc-09c4b38653df63f28" # The chosen vpc
 
@@ -236,12 +166,12 @@ resource "aws_security_group" "admin_ssh_preprod" {
   }
 
   tags = {
-    Name = "admin_ssh_preprod"
+    Name = "admin_ssh_production"
   }
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
-  security_group_id = aws_security_group.admin_ssh_preprod.id
+  security_group_id = aws_security_group.admin_ssh_production.id
   cidr_ipv4         = "${var.mon_ip}/24"
   from_port         = 22
   ip_protocol       = "tcp"
@@ -259,7 +189,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
 
 resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in" {
   for_each          = toset(var.admin-ips)
-  security_group_id = aws_security_group.admin_ssh_preprod.id
+  security_group_id = aws_security_group.admin_ssh_production.id
   cidr_ipv4         = "${each.value}/24"
   from_port         = 22
   ip_protocol       = "tcp"
@@ -267,13 +197,13 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in" {
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_ssh_out" {
-  security_group_id = aws_security_group.admin_ssh_preprod.id
+  security_group_id = aws_security_group.admin_ssh_production.id
   ip_protocol       = "-1"
   cidr_ipv4         = "0.0.0.0/0"
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_http_in" {
-  security_group_id = aws_security_group.admin_ssh_preprod.id
+  security_group_id = aws_security_group.admin_ssh_production.id
   cidr_ipv4         = "0.0.0.0/0"
   from_port         = 80
   ip_protocol       = "tcp"
@@ -281,7 +211,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_http_in" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_https_in" {
-  security_group_id = aws_security_group.admin_ssh_preprod.id
+  security_group_id = aws_security_group.admin_ssh_production.id
   cidr_ipv4         = "0.0.0.0/0"
   from_port         = 443
   ip_protocol       = "tcp"
