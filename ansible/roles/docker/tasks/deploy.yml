@@ -60,13 +60,13 @@
     group: ubuntu
     mode: '0755'
 
-- name: Copier le dossier letsencrypt/acme.json
-  copy:
-    src: templates/letsencrypt/acme.json
-    dest: /home/ubuntu/letsencrypt/acme.json
-    owner: ubuntu
-    group: ubuntu
-    mode: '0600'
+#- name: Copier le dossier letsencrypt/acme.json ----> locale
+#  copy:
+#    src: templates/letsencrypt/acme.json
+#    dest: /home/ubuntu/letsencrypt/acme.json
+#    owner: ubuntu
+#    group: ubuntu
+#    mode: '0600'
 
 #- name: Copier le fichier apache-config.conf pour wp
 #  copy:
@@ -99,13 +99,27 @@
   debug:
     msg: "{{ compose_check.stdout_lines }}"
 
+- name: Démarrage de Docker Compose (up)
+  shell: |
+    docker compose -f /home/ubuntu/compose.yml up -d
+  args:
+    chdir: /home/ubuntu
+
 - name: Attendre 3s pour redemarer compose
   pause:
     seconds: 3
 
+- name: Restreindre les droits d'accès du répertoire letsencrypt
+  file:
+    path: /home/ubuntu/letsencrypt/acme.json
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0600'
+
 - name: Lancer le redémarrage de Docker Compose (down-up)
   shell: |
-
+    docker compose -f /home/ubuntu/compose.yml down
     docker compose -f /home/ubuntu/compose.yml up -d
   args:
     chdir: /home/ubuntu
