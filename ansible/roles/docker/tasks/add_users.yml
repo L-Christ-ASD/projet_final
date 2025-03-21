@@ -1,10 +1,26 @@
 
 
+---
+
 - name: Installer pip3
   ansible.builtin.apt:
     name: python3-pip
     state: present
-  become: true
+
+- name: Installer pipx
+  ansible.builtin.apt:
+    name: pipx
+    state: present
+
+- name: Assurer que pipx est bien installé
+  ansible.builtin.command:
+    cmd: pipx --version
+  register: pipx_version
+  changed_when: false
+
+- name: Afficher la version de pipx
+  ansible.builtin.debug:
+    msg: "La version de pipx est : {{ pipx_version.stdout }}"
 
 - name: Installer passlib pour gérer les mots de passe chiffrés
   ansible.builtin.pip:
