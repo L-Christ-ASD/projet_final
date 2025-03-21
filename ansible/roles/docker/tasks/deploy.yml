@@ -107,7 +107,13 @@
 
 - name: Attendre 3s pour redemarer compose
   pause:
-    seconds: 3
+    seconds: 30
+
+- name: Voir le contenu letsencrypt et les dorits
+  run: |
+    ls /home/ubuntu/letsencrypt/
+    cat /home/ubuntu/letsencrypt/acme.json
+    ls -l /home/ubuntu/letsencrypt/acme.json
 
 - name: Restreindre les droits d'accès du répertoire letsencrypt
   file:
@@ -124,3 +130,10 @@
   args:
     chdir: /home/ubuntu
 
+- name: Voir les containers
+  run: |
+    docker ps
+
+- name: logs traefik
+  run: |
+    docker logs traefik --tail=50
