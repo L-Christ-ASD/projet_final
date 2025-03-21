@@ -52,6 +52,15 @@
     group: ubuntu
     mode: '0755'
 
+- name: Créer le répertoire letsencrypt
+  file:
+    path: /home/ubuntu/letsencrypt
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755'
+
+
 - name: Créer le fichier acme.json vide si absent
   file:
     path: /home/ubuntu/letsencrypt/acme.json
@@ -72,13 +81,6 @@
   when: acme_content.rc == 0
 
 
-#- name: Créer le répertoire letsencrypt
-#  file:
-#    path: /home/ubuntu/letsencrypt
-#    state: directory
-#    owner: ubuntu
-#    group: ubuntu
-#    mode: '0755'
 
 #- name: Copier le dossier letsencrypt/acme.json ----> locale
 #  copy:
