@@ -109,16 +109,30 @@
   pause:
     seconds: 30
 
-- name: Voir le contenu letsencrypt et les dorits
-  run: |
-    ls /home/ubuntu/letsencrypt/
-    cat /home/ubuntu/letsencrypt/acme.json
-    ls -l /home/ubuntu/letsencrypt/acme.json
+- name: Voir le contenu du répertoire letsencrypt
+  command: ls -l /home/ubuntu/letsencrypt/
+  register: ls_output
+  changed_when: false
+
+- name: Afficher le contenu du répertoire letsencrypt
+  debug:
+    msg: "{{ ls_output.stdout_lines }}"
+
+- name: Afficher le contenu de acme.json
+  command: cat /home/ubuntu/letsencrypt/acme.json
+  register: acme_content
+  changed_when: false
+  ignore_errors: true  # Permet d'éviter une erreur si le fichier n'existe pas
+
+- name: Afficher le contenu de acme.json
+  debug:
+    msg: "{{ acme_content.stdout_lines }}"
+  when: acme_content.rc == 0
 
 - name: Restreindre les droits d'accès du répertoire letsencrypt
   file:
     path: /home/ubuntu/letsencrypt/acme.json
-    state: directory
+    state: file
     owner: ubuntu
     group: ubuntu
     mode: '0600'
@@ -130,10 +144,20 @@
   args:
     chdir: /home/ubuntu
 
-- name: Voir les containers
-  run: |
-    docker ps
+- name: Voir les containers en cours d'exécution
+  command: docker ps
+  register: docker_ps_output
+  changed_when: false
 
-- name: logs traefik
-  run: |
-    docker logs traefik --tail=50
+- name: Afficher les containers en cours d'exécution
+  debug:
+    msg: "{{ docker_ps_output.stdout_lines }}"
+
+- name: Afficher les logs de Traefik
+  command: docker logs traefik --tail=50
+  register: traefik_logs
+  changed_when: false
+
+- name: Afficher les logs de Traefik
+  debug:
+    msg: "{{ traefik_logs.stdout_lines }}"
