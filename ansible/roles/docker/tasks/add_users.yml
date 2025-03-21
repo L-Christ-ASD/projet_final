@@ -1,3 +1,24 @@
+
+- name: Installer passlib pour gérer les mots de passe chiffrés
+  ansible.builtin.pip:
+    name: passlib
+
+- name: Vérifier que passlib est bien installé
+  command: python3 -c "import passlib"
+  register: passlib_check
+  ignore_errors: true
+
+- name: Afficher le résultat de la vérification
+  debug:
+    msg: "Passlib est installé !" 
+  when: passlib_check.rc == 0
+
+- name: Erreur si passlib est absent
+  fail:
+    msg: "Passlib n'est PAS installé !"
+  when: passlib_check.rc != 0
+
+
 - name: Créer un deuxième utilisateur avec accès SSH
   user:
     name: user1  # Remplace par le nom souhaité
