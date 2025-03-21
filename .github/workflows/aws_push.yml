@@ -136,26 +136,14 @@ jobs:
       run: |
         ls -l ./preProd-terraform/vockey.pem
 
-    #- name: Setup ssh
-    # 
-    #  run: |
-    #    service ssh status
-    #    eval `ssh-agent -s`
-    #    sudo service ssh start
-
-    - name: Vérifier l'état de l'instance EC2
+    - name: Attendre le demarrage complet du server
       run: |
-        aws ec2 describe-instances --instance-ids $(terraform output -raw instance_id) --query 'Reservations[*].Instances[*].[InstanceId,State.Name,PublicIpAddress]' --output table
-
-    - name: Vérifier l'état de SSH sur l'instance
-      run: |
-        ssh -i ./preProd-terraform/vockey.pem -o StrictHostKeyChecking=no ubuntu@$(terraform output -raw public_ip) "systemctl is-active sshd"
+        sleep 60s
   
-
     - name: Exécuter le playbook Ansible
       run: |
         ls ../preProd-terraform/
-        ansible-playbook -i inventory playbook.yml -vvv
+        ansible-playbook -i inventory playbook.yml 
       working-directory: ./ansible/
 
     - name: Désactiver l'accès SSH depuis n'importe où
