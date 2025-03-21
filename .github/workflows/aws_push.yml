@@ -1,4 +1,4 @@
-name: Deploy to AWS
+name: CI --> preProduction (Deploy to AWS)
 
 on:
   push:
@@ -81,9 +81,9 @@ jobs:
       working-directory: ./preProd-terraform
 
 
-    - name: Tout detruire !!
-      run: terraform destroy -auto-approve
-      working-directory: ./preProd-terraform
+    #- name: Tout detruire !!
+    #  run: terraform destroy -auto-approve
+    #  working-directory: ./preProd-terraform
 
     - name: Initialiser Terraform
       run: terraform init
@@ -103,15 +103,15 @@ jobs:
         name: vockey.pem
         path: ./preProd-terraform/vockey.pem
 
-    - name: Vérifier le contenu du dossier ansible
+    - name: Contenu du dossier ansible
       run: |
         ls ./ansible/
 
-    - name: Vérifier le contenu du dossier ansible
-      run: |
-        ls ./ansible/
+    #- name: Vérifier le contenu du dossier ansible
+    #  run: |
+    #    ls ./ansible/
 
-    - name: Vérifier le contenu du fichier inventory
+    - name: Contenu du fichier inventory
       run: |
         cat ./ansible/inventory
 
@@ -135,11 +135,18 @@ jobs:
     - name: Contenu du dossier terraform
       run: |
         ls -l ./preProd-terraform/vockey.pem
+
+    #- name: Setup ssh
+    # 
+    #  run: |
+    #    service ssh status
+    #    eval `ssh-agent -s`
+    #    sudo service ssh start
     
     - name: Exécuter le playbook Ansible
       run: |
         ls ../preProd-terraform/
-        ansible-playbook -i inventory playbook.yml 
+        ansible-playbook -i inventory playbook.yml -vvv
       working-directory: ./ansible/
 
     - name: Désactiver l'accès SSH depuis n'importe où

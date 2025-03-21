@@ -7,7 +7,7 @@ provider "aws" {
 variable "ec2_type_preprod" {
   description = "le type d'instance souhaité"
   type        = string
-  default     = "c5n.2xlarge"
+  default     = "t3.2xlarge"
 }
 
 variable "counterInstance_preprod" {
@@ -29,9 +29,11 @@ variable "mon_ip" {
 }
 
 
-
+# Cluster rke2 instances
 # ======================================
-resource "aws_instance" "terrafom_preprod" {
+
+# Master1
+resource "aws_instance" "Master1" {
 
   count         = var.counterInstance_preprod # creation multiple des instances
   ami           = "ami-04b4f1a9cf54c11d0"
@@ -48,19 +50,90 @@ resource "aws_instance" "terrafom_preprod" {
   depends_on = [aws_security_group.admin_ssh_preprod, aws_key_pair.vockey] # Assure l'ordre de création
 
   tags = {
-    Name = "preProd-tf-${count.index}"
+    Name = "master1-tf-${count.index}"
   }
 
 }
 
+# Master2
+resource "aws_instance" "Master2" {
+
+  count         = var.counterInstance_preprod # creation multiple des instances
+  ami           = "ami-04b4f1a9cf54c11d0"
+  instance_type = var.ec2_type_preprod
+  key_name      = aws_key_pair.vockey.key_name
+  #subnet_id              = "subnet-0c90a1be41664ad8e" #  sous-réseau appartenant à vpc-013d1e316d56835ef
+  vpc_security_group_ids = [aws_security_group.admin_ssh_preprod.id]
+
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  depends_on = [aws_security_group.admin_ssh_preprod, aws_key_pair.vockey] # Assure l'ordre de création
+
+  tags = {
+    Name = "master2-tf-${count.index}"
+  }
+
+}
+
+# Master3
+resource "aws_instance" "Master3" {
+
+  count         = var.counterInstance_preprod # creation multiple des instances
+  ami           = "ami-04b4f1a9cf54c11d0"
+  instance_type = var.ec2_type_preprod
+  key_name      = aws_key_pair.vockey.key_name
+  #subnet_id              = "subnet-0c90a1be41664ad8e" #  sous-réseau appartenant à vpc-013d1e316d56835ef
+  vpc_security_group_ids = [aws_security_group.admin_ssh_preprod.id]
+
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  depends_on = [aws_security_group.admin_ssh_preprod, aws_key_pair.vockey] # Assure l'ordre de création
+
+  tags = {
+    Name = "master3-tf-${count.index}"
+  }
+
+}
+
+# morker1
+resource "aws_instance" "morker1" {
+
+  count         = var.counterInstance_preprod # creation multiple des instances
+  ami           = "ami-04b4f1a9cf54c11d0"
+  instance_type = var.ec2_type_preprod
+  key_name      = aws_key_pair.vockey.key_name
+  #subnet_id              = "subnet-0c90a1be41664ad8e" #  sous-réseau appartenant à vpc-013d1e316d56835ef
+  vpc_security_group_ids = [aws_security_group.admin_ssh_preprod.id]
+
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  depends_on = [aws_security_group.admin_ssh_preprod, aws_key_pair.vockey] # Assure l'ordre de création
+
+  tags = {
+    Name = "worker1-tf-${count.index}"
+  }
+
+}
+
+
 #création de la clé SSH dans
 
 # Ajout d'un random_string pour générer un nom unique :
-resource "random_string" "suffix" {
-  length  = 4
-  special = false
-  upper   = false
-}
+#resource "random_string" "suffix" {
+#  length  = 4
+#  special = false
+#  upper   = false
+#}
+
 # tls_private_key → Génère une clé privée.
 resource "tls_private_key" "vockey" {
   algorithm = "RSA"
@@ -97,18 +170,57 @@ output "ssh_private_key_filename" {
 }
 
 
-# exportation d'IPs
-resource "null_resource" "generate_ansible_inventory" {
-  depends_on = [aws_instance.terrafom_preprod]
+# exportation d'IP master1
+resource "null_resource" "generate_ansible_inventory-m1" {
+  depends_on = [aws_instance.master1]
 
   provisioner "local-exec" {
     command = <<EOT
       mkdir -p ../ansible
-      echo "[docker]" > ../ansible/inventory
-      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../preProd-terraform/vockey.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible/inventory", aws_instance.terrafom_preprod[*].public_ip))}
+      echo "[Master1]" > ../ansible/inventory
+      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../preProd-terraform/vockey.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible/inventory", aws_instance.Master1[*].public_ip))}
     EOT
   }
 }
+
+#
+# exportation d'IP master2
+resource "null_resource" "generate_ansible_inventory_m2" {
+  depends_on = [aws_instance.master2]
+
+  provisioner "local-exec" {
+    command = <<EOT
+      mkdir -p ../ansible
+      echo "[master2]" > ../ansible/inventory
+      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../preProd-terraform/vockey.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible/inventory", aws_instance.Master2[*].public_ip))}
+    EOT
+  }
+}
+# exportation d'IP master3
+resource "null_resource" "generate_ansible_inventory_m3" {
+  depends_on = [aws_instance.master3]
+
+  provisioner "local-exec" {
+    command = <<EOT
+      mkdir -p ../ansible
+      echo "[master3]" > ../ansible/inventory
+      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../preProd-terraform/vockey.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible/inventory", aws_instance.master3[*].public_ip))}
+    EOT
+  }
+}
+# exportation d'IP worker1
+resource "null_resource" "generate_ansible_inventory_w1" {
+  depends_on = [aws_instance.worker1]
+
+  provisioner "local-exec" {
+    command = <<EOT
+      mkdir -p ../ansible
+      echo "[worker1]" > ../ansible/inventory
+      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../preProd-terraform/vockey.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible/inventory", aws_instance.worker1[*].public_ip))}
+    EOT
+  }
+}
+
 
 #_____________Creation de security group___________
 # =================================================.
