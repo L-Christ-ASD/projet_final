@@ -52,13 +52,33 @@
     group: ubuntu
     mode: '0755'
 
-- name: Créer le répertoire letsencrypt
+- name: Créer le fichier acme.json vide si absent
   file:
-    path: /home/ubuntu/letsencrypt
-    state: directory
+    path: /home/ubuntu/letsencrypt/acme.json
+    state: touch
     owner: ubuntu
     group: ubuntu
     mode: '0755'
+
+- name: Afficher le contenu de acme.json
+  command: cat /home/ubuntu/letsencrypt/acme.json
+  register: acme_content
+  changed_when: false
+  ignore_errors: true
+
+- name: Afficher le contenu de acme.json
+  debug:
+    msg: "{{ acme_content.stdout_lines }}"
+  when: acme_content.rc == 0
+
+
+#- name: Créer le répertoire letsencrypt
+#  file:
+#    path: /home/ubuntu/letsencrypt
+#    state: directory
+#    owner: ubuntu
+#    group: ubuntu
+#    mode: '0755'
 
 #- name: Copier le dossier letsencrypt/acme.json ----> locale
 #  copy:
@@ -105,9 +125,10 @@
   args:
     chdir: /home/ubuntu
 
-- name: Attendre 3s pour redemarer compose
+- name: Attendre 30s pour redemarer compose
   pause:
     seconds: 30
+#=================================================
 
 - name: Voir le contenu du répertoire letsencrypt
   command: ls -l /home/ubuntu/letsencrypt/
@@ -124,6 +145,18 @@
   changed_when: false
   ignore_errors: true  # Permet d'éviter une erreur si le fichier n'existe pas
 
+- name: Vérifier si acme.json est un répertoire
+  command: test -d /home/ubuntu/letsencrypt/acme.json
+  register: acme_is_dir
+  failed_when: false
+  changed_when: false
+
+- name: Supprimer acme.json s'il est un répertoire
+  file:
+    path: /home/ubuntu/letsencrypt/acme.json
+    state: absent
+  when: acme_is_dir.rc == 0
+
 - name: Afficher le contenu de acme.json
   debug:
     msg: "{{ acme_content.stdout_lines }}"
@@ -136,14 +169,14 @@
     owner: ubuntu
     group: ubuntu
     mode: '0600'
-
+#========================================================
 - name: Lancer le redémarrage de Docker Compose (down-up)
   shell: |
     docker compose -f /home/ubuntu/compose.yml down
     docker compose -f /home/ubuntu/compose.yml up -d
   args:
     chdir: /home/ubuntu
-
+#========================================================
 - name: Voir les containers en cours d'exécution
   command: docker ps
   register: docker_ps_output
@@ -161,3 +194,7 @@
 - name: Afficher les logs de Traefik
   debug:
     msg: "{{ traefik_logs.stdout_lines }}"
+
+- name: Afficher les logs de Traefik
+  debug:
+    msg: "Fin du déploiement... Merci Christ ! "
