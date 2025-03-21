@@ -22,9 +22,10 @@
   ansible.builtin.debug:
     msg: "La version de pipx est : {{ pipx_version.stdout }}"
 
-- name: Installer passlib pour gérer les mots de passe chiffrés
-  ansible.builtin.pip:
-    name: passlib
+- name: Installer passlib avec pipx
+  ansible.builtin.command:
+    cmd: pipx install passlib
+  become: true
 
 - name: Vérifier que passlib est bien installé
   command: python3 -c "import passlib"
