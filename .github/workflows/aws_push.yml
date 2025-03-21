@@ -138,7 +138,7 @@ jobs:
     
     - name: Exécuter le playbook Ansible
       run: |
-        
+        ls ../preProd-terraform/
         ansible-playbook -i inventory playbook.yml 
       working-directory: ./ansible/
 
