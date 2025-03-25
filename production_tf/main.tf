@@ -57,11 +57,11 @@ resource "aws_instance" "masters" {
 
 
 # morker1
-resource "aws_instance" "morker1" {
+resource "aws_instance" "worker1" {
 
   #count         = var.counterInstance_preprod # creation multiple des instances
   ami           = "ami-04b4f1a9cf54c11d0"
-  instance_type = var.ec2_type_preprod
+  instance_type = "t3.2xlarge" #var.ec2_type_preprod
   key_name      = aws_key_pair.vockey.key_name
   #subnet_id              = "subnet-0c90a1be41664ad8e" #  sous-réseau appartenant à vpc-013d1e316d56835ef
   vpc_security_group_ids = [aws_security_group.admin_ssh_production.id]
@@ -110,11 +110,17 @@ resource "local_file" "vockey_pem" {
   file_permission = "0600"
 }
 
-output "instance_info_preprod" {
+output "instance_info_prod_master" {
   value = {
-    PreProd_public_ip = aws_instance.terrafom_preprod[*].public_ip
+    master_prod_public_ip = aws_instance.masters[*].public_ip
   }
 }
+output "instance_info_prod_worker" {
+  value = {
+    worker_prod_public_ip = aws_instance.worker1[*].public_ip
+  }
+}
+
 
 output "ssh_key_name" {
   value = aws_key_pair.vockey.key_name

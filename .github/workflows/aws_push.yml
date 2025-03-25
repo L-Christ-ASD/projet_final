@@ -197,7 +197,7 @@ jobs:
 # -===============producttion==========================
 
 
-    - name: Initialiser Terraform cluster rke2
+    - name: Initialiser Terraform pour le cluster rke2
       run: terraform init
       working-directory: ./production_tf
 
@@ -248,7 +248,7 @@ jobs:
       run: |
         sleep 120s
   
-    - name: Exécuter le playbook Ansible
+    - name: Exécuter le playbook Ansible pour installer 
       run: |
         ls ../production_tf/
         ansible-playbook -i inventory playbook.yml 
