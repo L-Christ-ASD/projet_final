@@ -4,25 +4,26 @@
 BACKUP_DIR="/backup"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 BACKUP_NAME="wordpress_backup_${TIMESTAMP}.tar.gz"
-CONTAINER_DB="wordpress-db"
-CONTAINER_WP="wordpress-app"
+CONTAINER_DB="mysql"
+CONTAINER_WP="wordpress"
 DB_NAME="wordpress"
-DB_USER="root"
-DB_PASSWORD="your_db_password"  # À remplacer par le vrai mot de passe
+DB_USER="wordpress"
+DB_PASSWORD="wordpress"  # À remplacer par le vrai mot de passe
 
 # Création du dossier de sauvegarde s'il n'existe pas
-mkdir -p "$BACKUP_DIR"
+sudo mkdir -p "$BACKUP_DIR"
 
 echo "📂 Sauvegarde des fichiers WordPress..."
 docker cp "$CONTAINER_WP:/var/www/html/wp-content" "$BACKUP_DIR/wp-content"
 
 echo "🗄️ Sauvegarde de la base de données MySQL..."
-docker exec "$CONTAINER_DB" mysqldump -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" > "$BACKUP_DIR/db_backup.sql"
+docker exec "$CONTAINER_DB" mysqldump --no-tablespaces -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" > "$BACKUP_DIR/db_backup.sql"
 
 echo "📦 Compression des fichiers..."
 tar -czf "$BACKUP_DIR/$BACKUP_NAME" -C "$BACKUP_DIR" wp-content db_backup.sql
 
 echo "✅ Sauvegarde terminée : $BACKUP_DIR/$BACKUP_NAME"
+
 
 
 

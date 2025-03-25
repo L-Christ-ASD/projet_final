@@ -223,18 +223,17 @@ jobs:
     - name: Contenu du dossier terraform et arbo
       run: |
         pwd
-        ls
         ls ./production_tf/
-        ls -l ./production_tf/vockey.pem
+        ls -l production_tf/vockey.pem
         ls -R
 
     - name: Chmod 400 sur .pem
       run: |
-        chmod 400 ./production_tf/vockey.pem
+        chmod 400 production_tf/vockey.pem
     
-    - name: Contenu du dossier terraform
+    - name: Vérifier les permissions de la clé .pem
       run: |
-        ls -l ./production_tf/vockey.pem
+        ls -l production_tf/vockey.pem
 
     - name: Attendre le demarrage complet des instances 120s
       run: |
