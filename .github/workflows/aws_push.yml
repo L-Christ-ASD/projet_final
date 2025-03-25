@@ -202,7 +202,7 @@ jobs:
       working-directory: ./production_tf
 
     - name: Plan Terraform
-      run: terraform plan -no-color
+      run: terraform plan
       working-directory: ./production_tf
 
     - name: Lancer Terraform apply
