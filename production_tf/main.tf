@@ -74,7 +74,7 @@ resource "aws_instance" "worker1" {
   depends_on = [aws_security_group.admin_ssh_production, aws_key_pair.vockey] # Assure l'ordre de création
 
   tags = {
-    Name = "worker1-tf-${count.index}"
+    Name = "worker1-tf"
   }
 
 }
