@@ -226,16 +226,16 @@ jobs:
       run: |
         pwd
         ls ./production_tf/
-        ls -l production_tf/vockey.pem
+        ls -l production_tf/vockeyprod.pem
         ls -R
 
     - name: Chmod 400 sur .pem
       run: |
-        chmod 400 production_tf/vockey.pem
+        chmod 400 ./production_tf/vockeyprod.pem
     
     - name: Vérifier les permissions de la clé .pem
       run: |
-        ls -l production_tf/vockey.pem
+        ls -l ./production_tf/vockeyprod.pem
 
     - name: Attendre le demarrage complet des instances 120s
       run: |
