@@ -212,8 +212,8 @@ jobs:
     - name: Sauvegarder la clé SSH
       uses: actions/upload-artifact@v4
       with:
-        name: vockey.pem
-        path: ./production_tf/vockey.pem
+        name: vockeyprod.pem
+        path: ./production_tf/vockeyprod.pem
 
     - name: Contenu du dossier ansible_production
       run: |

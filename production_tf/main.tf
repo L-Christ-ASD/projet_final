@@ -38,7 +38,7 @@ resource "aws_instance" "masters" {
   count         = var.counterInstance_preprod # creation multiple des instances
   ami           = "ami-04b4f1a9cf54c11d0"
   instance_type = var.ec2_type_preprod
-  key_name      = aws_key_pair.vockey.key_name
+  key_name      = aws_key_pair.vockeyprod.key_name
   #subnet_id              = "subnet-0c90a1be41664ad8e" #  sous-réseau appartenant à vpc-013d1e316d56835ef
   vpc_security_group_ids = [aws_security_group.admin_ssh_production.id]
 
@@ -62,7 +62,7 @@ resource "aws_instance" "worker1" {
   #count         = var.counterInstance_preprod # creation multiple des instances
   ami           = "ami-04b4f1a9cf54c11d0"
   instance_type = "t3.2xlarge" #var.ec2_type_preprod
-  key_name      = aws_key_pair.vockey.key_name
+  key_name      = aws_key_pair.vockeyprod.key_name
   #subnet_id              = "subnet-0c90a1be41664ad8e" #  sous-réseau appartenant à vpc-013d1e316d56835ef
   vpc_security_group_ids = [aws_security_group.admin_ssh_production.id]
 
@@ -80,7 +80,7 @@ resource "aws_instance" "worker1" {
 }
 
 
-#création de la clé SSH dans
+#création de la clé SSH pour la prod
 
 # Ajout d'un random_string pour générer un nom unique :
 #resource "random_string" "suffix" {
@@ -90,25 +90,26 @@ resource "aws_instance" "worker1" {
 #}
 
 # tls_private_key → Génère une clé privée.
-resource "tls_private_key" "vockey" {
+resource "tls_private_key" "vockeyprod" {
   algorithm = "RSA"
   rsa_bits  = 2048
 }
 #aws_key_pair → Crée la clé publique sur AWS.
-resource "aws_key_pair" "vockey" {
-  key_name   = "vockey"
-  public_key = tls_private_key.vockey.public_key_openssh
+resource "aws_key_pair" "vockeyprod" {
+  key_name   = "vockeyprod"
+  public_key = tls_private_key.vockeyprod.public_key_openssh
 
   lifecycle {
     ignore_changes = [key_name] # Ignore si la clé existe déjà
   }
 }
 # local_file → Stocke la clé privée (vockey.pem) localement.
-resource "local_file" "vockey_pem" {
-  filename        = "${path.module}/vockey.pem"
-  content         = tls_private_key.vockey.private_key_pem
+resource "local_file" "vockeyprod_pem" {
+  filename        = "${path.module}/vockeyprod.pem"
+  content         = tls_private_key.vockeyprod.private_key_pem
   file_permission = "0600"
 }
+
 
 output "instance_info_prod_master" {
   value = {
