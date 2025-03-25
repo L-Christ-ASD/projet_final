@@ -10,19 +10,35 @@ DB_NAME="wordpress"
 DB_USER="wordpress"
 DB_PASSWORD="wordpress"  # À remplacer par le vrai mot de passe
 
+# Informations pour la machine locale
+LOCAL_USER="christ"
+LOCAL_HOST="192.168.1.100"  # Remplace par l'IP de ta machine locale
+LOCAL_DEST="/home/christ/wordpress_backups"
+
 # Création du dossier de sauvegarde s'il n'existe pas
 sudo mkdir -p "$BACKUP_DIR"
 
-echo "📂 Sauvegarde des fichiers WordPress..."
+echo "Sauvegarde des fichiers WordPress..."
 docker cp "$CONTAINER_WP:/var/www/html/wp-content" "$BACKUP_DIR/wp-content"
 
-echo "🗄️ Sauvegarde de la base de données MySQL..."
+echo "Sauvegarde de la base de données MySQL..."
 docker exec "$CONTAINER_DB" mysqldump --no-tablespaces -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" > "$BACKUP_DIR/db_backup.sql"
 
-echo "📦 Compression des fichiers..."
+echo "Compression des fichiers..."
 tar -czf "$BACKUP_DIR/$BACKUP_NAME" -C "$BACKUP_DIR" wp-content db_backup.sql
 
-echo "✅ Sauvegarde terminée : $BACKUP_DIR/$BACKUP_NAME"
+echo "Transfert de la sauvegarde vers la machine locale..."
+scp -r "$BACKUP_DIR/wp-content" "$BACKUP_DIR/$BACKUP_NAME" "$LOCAL_USER@$LOCAL_HOST:$LOCAL_DEST"
+
+if [ $? -eq 0 ]; then
+    echo "Transfert réussi vers $LOCAL_USER@$LOCAL_HOST:$LOCAL_DEST"
+else
+    echo "Erreur lors du transfert."
+fi
+
+echo "Sauvegarde et transfert terminés !"
+
+echo "Sauvegarde terminée : $BACKUP_DIR/$BACKUP_NAME"
 
 
 
