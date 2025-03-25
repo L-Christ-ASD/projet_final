@@ -47,7 +47,7 @@ resource "aws_instance" "masters" {
     create_before_destroy = true
   }
 
-  depends_on = [aws_security_group.admin_ssh_production, aws_key_pair.vockey] # Assure l'ordre de création
+  depends_on = [aws_security_group.admin_ssh_production, aws_key_pair.vockeyprod] # Assure l'ordre de création
 
   tags = {
     Name = "master-tf-${count.index}"
@@ -71,7 +71,7 @@ resource "aws_instance" "worker1" {
     create_before_destroy = true
   }
 
-  depends_on = [aws_security_group.admin_ssh_production, aws_key_pair.vockey] # Assure l'ordre de création
+  depends_on = [aws_security_group.admin_ssh_production, aws_key_pair.vockeyprod] # Assure l'ordre de création
 
   tags = {
     Name = "worker1-tf"
@@ -124,11 +124,11 @@ output "instance_info_prod_worker" {
 
 
 output "ssh_key_name" {
-  value = aws_key_pair.vockey.key_name
+  value = aws_key_pair.vockeyprod.key_name
 }
 
 output "ssh_private_key_filename" {
-  value = local_file.vockey_pem.filename
+  value = local_file.vockeyprod_pem.filename
 }
 
 
