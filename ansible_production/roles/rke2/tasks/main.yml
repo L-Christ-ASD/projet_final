@@ -13,3 +13,4 @@
 
 - name: Vérifier la configuration du cluster
   include_tasks: verif-conf.yml
+#
