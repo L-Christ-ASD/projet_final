@@ -60,6 +60,7 @@ jobs:
     - name: Supprimer les clés existantes 
       run: |
         aws ec2 delete-key-pair --key-name "vockey" --region us-east-1
+        aws ec2 delete-key-pair --key-name "vockeyprod" --region us-east-1
 
     - name: Lister les clés existantes 
       run: aws ec2 describe-key-pairs --query 'KeyPairs[*].KeyName'
@@ -188,6 +189,7 @@ jobs:
 
 # -===============producttion==========================
 
+  
 
     - name: Initialiser Terraform pour le cluster rke2
       run: terraform init
