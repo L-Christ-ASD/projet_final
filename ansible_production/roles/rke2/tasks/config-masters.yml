@@ -1,0 +1,32 @@
+
+    - name: Installer RKE2 server
+      command: sh /tmp/install-rke2.sh
+
+    - name: Configurer RKE2 server
+      copy:
+        dest: /etc/rancher/rke2/config.yaml
+        content: |
+          token: "mysecuretoken"
+          tls-san:
+            - "{{ ansible_host }}"
+          write-kubeconfig-mode: "0644"
+
+    - name: Activer et démarrer le serveur RKE2
+      systemd:
+        name: rke2-server
+        enabled: yes
+        state: started
+
+    - name: Attendre que RKE2 soit actif
+      command: systemctl is-active rke2-server
+      register: rke2_status
+      until: rke2_status.stdout == "active"
+      retries: 10
+      delay: 5
+
+    - name: Copier le kubeconfig sur le master principal (master1)
+      fetch:
+        src: /etc/rancher/rke2/rke2.yaml
+        dest: ./kubeconfig.yaml
+        flat: yes
+      when: inventory_hostname == groups['masters'][0]  # Prend le premier master

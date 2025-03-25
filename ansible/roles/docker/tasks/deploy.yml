@@ -197,6 +197,32 @@
   debug:
     msg: "{{ traefik_logs.stdout_lines }}"
 
-- name: Afficher les logs de Traefik
+# -----------------------redemaraer le server ++ pour le 'dns'-----------------------------
+
+- name: Attendre 30s pour redemarer compose
+  pause:
+    seconds: 60
+
+- name: Lancer le redémarrage de Docker Compose (down-up)
+  shell: |
+    docker compose -f /home/ubuntu/compose.yml down
+    docker compose -f /home/ubuntu/compose.yml up -d
+  args:
+    chdir: /home/ubuntu
+
+- name: Attendre 30s pour redemarer compose
+  pause:
+    seconds: 60
+
+- name: Lancer le redémarrage de Docker Compose (down-up)
+  shell: |
+    docker compose -f /home/ubuntu/compose.yml down
+    docker compose -f /home/ubuntu/compose.yml up -d
+  args:
+    chdir: /home/ubuntu
+
+- name: Fin du déploiement... 
   debug:
-    msg: "Fin du déploiement... Merci Christ ! "
+    msg: "Merci Christ ! "
+
+

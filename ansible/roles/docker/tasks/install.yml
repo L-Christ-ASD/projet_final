@@ -89,10 +89,10 @@
     name: docker
     state: restarted
 
-- name: Vérifier et créer le réseau Docker "dns-wp_traefik-external-network"
-  docker_network:
-    name: dns-wp_traefik-external-network
-    state: present
+#- name: Vérifier et créer le réseau Docker "dns-wp_traefik-external-network"
+#  docker_network:
+#    name: dns-wp_traefik-external-network
+#    state: present
 
 - name: Supprimer Apache2 de l'hôte
   apt:

@@ -1,0 +1,16 @@
+---
+
+- name: Installer et configurer RKE2 haute disponibilité (HA)
+  include_tasks: rke2-on-all-servers.yml
+
+- name: Récupérer le token RKE2 sur master1
+  include_tasks: rke2-token.yml
+
+- name: Installer et configurer RKE2 haute disponibilité (HA)
+  include_tasks: config-masters.yml
+
+- name: Installer et configurer le Worker RKE2
+  include_tasks: config-worker.yml
+
+- name: Vérifier la conf du cluster sur master1
+  include_tasks: verif-conf.yml

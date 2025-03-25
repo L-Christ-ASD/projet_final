@@ -131,9 +131,9 @@ resource "null_resource" "generate_ansible_inventory-masters" {
 
   provisioner "local-exec" {
     command = <<EOT
-      mkdir -p ../ansible
-      echo "[masters]" > ../ansible/inventory
-      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../preProd-terraform/vockey.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible/inventory", aws_instance.masters[*].public_ip))}
+      mkdir -p ../ansible_production
+      echo "[masters]" >> ../ansible_production/inventory
+      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../production_tf/vockey.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible_production/inventory", aws_instance.masters[*].public_ip))}
     EOT
   }
 }
@@ -144,9 +144,9 @@ resource "null_resource" "generate_ansible_inventory_w1" {
 
   provisioner "local-exec" {
     command = <<EOT
-      mkdir -p ../ansible
-      echo "[worker1]" > ../ansible/inventory
-      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../preProd-terraform/vockey.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible/inventory", aws_instance.worker1[*].public_ip))}
+      mkdir -p ../ansible_production
+      echo "[worker1]" >> ../ansible_production/inventory
+      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../production_tf/vockey.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible_production/inventory", aws_instance.worker1[*].public_ip))}
     EOT
   }
 }

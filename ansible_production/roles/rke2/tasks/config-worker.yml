@@ -1,0 +1,18 @@
+# ----------------- Installation sur le Worker -----------------
+
+
+- name: Installer RKE2 agent
+  command: sh /tmp/install-rke2.sh
+
+- name: Configurer RKE2 agent
+  copy:
+    dest: /etc/rancher/rke2/config.yaml
+    content: |
+      token: "{{ hostvars[groups['masters'][0]]['rke2_token_value'] }}"
+      server: "https://{{ hostvars[groups['masters'][0]]['ansible_host'] }}:9345"
+
+- name: Activer et démarrer RKE2 agent
+  systemd:
+    name: rke2-agent
+    enabled: yes
+    state: started

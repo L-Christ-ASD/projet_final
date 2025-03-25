@@ -1,0 +1,31 @@
+
+- name: Mettre à jour les paquets
+  apt:
+    update_cache: yes
+    upgrade: yes
+
+- name: Désactiver swap (RKE2 exige que le swap soit désactivé)
+  command: swapoff -a
+  when: ansible_swaptotal_mb > 0
+
+- name: Supprimer swap du fstab pour éviter qu'il ne se réactive au reboot
+  replace:
+    path: /etc/fstab
+    regexp: '^\s*[^#].*\bswap\b.*$'
+    replace: ''
+
+- name: Installer les dépendances nécessaires
+  apt:
+    name:
+      - curl
+      - iptables
+      - socat
+      - unzip
+      - iproute2
+    state: present
+
+- name: Télécharger le script d'installation de RKE2
+  get_url:
+    url: https://get.rke2.io
+    dest: /tmp/install-rke2.sh
+    mode: '0755'

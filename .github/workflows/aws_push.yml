@@ -191,3 +191,72 @@ jobs:
 #Récupère l'IP de l'instance AWS créée
 #Ajoute la clé SSH pour la connexion
 #Installe Ansible et exécute le playbook sur l'instance
+
+
+
+# -===============producttion==========================
+
+
+    - name: Initialiser Terraform cluster rke2
+      run: terraform init
+      working-directory: ./production_tf
+
+    - name: Plan Terraform
+      run: terraform plan -no-color
+      working-directory: ./production_tf
+
+    - name: Lancer Terraform apply
+      run: terraform apply -auto-approve
+      working-directory: ./production_tf
+
+    - name: Sauvegarder la clé SSH
+      uses: actions/upload-artifact@v4
+      with:
+        name: vockey.pem
+        path: ./production_tf/vockey.pem
+
+    - name: Contenu du dossier ansible_production
+      run: |
+        ls ./ansible_production/
+
+    - name: Contenu du fichier inventory
+      run: |
+        cat ./ansible_production/inventory
+
+    - name: Autoriser SSH depuis n'importe où (temporaire)
+      run: |
+        aws ec2 authorize-security-group-ingress --group-name admin_ssh_production \
+          --protocol tcp --port 22 --cidr 0.0.0.0/0 --region us-east-1
+
+    - name: Contenu du dossier terraform et arbo
+      run: |
+        pwd
+        ls
+        ls ./production_tf/
+        ls -l ./production_tf/vockey.pem
+        ls -R
+
+    - name: Chmod 400 sur .pem
+      run: |
+        chmod 400 ./production_tf/vockey.pem
+    
+    - name: Contenu du dossier terraform
+      run: |
+        ls -l ./production_tf/vockey.pem
+
+    - name: Attendre le demarrage complet du server
+      run: |
+        sleep 60s
+  
+    - name: Exécuter le playbook Ansible
+      run: |
+        ls ../production_tf/
+        ansible-playbook -i inventory playbook.yml 
+      working-directory: ./ansible_production/
+
+    - name: Désactiver l'accès SSH depuis n'importe où
+      run: |
+        aws ec2 revoke-security-group-ingress --group-name admin_ssh_production \
+          --protocol tcp --port 22 --cidr 0.0.0.0/0 --region us-east-1
+
+
