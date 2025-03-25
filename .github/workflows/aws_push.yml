@@ -136,9 +136,9 @@ jobs:
       run: |
         ls -l ./preProd-terraform/vockey.pem
 
-    - name: Attendre le demarrage complet du server
+    - name: Attendre le demarrage complet du server 120s
       run: |
-        sleep 60s
+        sleep 120s
   
     - name: Exécuter le playbook Ansible
       run: |
@@ -244,9 +244,9 @@ jobs:
       run: |
         ls -l ./production_tf/vockey.pem
 
-    - name: Attendre le demarrage complet du server
+    - name: Attendre le demarrage complet des instances 120s
       run: |
-        sleep 60s
+        sleep 120s
   
     - name: Exécuter le playbook Ansible
       run: |
