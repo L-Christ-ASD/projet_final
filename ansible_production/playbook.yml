@@ -50,6 +50,36 @@
       command: sh /tmp/install-rke2.sh INSTALL_RKE2_CHANNEL=stable INSTALL_RKE2_VERSION="v1.30.0+rke2r1"
       when: rke2_check.rc != 0
 
+#-------------------configuration master1-------------------------------
+
+- name: Vérifer que RKE2 fonctionne via master1
+  hosts: masters[0]
+  become: true
+  tasks:
+    - name: Activer et démarrer le serveur RKE2
+      systemd:
+        name: rke2-server
+        enabled: true
+        state: started
+
+    - name: Vérifier que RKE2 est actif
+      command: systemctl is-active rke2-server
+      register: rke2_status
+      until: rke2_status.stdout == "active"
+      retries: 10
+      delay: 5
+      become: true
+
+    - name: Vérifier si le fichier node-token existe
+      stat:
+        path: /var/lib/rancher/rke2/server/node-token
+      register: token_file
+
+    - name: Lire le token RKE2 s'il existe
+      command: cat /var/lib/rancher/rke2/server/node-token
+      when: token_file.stat.exists
+      register: rke2_token
+
 
 
 # ----------------- Récupérer le token automatiquement -----------------
@@ -59,7 +89,9 @@
   tasks:
 
     - name: Lire le token RKE2
-      command: cat /var/lib/rancher/rke2/server/node-token
+      command: |
+        systemctl status rke2-server
+        cat /var/lib/rancher/rke2/server/node-token
       register: rke2_token
 
     - name: Afficher le token récupéré
