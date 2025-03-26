@@ -235,9 +235,9 @@ jobs:
       run: |
         ls -l ./production_tf/vockeyprod.pem
 
-    - name: Attendre le demarrage complet des instances 120s
+    - name: Attendre le demarrage complet des instances 60s
       run: |
-        sleep 120s
+        sleep 60s
   
     - name: Exécuter le playbook Ansible pour installer le cluster rke2
       run: |

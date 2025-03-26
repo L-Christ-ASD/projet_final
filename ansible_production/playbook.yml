@@ -73,14 +73,6 @@
       ignore_errors: true
       changed_when: false
 
-
-    - name: Vérifier encore la connectivité des hôtes avec Ansible ping
-      #hosts: all
-      gather_facts: false
-      tasks:
-        - name: Vérifier la connexion SSH avec un ping Ansible
-          ansible.builtin.ping:
-
     - name: Vérifier l'installation de RKE2
       command: PATH=$PATH:/usr/local/bin:/opt/rke2/bin which rke2
       register: rke2_check
