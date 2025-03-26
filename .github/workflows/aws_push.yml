@@ -242,7 +242,7 @@ jobs:
     - name: Exécuter le playbook Ansible pour installer le cluster rke2
       run: |
         ls ../production_tf/
-        ansible-playbook -i inventory playbook.yml --vvv
+        ansible-playbook -i inventory playbook.yml
       working-directory: ./ansible_production/
 
     - name: Désactiver l'accès SSH depuis n'importe où
