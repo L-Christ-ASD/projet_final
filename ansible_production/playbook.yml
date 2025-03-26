@@ -34,44 +34,23 @@
           - iproute2
         state: present
 
-    - name: Télécharger et exécuter le script d'installation de RKE2 si absent
-      shell: curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE="server" sh -
+    - name: Créer le répertoire /etc/rancher/rke2 si nécessaire
+      file:
+        path: /etc/rancher/rke2
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Télécharger le script d'installation de RKE2
+      command: curl -sfL https://get.rke2.io -o /tmp/install-rke2.sh
       when: rke2_check.rc != 0
 
-# ----------------- Installation sur les Masters -----------------
-- name: Installer et configurer les Masters RKE2
-  hosts: masters
-  become: true
-  tasks:
+    - name: Exécuter le script d'installation de RKE2
+      command: sh /tmp/install-rke2.sh INSTALL_RKE2_CHANNEL=stable INSTALL_RKE2_VERSION="v1.30.0+rke2r1"
+      when: rke2_check.rc != 0
 
-    - name: Configurer RKE2 server
-      copy:
-        dest: /etc/rancher/rke2/config.yaml
-        content: |
-          token: "mysecuretoken"
-          tls-san:
-            - "{{ ansible_host }}"
-          write-kubeconfig-mode: "0644"
 
-    - name: Activer et démarrer le serveur RKE2
-      systemd:
-        name: rke2-server
-        enabled: yes
-        state: started
-
-    - name: Attendre que RKE2 soit actif
-      command: systemctl is-active rke2-server
-      register: rke2_status
-      until: rke2_status.stdout == "active"
-      retries: 10
-      delay: 5
-
-    - name: Copier le kubeconfig sur le master principal (master1)
-      fetch:
-        src: /etc/rancher/rke2/rke2.yaml
-        dest: ./kubeconfig.yaml
-        flat: yes
-      when: inventory_hostname == groups['masters'][0]
 
 # ----------------- Récupérer le token automatiquement -----------------
 - name: Récupérer le token RKE2 sur master1
@@ -90,6 +69,58 @@
     - name: Partager le token avec les autres hôtes
       set_fact:
         rke2_token_value: "{{ rke2_token.stdout }}"
+
+# ----------------- Installation sur les Masters -----------------
+- name: Installer et configurer les Masters RKE2
+  hosts: masters
+  become: true
+  tasks:
+
+    - name: Configurer RKE2 server sur les 3 masters
+      copy:
+        dest: /etc/rancher/rke2/config.yaml
+        content: |
+          token: "{{ hostvars[groups['masters'][0]].rke2_token_value }}"
+          tls-san:
+            - "{{ ansible_host }}"
+          write-kubeconfig-mode: "0644"
+
+    - name: Activer et démarrer le serveur RKE2
+      systemd:
+        name: rke2-server
+        enabled: true
+        state: started
+
+    - name: Attendre que RKE2 soit actif
+      command: systemctl is-active rke2-server
+      register: rke2_status
+      until: rke2_status.stdout == "active"
+      retries: 10
+      delay: 5
+
+    - name: Copier le kubeconfig sur le master principal (master1)
+      fetch:
+        src: /etc/rancher/rke2/rke2.yaml
+        dest: ./kubeconfig.yaml
+        flat: true
+      when: inventory_hostname == groups['masters'][0]
+
+#     Installer kubectl sur master1
+
+    - name: Télécharger kubectl sur master1
+      command: >
+        curl -LO "https://dl.k8s.io/release/v$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      when: inventory_hostname == groups['masters'][0]
+
+    - name: Rendre kubectl exécutable
+      command: chmod +x /usr/local/bin/kubectl
+      when: inventory_hostname == groups['masters'][0]
+
+    - name: Déplacer kubectl vers le répertoire d'exécution
+      command: mv ./kubectl /usr/local/bin/kubectl
+      when: inventory_hostname == groups['masters'][0]
+
+
 
 # ----------------- Installation sur le Worker -----------------
 - name: Installer et configurer le Worker RKE2
@@ -114,7 +145,7 @@
     - name: Activer et démarrer RKE2 agent
       systemd:
         name: rke2-agent
-        enabled: yes
+        enabled: true
         state: started
 
 

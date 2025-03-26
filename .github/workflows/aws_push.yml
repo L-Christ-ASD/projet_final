@@ -239,7 +239,7 @@ jobs:
       run: |
         sleep 120s
   
-    - name: Exécuter le playbook Ansible pour installer 
+    - name: Exécuter le playbook Ansible pour installer le cluster rke2
       run: |
         ls ../production_tf/
         ansible-playbook -i inventory playbook.yml 
