@@ -229,7 +229,7 @@ jobs:
 
     - name: Chmod 400 sur .pem
       run: |
-        chmod 400 ./production_tf/vockeyprod.pem
+        chmod 600 ./production_tf/vockeyprod.pem
     
     - name: Vérifier les permissions de la clé .pem
       run: |
