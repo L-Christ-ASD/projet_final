@@ -1,8 +1,11 @@
 # ----------------- Installation sur le Worker -----------------
 
-
 - name: Installer RKE2 agent
-  command: sh /tmp/install-rke2.sh
+  command: |
+    curl -sfL https://get.rke2.io | INSTALL_RKE2_CHANNEL=stable INSTALL_RKE2_VERSION="v1.30.0+rke2r1" sh -
+
+#- name: Installer RKE2 agent
+#  command: sh /tmp/install-rke2.sh
 
 - name: Configurer RKE2 agent
   copy:
@@ -16,5 +19,5 @@
 - name: Activer et démarrer RKE2 agent
   systemd:
     name: rke2-agent
-    enabled: yes
+    enabled: true
     state: started

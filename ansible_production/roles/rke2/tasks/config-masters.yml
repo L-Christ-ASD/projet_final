@@ -16,8 +16,40 @@
     mode: '0755'
   when: rke2_check.rc != 0
 
-- name: Installer RKE2 server
-  command: sh /tmp/install-rke2.sh
+- name: Vérifier la présence du script d’installation
+  stat:
+    path: /tmp/install-rke2.sh
+  register: install_script
+
+- name: Afficher le statut du script
+  debug:
+    var: install_script
+
+
+- name: Télécharger et exécuter le script d'installation de RKE2
+  shell: curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE="server" sh -
+
+- name: Vérifier l'installation de RKE2
+  command: PATH=$PATH:/usr/local/bin:/opt/rke2/bin which rke2
+  register: rke2_check
+  ignore_errors: true
+
+- name: Vérifier où RKE2 est installé
+  command: find / -name rke2 2>/dev/null
+  register: rke2_path
+
+- debug:
+    var: rke2_path.stdout
+
+
+- name: Ajouter RKE2 au PATH
+  lineinfile:
+    path: /etc/profile
+    line: 'export PATH=$PATH:/usr/local/bin:/opt/rke2/bin'
+  when: "'rke2' in rke2_path.stdout"
+
+- name: Recharger les variables d’environnement
+  shell: source /etc/profile
 
 - name: Configurer RKE2 server
   copy:
