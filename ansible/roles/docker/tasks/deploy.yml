@@ -82,10 +82,10 @@
 
 
 
-#- name: Copier le dossier letsencrypt/acme.json ----> locale
+#- name: Copier le fichier de config prometheus.yml
 #  copy:
-#    src: templates/letsencrypt/acme.json
-#    dest: /home/ubuntu/letsencrypt/acme.json
+#    src: templates/prometheus.yml
+#    dest: /home/ubuntu/prometheus/
 #    owner: ubuntu
 #    group: ubuntu
 #    mode: '0600'

@@ -241,6 +241,10 @@
       debug:
         var: hostvars[groups['masters'][0]]['rke2_token_value']
 
+    #- name: Vérifier que le serveur master est bien défini
+    #  debug:
+    #    var: hostvars[groups['masters'][0]]['ansible_host']
+
     - name: Configurer RKE2 agent
       copy:
         dest: /etc/rancher/rke2/config.yaml
@@ -268,8 +272,6 @@
     - name: Afficher les nœuds du cluster
       debug:
         var: kubectl_nodes.stdout_lines
-
-
 
 
   handlers:
