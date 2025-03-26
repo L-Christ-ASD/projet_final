@@ -28,12 +28,6 @@
         regexp: '^\s*[^#].*\bswap\b.*$'
         state: absent
 
-    - name: Vérifier si RKE2 est déjà installé
-      command: which rke2
-      register: rke2_check
-      ignore_errors: true
-      changed_when: false
-
     - name: Installer les dépendances nécessaires
       apt:
         name:
@@ -63,21 +57,49 @@
     - name: Pause de 60 secondes pour laisser RKE2 s'initialiser
       ansible.builtin.pause:
         seconds: 60
+      
+    - name: Vérifier si RKE2 est installé
+      command: ls -l /var/lib/rancher/rke2/bin/rke2
+      register: rke2_ls
+      ignore_errors: true
 
-- name: Vérifier encore la connectivité des hôtes avec Ansible ping
-  hosts: all
-  gather_facts: false
-  tasks:
-    - name: Vérifier la connexion SSH avec un ping Ansible
-      ansible.builtin.ping:
+    - name: Afficher la sortie de la vérification RKE2
+      debug:
+        var: rke2_ls
+
+    - name: Vérifier encore si RKE2 est déjà installé
+      command: which rke2
+      register: rke2_check
+      ignore_errors: true
+      changed_when: false
+
+
+    - name: Vérifier encore la connectivité des hôtes avec Ansible ping
+      #hosts: all
+      gather_facts: false
+      tasks:
+        - name: Vérifier la connexion SSH avec un ping Ansible
+          ansible.builtin.ping:
 
     - name: Vérifier l'installation de RKE2
       command: PATH=$PATH:/usr/local/bin:/opt/rke2/bin which rke2
       register: rke2_check
       ignore_errors: true
 
+    - name: Ajouter le chemin de RKE2 au PATH
+      lineinfile:
+        path: /etc/profile.d/rke2.sh
+        line: 'export PATH=$PATH:/var/lib/rancher/rke2/bin'
+        create: yes
+        mode: '0644'
+      notify: Reload profile
+
+    - name: Appliquer le nouveau PATH
+      shell: source /etc/profile.d/rke2.sh
+
+
     - name: Vérifier où RKE2 est installé
-      command: find / -name rke2 2>/dev/null
+      command: find / -name "rke2" 2>/dev/null
       register: rke2_path
 
     - debug:
@@ -96,7 +118,7 @@
         enabled: true
         state: started
 
-    - name: Vérifier que RKE2 est actif
+    - name: Vérifier que RKE2 est actif (attaendre avant de continuer)
       command: systemctl is-active rke2-server
       register: rke2_status
       until: rke2_status.stdout == "active"
@@ -228,3 +250,10 @@
     - name: Afficher les nœuds du cluster
       debug:
         var: kubectl_nodes.stdout_lines
+
+
+
+
+  handlers:
+    - name: Reload profile
+      shell: source /etc/profile
