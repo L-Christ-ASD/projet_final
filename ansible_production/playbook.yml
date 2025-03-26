@@ -46,6 +46,12 @@
         group: root
         mode: '0755'
 
+    - name: Vérifier encore si RKE2 est déjà installé
+      command: which rke2
+      register: rke2_check
+      ignore_errors: true
+      changed_when: false
+
     - name: Télécharger le script d'installation de RKE2
       command: curl -sfL https://get.rke2.io -o /tmp/install-rke2.sh
       when: rke2_check.rc != 0
@@ -66,12 +72,6 @@
     - name: Afficher la sortie de la vérification RKE2
       debug:
         var: rke2_ls
-
-    - name: Vérifier encore si RKE2 est déjà installé
-      command: which rke2
-      register: rke2_check
-      ignore_errors: true
-      changed_when: false
 
     - name: Vérifier l'installation de RKE2
       command: PATH=$PATH:/usr/local/bin:/opt/rke2/bin which rke2
