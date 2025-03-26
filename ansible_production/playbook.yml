@@ -211,7 +211,7 @@
 
     - name: Installer RKE2 agent
       shell: |
-        curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE="agent" sh -
+        curl -sfL https://get.rke2.io | INSTALL_RKE2_CHANNEL=stable INSTALL_RKE2_VERSION="v1.30.0+rke2r1" sh -
       args:
         creates: /usr/local/bin/rke2
 
@@ -220,7 +220,11 @@
         dest: /etc/rancher/rke2/config.yaml
         content: |
           token: "{{ hostvars[groups['masters'][0]]['rke2_token_value'] }}"
-          server: "https://{{ hostvars[groups['masters'][0]] }}:9345"
+          server: "https://{{ hostvars[groups['masters'][0]] ['ansible_host'] }}:9345"
+
+    - name: Pause de 60 secondes pour laisser RKE2-agent s'installer tranquilement!
+      ansible.builtin.pause:
+        seconds: 60
 
     - name: Activer et démarrer RKE2 agent
       systemd:
