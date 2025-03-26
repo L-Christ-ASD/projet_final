@@ -1,3 +1,13 @@
+---
+
+- name: Vérifier la connectivité des hôtes avec Ansible ping
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Vérifier la connexion SSH avec un ping Ansible
+      ansible.builtin.ping:
+
+
 - name: Installer et configurer RKE2 haute disponibilité (HA)
   hosts: all
   become: true
@@ -50,9 +60,33 @@
       command: sh /tmp/install-rke2.sh INSTALL_RKE2_CHANNEL=stable INSTALL_RKE2_VERSION="v1.30.0+rke2r1"
       when: rke2_check.rc != 0
 
+    - name: Pause de 60 secondes pour laisser RKE2 s'initialiser
+      ansible.builtin.pause:
+        seconds: 60
+
+- name: Vérifier encore la connectivité des hôtes avec Ansible ping
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Vérifier la connexion SSH avec un ping Ansible
+      ansible.builtin.ping:
+
+    - name: Vérifier l'installation de RKE2
+      command: PATH=$PATH:/usr/local/bin:/opt/rke2/bin which rke2
+      register: rke2_check
+      ignore_errors: true
+
+    - name: Vérifier où RKE2 est installé
+      command: find / -name rke2 2>/dev/null
+      register: rke2_path
+
+    - debug:
+        var: rke2_path.stdout
+
+
 #-------------------configuration master1-------------------------------
 
-- name: Vérifer que RKE2 fonctionne via master1
+- name: Vérifer que RKE2 fonctionne sur master1
   hosts: masters[0]
   become: true
   tasks:
