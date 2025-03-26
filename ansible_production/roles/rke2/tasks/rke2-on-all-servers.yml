@@ -1,4 +1,4 @@
-
+---
 - name: Mettre à jour les paquets
   apt:
     update_cache: yes
@@ -14,8 +14,9 @@
     regexp: '^\s*[^#].*\bswap\b.*$'
     replace: ''
 
-- name: Installer les dépendances nécessaires
+- name: Mettre à jour le cache APT et installer les dépendances nécessaires
   apt:
+    update_cache: yes
     name:
       - curl
       - iptables
@@ -24,8 +25,12 @@
       - iproute2
     state: present
 
-- name: Télécharger le script d'installation de RKE2
-  get_url:
-    url: https://get.rke2.io
-    dest: /tmp/install-rke2.sh
-    mode: '0755'
+- name: Vérifier si RKE2 est déjà installé
+  command: which rke2
+  register: rke2_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Télécharger et exécuter le script d'installation de RKE2 si absent
+  shell: curl -sfL https://get.rke2.io | INSTALL_RKE2_CHANNEL=stable INSTALL_RKE2_VERSION="v1.30.0+rke2r1" sh -
+  when: rke2_check.rc != 0
