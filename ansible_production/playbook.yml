@@ -64,8 +64,7 @@
       ansible.builtin.pause:
         seconds: 60
       
-    - name: Vérifier le statut RKE2-server
-      command: systemctl status rke2-server
+    
       
     
     #- name: Vérifier si RKE2 est installé
@@ -113,6 +112,13 @@
         name: rke2-server
         enabled: true
         state: started
+
+    - name: Pause de 60 secondes pour laisser RKE2-server démarrer
+      ansible.builtin.pause:
+        seconds: 60
+
+    - name: Vérifier le statut RKE2-server de master1 [0]
+      command: systemctl status rke2-server
 
     - name: Vérifier que RKE2 est actif (attaendre avant de continuer)
       command: systemctl is-active rke2-server
