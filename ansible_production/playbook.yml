@@ -146,19 +146,25 @@
   become: true
   tasks:
 
+    - name: Vérifier que le service RKE2 est actif
+      command: systemctl status rke2-server
+      register: rke2_status
+      ignore_errors: true  # Ignore l'erreur si le service est inactif
+    
     - name: Lire le token RKE2
-      command: |
-        systemctl status rke2-server
-        cat /var/lib/rancher/rke2/server/node-token
+      command: cat /var/lib/rancher/rke2/server/node-token
       register: rke2_token
+      when: rke2_status.rc == 0  # Exécute seulement si le service est actif
 
     - name: Afficher le token récupéré
       debug:
         var: rke2_token.stdout
+      when: rke2_status.rc == 0  # Affiche seulement si le service est actif
 
     - name: Partager le token avec les autres hôtes
       set_fact:
         rke2_token_value: "{{ rke2_token.stdout }}"
+      when: rke2_status.rc == 0
 
 # ----------------- Installation sur les Masters -----------------
 - name: Installer et configurer les Masters RKE2
