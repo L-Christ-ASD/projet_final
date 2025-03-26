@@ -220,7 +220,9 @@
         dest: /etc/rancher/rke2/config.yaml
         content: |
           token: "{{ hostvars[groups['masters'][0]]['rke2_token_value'] }}"
-          server: "https://{{ hostvars[groups['masters'][0]] ['ansible_host'] }}:9345"
+          server: "https://{{ hostvars[groups['masters'][0]]['inventory_hostname'] }}:9345"
+        when: inventory_hostname == groups['masters'][0]
+        # server: "https://{{ hostvars[groups['masters'][0]] ['ansible_host'] }}:9345"
 
     - name: Pause de 60 secondes pour laisser RKE2-agent s'installer tranquilement!
       ansible.builtin.pause:
