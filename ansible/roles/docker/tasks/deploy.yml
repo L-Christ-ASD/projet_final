@@ -82,13 +82,13 @@
 
 
 
-#- name: Copier le fichier de config prometheus.yml
-#  copy:
-#    src: templates/prometheus.yml
-#    dest: /home/ubuntu/prometheus/
-#    owner: ubuntu
-#    group: ubuntu
-#    mode: '0600'
+- name: Copier le fichier de config prometheus.yml
+  copy:
+    src: templates/prometheus.yml
+    dest: /home/ubuntu/prometheus/
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
 
 #- name: Copier le fichier apache-config.conf pour wp
 #  copy:

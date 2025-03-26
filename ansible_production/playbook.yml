@@ -63,42 +63,6 @@
     - name: Pause de 60 secondes pour laisser RKE2 s'initialiser
       ansible.builtin.pause:
         seconds: 60
-      
-    
-      
-    
-    #- name: Vérifier si RKE2 est installé
-    #  command: ls -l /var/lib/rancher/rke2/bin/rke2 systemctl status rke2-server
-    #  register: rke2_ls
-    #  ignore_errors: true
-#
-    #- name: Afficher la sortie de la vérification RKE2
-    #  debug:
-    #    var: rke2_ls
-#
-    #- name: Vérifier l'installation de RKE2
-    #  command: PATH=$PATH:/usr/local/bin:/opt/rke2/bin which rke2
-    #  register: rke2_check
-    #  ignore_errors: true
-#
-    #- name: Ajouter le chemin de RKE2 au PATH
-    #  lineinfile:
-    #    path: /etc/profile.d/rke2.sh
-    #    line: 'export PATH=$PATH:/var/lib/rancher/rke2/bin'
-    #    create: yes
-    #    mode: '0644'
-    #  notify: Reload profile
-#
-    #- name: Appliquer le nouveau PATH
-    #  shell: source /etc/profile.d/rke2.sh
-#
-#
-    #- name: Vérifier où RKE2 est installé
-    #  command: find / -name "rke2" 2>/dev/null
-    #  register: rke2_path
-#
-    #- debug:
-    #    var: rke2_path.stdout
 
 
 #-------------------configuration master1-------------------------------
@@ -244,6 +208,12 @@
     #- name: Vérifier que le serveur master est bien défini
     #  debug:
     #    var: hostvars[groups['masters'][0]]['ansible_host']
+
+    - name: Installer RKE2 agent
+      shell: |
+        curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE="agent" sh -
+      args:
+        creates: /usr/local/bin/rke2
 
     - name: Configurer RKE2 agent
       copy:
