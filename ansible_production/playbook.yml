@@ -167,7 +167,7 @@
       when: rke2_status.rc == 0
 
 # ----------------- Installation sur les Masters -----------------
-- name: Installer et configurer les Masters RKE2
+- name: Configuration des 3 Masters RKE2
   hosts: masters
   become: true
   tasks:
@@ -201,11 +201,24 @@
         flat: true
       when: inventory_hostname == groups['masters'][0]
 
-#     Installer kubectl sur master1
+#     Installer kubectl sur master1 
 
     - name: Télécharger kubectl sur master1
-      command: >
-        curl -LO "https://dl.k8s.io/release/v$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      command: curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      args:
+        chdir: /usr/local/bin
+      when: inventory_hostname == groups['masters'][0]
+    
+    - name: Télécharger le fichier checksum de kubectl
+      command: curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+      args:
+        chdir: /usr/local/bin
+      when: inventory_hostname == groups['masters'][0]
+
+    - name: Véification d'intégrité de kubectl sur master1
+      command: echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check  # cubctl: ok
+      args:
+        chdir: /usr/local/bin
       when: inventory_hostname == groups['masters'][0]
 
     - name: Rendre kubectl exécutable
@@ -227,9 +240,6 @@
     - name: Vérifier si le token a bien été récupéré
       debug:
         var: hostvars[groups['masters'][0]]['rke2_token_value']
-
-    - name: Installer RKE2 agent
-      shell: curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE="agent" sh -
 
     - name: Configurer RKE2 agent
       copy:
