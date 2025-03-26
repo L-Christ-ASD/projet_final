@@ -65,7 +65,7 @@
         seconds: 60
       
     - name: Vérifier le statut RKE2-server
-      command: ystemctl status rke2-server
+      command: systemctl status rke2-server
       
     
     #- name: Vérifier si RKE2 est installé
