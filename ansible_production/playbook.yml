@@ -289,7 +289,7 @@
     - name: Afficher la valeur du token sur les workers
       debug:
         var: hostvars[groups['masters'][0]]['rke2_token_value']
-      when: inventory_hostname in groups['workers']
+      #when: inventory_hostname in groups['workers']
 #-----------------------------------------------------------
     - name: Pause de 30 secondes pour laisser RKE2-agent s'installer tranquilement!
       ansible.builtin.pause:
