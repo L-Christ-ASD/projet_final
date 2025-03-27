@@ -46,7 +46,7 @@
         group: root
         mode: '0755'
 
-    - name: Vérifier encore si RKE2 est déjà installé
+    - name: Vérifier si RKE2 est déjà installé
       command: which rke2
       register: rke2_check
       ignore_errors: true
@@ -81,8 +81,8 @@
       ansible.builtin.pause:
         seconds: 60
 
-    - name: Vérifier le statut RKE2-server de master1 [0]
-      command: systemctl status rke2-server
+    #- name: Vérifier le statut RKE2-server de master1 [0]
+    #  command: systemctl status rke2-server
 
     - name: Vérifier que RKE2 est actif sur master1 (attaendre avant de continuer)
       command: systemctl is-active rke2-server
