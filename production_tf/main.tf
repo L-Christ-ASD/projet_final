@@ -209,7 +209,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
 }
 
 # temporairement pour le worker k8s
-resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
+resource "aws_vpc_security_group_ingress_rule" "allow_port_9345" {
   security_group_id = aws_security_group.admin_ssh_preprod.id
   cidr_ipv4         = "0.0.0.0/0"
   from_port         = 9345
