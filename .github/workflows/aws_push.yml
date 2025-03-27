@@ -151,7 +151,7 @@ jobs:
 # Explications
 #    Artefact pour la clé SSH :
 #    
-#    L'étape actions/upload-artifact@v3 permet de sauvegarder la clé privée SSH (vockey.pem) générée par Terraform en tant qu'artefact.
+#    L'étape actions/upload-artifact@v4 permet de sauvegarder la clé privée SSH (vockey.pem) générée par Terraform en tant qu'artefact.
 #    
 #    Cet artefact sera accessible depuis l'interface GitHub dans la section Actions après l'exécution du workflow.
 #    
@@ -253,7 +253,7 @@ jobs:
     
 
     - name: Télécharger kubeconfig comme Artifact (pour bastion)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: kubeconfig
         path: ./ansible_production/kubeconfig.yaml
