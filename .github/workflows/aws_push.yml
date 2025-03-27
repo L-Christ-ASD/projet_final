@@ -195,12 +195,14 @@ jobs:
 
 # -===============producttion==========================
 
-    - name: Valider la config Terraform pour rke2
-      run: terraform validate
-      working-directory: ./production_tf
+    
 
     - name: Initialiser Terraform pour le cluster rke2
       run: terraform init
+      working-directory: ./production_tf
+
+    - name: Valider la config Terraform pour rke2
+      run: terraform validate
       working-directory: ./production_tf
 
     - name: Plan Terraform
