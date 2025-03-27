@@ -208,14 +208,14 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
   to_port           = 22
 }
 
-# temporairement pour le workflow
-#resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
-#  security_group_id = aws_security_group.admin_ssh_preprod.id
-#  cidr_ipv4         = "0.0.0.0/0"
-#  from_port         = 22
-#  ip_protocol       = "tcp"
-#  to_port           = 22
-#}
+# temporairement pour le worker k8s
+resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
+  security_group_id = aws_security_group.admin_ssh_preprod.id
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 9345
+  ip_protocol       = "tcp"
+  to_port           = 9345
+}
 
 resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in" {
   for_each          = toset(var.admin-ips)
