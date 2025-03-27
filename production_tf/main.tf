@@ -133,17 +133,35 @@ output "ssh_private_key_filename" {
 
 
 # exportation d'IP masters
+
 resource "null_resource" "generate_ansible_inventory-masters" {
   depends_on = [aws_instance.masters]
 
   provisioner "local-exec" {
     command = <<EOT
       mkdir -p ../ansible_production
-      echo "[masters]" >> ../ansible_production/inventory
-      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../production_tf/vockeyprod.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible_production/inventory", aws_instance.masters[*].public_ip))}
+      echo "[masters]" > ../ansible_production/inventory
+      # Ajouter master1 avec l'IP spécifique
+      echo "master1 ansible_host=${aws_instance.masters[0].public_ip} ansible_user=ubuntu ansible_ssh_private_key_file=../production_tf/vockeyprod.pem ansible_ssh_extra_args='-o StrictHostKeyChecking=no'" >> ../ansible_production/inventory
+      # Ajouter les autres masters
+      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../production_tf/vockeyprod.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible_production/inventory", slice(aws_instance.masters[*].public_ip, 1, length(aws_instance.masters))))}
     EOT
   }
 }
+
+
+
+#resource "null_resource" "generate_ansible_inventory-masters" {
+#  depends_on = [aws_instance.masters]
+#
+#  provisioner "local-exec" {
+#    command = <<EOT
+#      mkdir -p ../ansible_production
+#      echo "[masters]" >> ../ansible_production/inventory
+#      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../production_tf/vockeyprod.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible_production/inventory", aws_instance.masters[*].public_ip))}
+#    EOT
+#  }
+#}
 
 # exportation d'IP worker1
 resource "null_resource" "generate_ansible_inventory_w1" {
@@ -153,7 +171,7 @@ resource "null_resource" "generate_ansible_inventory_w1" {
     command = <<EOT
       mkdir -p ../ansible_production
       echo "[workers]" >> ../ansible_production/inventory
-      ${join("\n", formatlist("echo ansible_host=%s ansible_user=ubuntu ansible_ssh_private_key_file=../production_tf/vockeyprod.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible_production/inventory", aws_instance.worker1[*].public_ip))}
+      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../production_tf/vockeyprod.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible_production/inventory", aws_instance.worker1[*].public_ip))}
     EOT
   }
 }
