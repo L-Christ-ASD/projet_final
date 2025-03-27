@@ -253,6 +253,10 @@ jobs:
         sleep 60s
 
     # Vérifier la connexion SSH avec Ansible (ping sur toutes les machines)
+    - name: Copier la clé SSH dans ./
+      run: |
+        cp ./production_tf/vockeyprod.pem ./
+
     - name: Test SSH connection with Ansible
       run: |
         ansible -m ping -i ./ansible_production/inventory all

@@ -144,7 +144,7 @@ resource "null_resource" "generate_ansible_inventory-masters" {
       # Ajouter master1 avec l'IP spécifique
       echo "master1 ansible_host=${aws_instance.masters[0].public_ip} ansible_user=ubuntu ansible_ssh_private_key_file=../production_tf/vockeyprod.pem ansible_ssh_extra_args='-o StrictHostKeyChecking=no'" >> ../ansible_production/inventory
       # Ajouter les autres masters
-      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../production_tf/vockeyprod.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible_production/inventory", slice(aws_instance.masters[*].public_ip, 1, length(aws_instance.masters))))}
+      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=./vockeyprod.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible_production/inventory", slice(aws_instance.masters[*].public_ip, 1, length(aws_instance.masters))))}
     EOT
   }
 }
@@ -175,7 +175,7 @@ resource "null_resource" "generate_ansible_inventory_w1" {
       echo "DEBUG: Création de l’inventaire des workers..." >> ../ansible_production/debug_ansible_inventory.log
       mkdir -p ../ansible_production
       echo "[workers]" >> ../ansible_production/inventory
-      echo "worker1 ansible_host=${aws_instance.worker1.public_ip} ansible_user=ubuntu ansible_ssh_private_key_file=../production_tf/vockeyprod.pem ansible_ssh_extra_args='-o StrictHostKeyChecking=no'" >> ../ansible_production/inventory
+      echo "worker1 ansible_host=${aws_instance.worker1.public_ip} ansible_user=ubuntu ansible_ssh_private_key_file=./vockeyprod.pem ansible_ssh_extra_args='-o StrictHostKeyChecking=no'" >> ../ansible_production/inventory
       echo "DEBUG: Fin de l’inventaire des workers." >> ../ansible_production/debug_ansible_inventory.log
     EOT
   }
