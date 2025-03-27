@@ -128,21 +128,21 @@
         rke2_token_value: "{{ rke2_token.stdout }}"
       when: rke2_status.rc == 0
 
-# ----------------- Installation sur le Master2 et 3-----------------
-- name: Configuration des Masters 2 et 3
+# ----------------- Installation sur les Masters---------------
+- name: Configuration des Masters 
   hosts: masters
   become: true
   tasks:
 
-    - name: Configurer RKE2 server sur les masters2 et 3
-      ansible.builtin.copy:
+    - name: Configurer RKE2 server sur les 3 masters
+      copy:
         dest: /etc/rancher/rke2/config.yaml
         content: |
           token: "{{ hostvars[groups['masters'][0]].rke2_token_value }}"
           tls-san:
             - "{{ ansible_host }}"
           write-kubeconfig-mode: "0644"
-        when: inventory_hostname != groups['masters'][0]
+        #when: inventory_hostname != groups['masters'][0]
 
     - name: Activer et démarrer le serveur RKE2
       systemd:
@@ -157,7 +157,7 @@
       until: rke2_status.stdout == "active"
       retries: 10
       delay: 5
-      when: inventory_hostname != groups['masters'][0]
+      #when: inventory_hostname != groups['masters'][0]
 
     - name: Copier le kubeconfig sur la machine locale depuis le master principal (master1)
       fetch:

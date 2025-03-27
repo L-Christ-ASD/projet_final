@@ -174,7 +174,7 @@ resource "null_resource" "generate_ansible_inventory_w1" {
       echo "DEBUG: Création de l’inventaire des workers..." >> ../ansible_production/debug_ansible_inventory.log
       mkdir -p ../ansible_production
       echo "[workers]" >> ../ansible_production/inventory
-      ${join("\n", formatlist("echo worker ansible_host=%s ansible_user=ubuntu ansible_ssh_private_key_file=../production_tf/vockeyprod.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible_production/inventory", aws_instance.worker1[*].public_ip))}
+      ${join("\n", formatlist("echo worker ansible_host=%s ansible_user=ubuntu ansible_ssh_private_key_file=../production_tf/vockeyprod.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible_production/inventory", aws_instance.worker1.public_ip))}
       echo "DEBUG: Fin de l’inventaire des workers." >> ../ansible_production/debug_ansible_inventory.log
     EOT
   }
