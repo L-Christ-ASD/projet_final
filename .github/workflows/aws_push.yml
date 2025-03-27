@@ -214,6 +214,11 @@ jobs:
       run: |
         ls ./ansible_production/
 
+
+    - name: Contenu du fichier debug_ansible_inventory.log (terraform)
+      run: |
+        cat ./ansible_production/debug_ansible_inventory.log
+
     - name: Contenu du fichier inventory
       run: |
         cat ./ansible_production/inventory

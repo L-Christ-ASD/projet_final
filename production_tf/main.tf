@@ -151,14 +151,16 @@ resource "null_resource" "generate_ansible_inventory-masters" {
 
 
 
-#resource "null_resource" "generate_ansible_inventory-masters" {
-#  depends_on = [aws_instance.masters]
+# exportation d'IP worker1
+
+#resource "null_resource" "generate_ansible_inventory_w1" {
+#  depends_on = [aws_instance.worker1]
 #
 #  provisioner "local-exec" {
 #    command = <<EOT
 #      mkdir -p ../ansible_production
-#      echo "[masters]" >> ../ansible_production/inventory
-#      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../production_tf/vockeyprod.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible_production/inventory", aws_instance.masters[*].public_ip))}
+#      echo "[workers]" >> ../ansible_production/inventory
+#      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../production_tf/vockeyprod.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible_production/inventory", aws_instance.worker1[*].public_ip))}
 #    EOT
 #  }
 #}
@@ -169,9 +171,11 @@ resource "null_resource" "generate_ansible_inventory_w1" {
 
   provisioner "local-exec" {
     command = <<EOT
+      echo "DEBUG: Création de l’inventaire des workers..." >> ../ansible_production/debug_ansible_inventory.log
       mkdir -p ../ansible_production
       echo "[workers]" >> ../ansible_production/inventory
-      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=../production_tf/vockeyprod.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible_production/inventory", aws_instance.worker1[*].public_ip))}
+      ${join("\n", formatlist("echo worker%s ansible_host=%s ansible_user=ubuntu ansible_ssh_private_key_file=../production_tf/vockeyprod.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible_production/inventory", range(1, length(aws_instance.worker1) + 1), aws_instance.worker1[*].public_ip))}
+      echo "DEBUG: Fin de l’inventaire des workers." >> /tmp/debug_ansible_inventory.log
     EOT
   }
 }

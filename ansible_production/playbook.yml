@@ -135,7 +135,7 @@
   tasks:
 
     - name: Configurer RKE2 server sur les masters2 et 3
-      copy:
+      ansible.builtin.copy:
         dest: /etc/rancher/rke2/config.yaml
         content: |
           token: "{{ hostvars[groups['masters'][0]].rke2_token_value }}"
