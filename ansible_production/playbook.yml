@@ -274,7 +274,7 @@
       args:
         creates: /usr/local/bin/rke2
 
-    - name: Pause de 30 secondes pour laisser RKE2-agent s'installer tranquilement!
+    - name: Pause de 60 secondes pour laisser RKE2-agent s'installer tranquilement!
       ansible.builtin.pause:
         seconds: 60
 
@@ -293,7 +293,7 @@
       
 #-----------------------------------------------------------
 
-    - name: Pause de 30 secondes pour laisser RKE2-agent s'installer tranquilement!
+    - name: Pause de 80 secondes pour laisser RKE2-agent s'installer tranquilement!
       ansible.builtin.pause:
         seconds: 80
 
@@ -301,19 +301,27 @@
       wait_for_connection:
         timeout: 120
 
-
     - name: Activer et démarrer RKE2 agent
       systemd:
         name: rke2-agent
         enabled: true
         state: started
 
+    - name: Attendre 30 secondes après le démarrage de RKE2 agent
+      pause:
+        seconds: 30
+
+    - name: Vérifier que le worker est de nouveau accessible après activation de RKE2 agent
+      wait_for_connection:
+        timeout: 120
+
     - name: Attendre que RKE2-agent soit actif
-      command: systemctl is-active rke2-server
+      command: systemctl is-active rke2-agent
       register: rke2_status
       until: rke2_status.stdout == "active"
       retries: 10
       delay: 5
+
       #when: inventory_hostname == groups['workers'][0]
 
     #- name: Pause de 60 secondes pour laisser RKE2-agent demarer tranquilement!
