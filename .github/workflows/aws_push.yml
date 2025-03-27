@@ -16,6 +16,7 @@ jobs:
     - name: Mettre à jour les paquets
       run: |
         sudo apt update
+        sudo apt upgrade
         
     - name: Installer Terraform
       uses: hashicorp/setup-terraform@v3
@@ -31,8 +32,10 @@ jobs:
         sudo apt install -y python3-pip
         pip3 install awscli --upgrade --user
 
-    - name: Installer Ansible
+    - name: Installer Ansible via PPA (dernière version stable)
       run: |
+        sudo apt install -y software-properties-common
+        sudo add-apt-repository --yes --update ppa:ansible/ansible
         sudo apt install -y ansible
 
     - name: Vérifier l'installation d'Ansible et aws
