@@ -133,6 +133,11 @@ jobs:
   #  - name: Attendre le demarrage complet du server 120s
   #    run: |
   #      sleep 120s
+
+      # Vérifier la connexion SSH avec Ansible (ping sur toutes les machines)
+#    - name: Tester la connection SSH  avec Ansible
+#      run: |
+#        ansible -m ping -i ./ansible_production/inventory all
   #
   #  - name: Exécuter le playbook Ansible
   #    run: |
@@ -246,6 +251,11 @@ jobs:
     - name: Attendre le demarrage complet des instances 60s
       run: |
         sleep 60s
+
+    # Vérifier la connexion SSH avec Ansible (ping sur toutes les machines)
+    - name: Test SSH connection with Ansible
+      run: |
+        ansible -m ping -i ./ansible_production/inventory all
   
     - name: Installlation du cluster rke2 avec le playbook Ansible_prod
       run: |
