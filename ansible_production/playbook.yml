@@ -84,7 +84,7 @@
     - name: Vérifier le statut RKE2-server de master1 [0]
       command: systemctl status rke2-server
 
-    - name: Vérifier que RKE2 est actif (attaendre avant de continuer)
+    - name: Vérifier que RKE2 est actif sur master1 (attaendre avant de continuer)
       command: systemctl is-active rke2-server
       register: rke2_status
       until: rke2_status.stdout == "active"
@@ -92,17 +92,15 @@
       delay: 5
       become: true
 
-    - name: Vérifier si le fichier node-token existe
+    - name: Vérifier si le fichier node-token existe sur master1
       stat:
         path: /var/lib/rancher/rke2/server/node-token
       register: token_file
 
-    - name: Lire le token RKE2 s'il existe
+    - name: Lire le token RKE2 s'il existe sur master1
       command: cat /var/lib/rancher/rke2/server/node-token
       when: token_file.stat.exists
       register: rke2_token
-
-
 
 # ----------------- Récupérer le token automatiquement -----------------
 - name: Récupérer le token RKE2 sur master1
@@ -110,17 +108,17 @@
   become: true
   tasks:
 
-    - name: Vérifier que le service RKE2 est actif
+    - name: Vérifier que le service RKE2 est actif sur master1
       command: systemctl status rke2-server
       register: rke2_status
       ignore_errors: true  # Ignore l'erreur si le service est inactif
     
-    - name: Lire le token RKE2
+    - name: Lire le token RKE2 sur master1
       command: cat /var/lib/rancher/rke2/server/node-token
       register: rke2_token
       when: rke2_status.rc == 0  # Exécute seulement si le service est actif
 
-    - name: Afficher le token récupéré
+    - name: Afficher le token récupéré sur master1
       debug:
         var: rke2_token.stdout
       when: rke2_status.rc == 0  # Affiche seulement si le service est actif
@@ -130,13 +128,13 @@
         rke2_token_value: "{{ rke2_token.stdout }}"
       when: rke2_status.rc == 0
 
-# ----------------- Installation sur les Masters -----------------
-- name: Configuration des 3 Masters RKE2
+# ----------------- Installation sur le Master2 et 3-----------------
+- name: Configuration des Masters 2 et 3
   hosts: masters
   become: true
   tasks:
 
-    - name: Configurer RKE2 server sur les 3 masters
+    - name: Configurer RKE2 server sur les masters2 et 3
       copy:
         dest: /etc/rancher/rke2/config.yaml
         content: |
@@ -144,12 +142,14 @@
           tls-san:
             - "{{ ansible_host }}"
           write-kubeconfig-mode: "0644"
+        when: inventory_hostname != groups['masters'][0]
 
     - name: Activer et démarrer le serveur RKE2
       systemd:
         name: rke2-server
         enabled: true
         state: started
+      when: inventory_hostname != groups['masters'][0]
 
     - name: Attendre que RKE2 soit actif
       command: systemctl is-active rke2-server
@@ -157,8 +157,9 @@
       until: rke2_status.stdout == "active"
       retries: 10
       delay: 5
+      when: inventory_hostname != groups['masters'][0]
 
-    - name: Copier le kubeconfig sur le master principal (master1)
+    - name: Copier le kubeconfig sur la machine locale depuis le master principal (master1)
       fetch:
         src: /etc/rancher/rke2/rke2.yaml
         dest: ./kubeconfig.yaml
@@ -237,6 +238,7 @@
     - name: Vérifier si le token a bien été récupéré
       debug:
         var: hostvars[groups['masters'][0]]['rke2_token_value']
+    
       
 
     - name: Vérifier que le serveur master est bien défini
@@ -289,9 +291,9 @@
         var: hostvars[groups['masters'][0]]['rke2_token_value']
       when: inventory_hostname in groups['workers']
 #-----------------------------------------------------------
-    - name: Pause de 60 secondes pour laisser RKE2-agent s'installer tranquilement!
+    - name: Pause de 30 secondes pour laisser RKE2-agent s'installer tranquilement!
       ansible.builtin.pause:
-        seconds: 60
+        seconds: 30
 
     - name: Activer et démarrer RKE2 agent
       systemd:
@@ -304,22 +306,39 @@
       ansible.builtin.pause:
         seconds: 60
 
+    - name: Vérifier que le service RKE2-agent est actif sur worker1
+      command: systemctl status rke2-agent
+      register: rke2_status
+      ignore_errors: true  
 
-- name: Vérifer que RKE2 fonctionne via master1
-  hosts: masters[0]
+#===================Vérifs==================================
+- name: Vérifier que RKE2 fonctionne via master1
+  hosts: "{{ groups['masters'][0] }}"  # Sélectionne directement master1
   become: true
   tasks:
+
+    - name: Vérifier si le fichier kubeconfig existe
+      stat:
+        path: /etc/rancher/rke2/rke2.yaml
+      register: kubeconfig_file
+
+    - name: Vérifier que le service RKE2 est actif
+      command: systemctl is-active rke2-server
+      register: rke2_status
+      changed_when: false
+      failed_when: rke2_status.stdout != "active"
 
     - name: Vérifier la configuration du cluster avec kubectl
       command: KUBECONFIG=/etc/rancher/rke2/rke2.yaml /var/lib/rancher/rke2/bin/kubectl get nodes
       register: kubectl_nodes
       changed_when: false
-      #when: inventory_hostname == groups['masters'][0]
+      when: kubeconfig_file.stat.exists  # Exécute la commande seulement si le fichier existe
 
     - name: Afficher les nœuds du cluster
       debug:
         var: kubectl_nodes.stdout_lines
-      #when: inventory_hostname == groups['masters'][0]
+      when: kubeconfig_file.stat.exists
+
 
 
   handlers:

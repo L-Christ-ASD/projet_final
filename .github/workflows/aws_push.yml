@@ -248,6 +248,18 @@ jobs:
         ansible-playbook -i inventory playbook.yml
       working-directory: ./ansible_production/
 
+    - name: Vérification du kubeconfig.yaml
+      run: ls -lah ./ansible_production/
+    
+
+    - name: Télécharger kubeconfig comme Artifact (pour bastion)
+      uses: actions/upload-artifact@v3
+      with:
+        name: kubeconfig
+        path: ./ansible_production/kubeconfig.yaml
+        retention-days: 7  # Garde le fichier pendant 7 jours
+        
+
     - name: Désactiver l'accès SSH depuis n'importe où
       run: |
         aws ec2 revoke-security-group-ingress --group-name admin_ssh_production \
