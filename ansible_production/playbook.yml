@@ -258,7 +258,7 @@
 
 
     - name: Configurer RKE2 agent
-      copy:
+      ansible.builtin.copy:  # Utilisation de la version moderne du module copy
         dest: /etc/rancher/rke2/config.yaml
         content: |
           token: "{{ hostvars[groups['masters'][0]]['rke2_token_value'] }}"
