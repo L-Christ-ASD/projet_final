@@ -77,9 +77,9 @@
         enabled: true
         state: started
 
-    - name: Pause de 60 secondes pour laisser RKE2-server démarrer
+    - name: Pause de 80 secondes pour laisser RKE2-server démarrer
       ansible.builtin.pause:
-        seconds: 60
+        seconds: 80
 
     #- name: Vérifier le statut RKE2-server de master1 [0]
     #  command: systemctl status rke2-server
@@ -196,9 +196,14 @@
       command: chmod +x /usr/local/bin/kubectl
       when: inventory_hostname == groups['masters'][0]
 
-    - name: Déplacer kubectl vers le répertoire d'exécution
-      command: mv ./kubectl /usr/local/bin/kubectl
+    - name: Vérifier si kubectl a été téléchargé
+      command: ls -l /usr/local/bin/kubectl
       when: inventory_hostname == groups['masters'][0]
+
+
+    #- name: Déplacer kubectl vers le répertoire d'exécution
+    #  command: mv ./kubectl /usr/local/bin/kubectl
+    #  when: inventory_hostname == groups['masters'][0]
 
 
     #- name: Télécharger kubectl sur master1

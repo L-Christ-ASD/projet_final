@@ -140,7 +140,7 @@ resource "null_resource" "generate_ansible_inventory-masters" {
   provisioner "local-exec" {
     command = <<EOT
       mkdir -p ../ansible_production
-      echo "[masters]" > ../ansible_production/inventory
+      echo "[masters]" >> ../ansible_production/inventory
       # Ajouter master1 avec l'IP spécifique
       echo "master1 ansible_host=${aws_instance.masters[0].public_ip} ansible_user=ubuntu ansible_ssh_private_key_file=../production_tf/vockeyprod.pem ansible_ssh_extra_args='-o StrictHostKeyChecking=no'" >> ../ansible_production/inventory
       # Ajouter les autres masters
