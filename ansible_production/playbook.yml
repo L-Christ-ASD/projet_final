@@ -250,15 +250,15 @@
       debug:
         var: hostvars[groups['masters'][0]]['ansible_host']
 
-    #- name: Installer les dépendances nécessaires
-    #  apt:
-    #    name:
-    #      - curl
-    #      - iptables
-    #      - socat
-    #      - unzip
-    #      - iproute2
-    #    state: present
+    - name: Installer les dépendances nécessaires
+      apt:
+        name:
+          - curl
+          - iptables
+          - socat
+          - unzip
+          - iproute2
+        state: present
 #
     #- name: Créer le répertoire /etc/rancher/rke2 si nécessaire
     #  file:
@@ -276,29 +276,31 @@
 
     - name: Pause de 30 secondes pour laisser RKE2-agent s'installer tranquilement!
       ansible.builtin.pause:
-        seconds: 30
-      #when: inventory_hostname == groups['workers'][0]
-
-    #- name: debogage 1 d'installation rke2 où est rke2
-    #  command: which rke2
-#
-    #- name: debogage 2 d'installation rke2 version
-    #  command: rke2 --version
+        seconds: 60
 
     - name: Configurer RKE2 agent
-      ansible.builtin.copy:  # Utilisation de la version moderne du module copy
+      ansible.builtin.copy:  
         dest: /etc/rancher/rke2/config.yaml
         content: |
           token: "{{ hostvars[groups['masters'][0]]['rke2_token_value'] }}"
           server: "https://{{ hostvars[groups['masters'][0]]['ansible_host'] }}:9345"
-        #when: inventory_hostname == groups['workers'][0]
+        
         
 #---------------------------------------------------------------
     - name: Afficher la valeur du token sur les workers
       debug:
         var: hostvars[groups['masters'][0]]['rke2_token_value']
-      #when: inventory_hostname in groups['workers'].
+      
 #-----------------------------------------------------------
+
+    - name: Pause de 30 secondes pour laisser RKE2-agent s'installer tranquilement!
+      ansible.builtin.pause:
+        seconds: 80
+
+    - name: Attendre que le worker soit de nouveau accessible en SSH
+      wait_for_connection:
+        timeout: 120
+
 
     - name: Activer et démarrer RKE2 agent
       systemd:
