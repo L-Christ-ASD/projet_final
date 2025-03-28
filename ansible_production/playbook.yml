@@ -142,7 +142,13 @@
           tls-san:
             - "{{ ansible_host }}"
           write-kubeconfig-mode: "0644"
-        #when: inventory_hostname != groups['masters'][0]
+
+    - name: Mettre à jour le fichier rke2.yaml avec l'IP publique
+      replace:
+        path: /etc/rancher/rke2/rke2.yaml
+        regexp: '^server: https://.*:6443'
+        replace: 'server: https://{{ ansible_host }}:6443'
+      when: inventory_hostname == groups['masters'][0]
 
     - name: Activer et démarrer le serveur RKE2
       systemd:
@@ -157,7 +163,7 @@
       until: rke2_status.stdout == "active"
       retries: 10
       delay: 5
-      #when: inventory_hostname != groups['masters'][0]
+      
 
     - name: Copier le kubeconfig sur la machine locale depuis le master principal (master1)
       fetch:
@@ -199,39 +205,6 @@
     - name: Vérifier si kubectl a été téléchargé
       command: ls -l /usr/local/bin/kubectl
       when: inventory_hostname == groups['masters'][0]
-
-
-    #- name: Déplacer kubectl vers le répertoire d'exécution
-    #  command: mv ./kubectl /usr/local/bin/kubectl
-    #  when: inventory_hostname == groups['masters'][0]
-
-
-    #- name: Télécharger kubectl sur master1
-    #  command: curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-    #  args:
-    #    chdir: /usr/local/bin
-    #  when: inventory_hostname == groups['masters'][0]
-    #
-    #- name: Télécharger le fichier checksum de kubectl
-    #  command: curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
-    #  args:
-    #    chdir: /usr/local/bin
-    #  when: inventory_hostname == groups['masters'][0]
-#
-    #- name: Véification d'intégrité de kubectl sur master1
-    #  command: echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check  # cubctl: ok
-    #  args:
-    #    chdir: /usr/local/bin
-    #  when: inventory_hostname == groups['masters'][0]
-#
-    #- name: Rendre kubectl exécutable
-    #  command: chmod +x /usr/local/bin/kubectl
-    #  when: inventory_hostname == groups['masters'][0]
-#
-    #- name: Déplacer kubectl vers le répertoire d'exécution
-    #  command: mv ./kubectl /usr/local/bin/kubectl
-    #  when: inventory_hostname == groups['masters'][0]
-
 
 
 # ----------------- Installation sur le Worker -----------------
