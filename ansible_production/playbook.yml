@@ -170,10 +170,6 @@
       register: rke2_token
 
 # ----------------- Récupérer le token automatiquement -----------------
-#- name: Récupérer le token RKE2 sur master1
-#  hosts: masters[0]
-#  become: true
-#  tasks:
 
     - name: Vérifier que le service RKE2 est actif sur master1
       command: systemctl status rke2-server
@@ -204,20 +200,38 @@
   become: true
   tasks:
 
+  #  - name: Configurer RKE2 server sur les 3 masters
+  #    copy:
+  #      dest: /etc/rancher/rke2/config.yaml
+  #      content: |
+  #        token: "{{ hostvars[groups['masters'][0]].rke2_token_value }}"
+  #        tls-san:
+  #          - "{{ ansible_host }}"
+  #        write-kubeconfig-mode: "0644"
+
     - name: Configurer RKE2 server sur les 3 masters
       copy:
         dest: /etc/rancher/rke2/config.yaml
         content: |
           token: "{{ hostvars[groups['masters'][0]].rke2_token_value }}"
           tls-san:
-            - "{{ ansible_host }}"
+            - "{{ hostvars[groups['masters'][0]]["ansible_host"] }}"
           write-kubeconfig-mode: "0644"
 
-    - name: Mettre à jour le fichier rke2.yaml avec l'IP publique
+    - name: Créer le fichier /etc/rancher/rke2/rke2.yaml si nécessaire
+      file:
+        path: /etc/rancher/rke2/rke2.yaml
+        state: touch
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Mettre à jour le fichier rke2.yaml avec l'IP publique du master1
       replace:
         path: /etc/rancher/rke2/rke2.yaml
         regexp: '^server: https://.*:6443'
-        replace: 'server: https://{{ ansible_host }}:6443'
+        replace: 'server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
+        #replace: 'server: https://{{ ansible_host }}:6443'
       when: inventory_hostname == groups['masters'][0]
 
     - name: Activer et démarrer le serveur RKE2
@@ -256,34 +270,6 @@
     - name: Vérifier que le serveur master est bien défini
       debug:
         var: hostvars[groups['masters'][0]]['ansible_host']
-
-    #- name: Installer les dépendances nécessaires
-    #  apt:
-    #    name:
-    #      - curl
-    #      - iptables
-    #      - socat
-    #      - unzip
-    #      - iproute2
-    #    state: present
-#
-    #- name: Créer le répertoire /etc/rancher/rke2 si nécessaire
-    #  file:
-    #    path: /etc/rancher/rke2
-    #    state: directory
-    #    owner: root
-    #    group: root
-    #    mode: '0755'
-#
-    #- name: Installer RKE2 agent
-    #  shell: |
-    #    sudo sh -c 'curl -sfL https://get.rke2.io | INSTALL_RKE2_CHANNEL=stable INSTALL_RKE2_VERSION="v1.30.0+rke2r1" sh -'
-    #  args:
-    #    creates: /usr/local/bin/rke2
-#
-    #- name: Pause de 30 secondes pour laisser RKE2-agent s'installer tranquilement!
-    #  ansible.builtin.pause:
-    #    seconds: 30
 
     - name: Configurer RKE2 agent
       ansible.builtin.copy:  
