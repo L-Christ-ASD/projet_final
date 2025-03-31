@@ -73,9 +73,7 @@
   become: true
   tasks:
 
-  #     Installer kubectl sur master1 
-
-        # Installer kubectl sur master1
+      # Installer kubectl sur master1
     - name: Télécharger la version stable de kubectl
       command: "curl -L -s https://dl.k8s.io/release/stable.txt"
       register: kubectl_version
@@ -102,22 +100,16 @@
     - name: Rendre kubectl exécutable
       command: chmod +x /usr/local/bin/kubectl
       when: inventory_hostname == groups['masters'][0]
-
-    - name: Vérifier si kubectl a été téléchargé
-      command: ls -l /usr/local/bin/kubectl
-      when: inventory_hostname == groups['masters'][0]
-
-    
-
+ 
     - name: Activer et démarrer le serveur RKE2
       systemd:
         name: rke2-server
         enabled: true
         state: started
 
-    - name: Pause de 80 secondes pour laisser RKE2-server démarrer
+    - name: Pause de 60 secondes pour laisser RKE2-server démarrer
       ansible.builtin.pause:
-        seconds: 80
+        seconds: 60
 
     - name: Vérifier que RKE2 est actif sur master1 (attaendre avant de continuer)
       command: systemctl is-active rke2-server
@@ -126,40 +118,61 @@
       retries: 10
       delay: 5
       become: true
-#-------------------------------------=====================
-    - name: Vérifie le contenu de /etc/rancher/rke2/ sur master1 après installation
-      command: ls /etc/rancher/rke2/
-      when: inventory_hostname == groups['masters'][0]
+#-----------------Avant modif--------------------=====================
 
-    - name: Vérifie le contenu de /etc/rancher/rke2/rke2.yaml sur master1 après installation
+    - name: Lire rke2.yaml sur master1
       command: cat /etc/rancher/rke2/rke2.yaml
-      when: inventory_hostname == groups['masters'][0]
+      when: rke2_status.rc == 0 
 
-    # Mise à jour du fichier rke2.yml
-    - name: Mettre à jour le fichier rke2.yaml avec l'IP publique sur master1
+    - name: Afficher rke2.yaml sur master1
+      debug:
+        var: rke2_token.stdout
+      when: rke2_status.rc == 0
+
+#=================== Mise à jour du fichier rke2.yml=================
+    - name: Configurer le fichier rke2.yaml avec l'IP publique sur master1
       replace:
         path: /etc/rancher/rke2/rke2.yaml
         regexp: '^server: https://.*:6443'
         replace: 'server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
       when: inventory_hostname == groups['masters'][0]
 
-    - name: Vérifie le contenu de /etc/rancher/rke2/rke2.yaml sur master1 après installation
+    - name: Lire rke2.yaml sur master1
       command: cat /etc/rancher/rke2/rke2.yaml
-      when: inventory_hostname == groups['masters'][0]
+      when: rke2_status.rc == 0 
+
+    - name: Afficher rke2.yaml sur master1
+      debug:
+        var: rke2_token.stdout
+      when: rke2_status.rc == 0
+
+#==================config.yaml=====================
+    - name: Lire config.yaml sur master1
+      command: cat /etc/rancher/rke2/rke2.yaml
+      when: rke2_status.rc == 0 
+
+    - name: Afficher config.yaml sur master1
+      debug:
+        var: rke2_token.stdout
+      when: rke2_status.rc == 0 
 
     - name: Configurer /etc/rancher/rke2/config.yaml master1
       copy:
         dest: /etc/rancher/rke2/config.yaml
         content: |
-          token: "{{ hostvars[groups['masters'][0]].rke2_token_value }}"
           tls-san:
             - "{{ hostvars[groups['masters'][0]]["ansible_host"] }}"
           write-kubeconfig-mode: "0644"
         when: inventory_hostname == groups['masters'][0]
 
-    - name: Vérifie le contenu de /etc/rancher/rke2/config.yaml sur master1 après installation
+    - name: Lire le contenu config.yaml 
       command: cat /etc/rancher/rke2/rke2.yaml 
-      when: inventory_hostname == groups['masters'][0]
+      when: rke2_status.rc == 0 
+
+    - name: Afficher config.yaml sur master1 après modif
+      debug:
+        var: rke2_token.stdout
+      when: rke2_status.rc == 0 
 #=====================================================
     - name: Redémarrer le serveur RKE2 master1
       systemd:
@@ -179,9 +192,14 @@
       delay: 5
       become: true
 
-    - name: Vérifie le contenu de /etc/rancher/rke2/rke2.yaml sur master1 après redémarage
-      command: cat /etc/rancher/rke2/rke2.yaml
-      when: inventory_hostname == groups['masters'][0]
+    - name: Lire le contenu de /etc/rancher/rke2/config.yaml 
+      command: cat /etc/rancher/rke2/rke2.yaml 
+      when: rke2_status.rc == 0 
+
+    - name: Afficher rke2.yaml sur master1
+      debug:
+        var: rke2_token.stdout
+      when: rke2_status.rc == 0 
 
     - name: Vérifier si le fichier node-token existe sur master1
       stat:
@@ -216,42 +234,10 @@
       when: rke2_status.rc == 0
 
 
-
-
 # ----------------- Installation sur les Masters---------------
-#- name: Configuration des Masters 
-#  hosts: masters
-#  become: true
-#  tasks:
-
-    #- name: Configurer RKE2 server sur les 3 masters
-    #  copy:
-    #    dest: /etc/rancher/rke2/config.yaml
-    #    content: |
-    #      token: "{{ hostvars[groups['masters'][0]].rke2_token_value }}"
-    #      tls-san:
-    #        - "{{ hostvars[groups['masters'][0]]["ansible_host"] }}"
-    #      write-kubeconfig-mode: "0644"
-
-
-    #- name: Mettre à jour le fichier rke2.yaml avec l'IP publique du master1
-    #  replace:
-    #    path: /etc/rancher/rke2/rke2.yaml
-    #    regexp: '^server: https://.*:6443'
-    #    replace: 'server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
-    #    #replace: 'server: https://{{ ansible_host }}:6443'
-    #  when: inventory_hostname == groups['masters'][0]
-
-    ##- name: Créer le fichier /etc/rancher/rke2/rke2.yaml si nécessaire
-     # file:
-     #   path: /etc/rancher/rke2/rke2.yaml
-     #   state: touch
-     #   owner: root
-     #   group: root
-     #   mode: '0755'
 
 - name: Configuration des autres Masters
-  hosts: masters[1:]
+  hosts: masters #[1:]
   become: true
   tasks:
 
@@ -259,11 +245,12 @@
       copy:
         dest: /etc/rancher/rke2/config.yaml
         content: |
-          token: "{{ hostvars[groups['masters'][0]].rke2_token_value }}"
+          token: "{{ hostvars[groups['masters'][0]]['ansible_host'].rke2_token_value }}"
           tls-san:
             - "{{ hostvars[groups['masters'][0]]['ansible_host'] }}"
           write-kubeconfig-mode: "0644"
           server: "https://{{ hostvars[groups['masters'][0]]['ansible_host'] }}:6443"
+        when: inventory_hostname != groups['masters'][0]
 
     - name: Activer et démarrer le serveur RKE2
       systemd:
@@ -278,6 +265,7 @@
       until: rke2_status.stdout == "active"
       retries: 10
       delay: 5
+      when: inventory_hostname != groups['masters'][0]
       
 
     - name: Copier le kubeconfig sur la machine locale depuis le master principal (master1)
