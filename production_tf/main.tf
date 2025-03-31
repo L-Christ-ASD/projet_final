@@ -227,44 +227,38 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
 }
 
 #========================K8S PORTS================================================
-#  seules les instances appartenant à ce même Security Group pourront accéder aux ports ouverts.
-
-# Permet aux instances du Security Group "admin_ssh_production" de joindre les masters sur le port 9345
+# temporairement pour le worker k8s
 resource "aws_vpc_security_group_ingress_rule" "allow_port_9345" {
-  security_group_id        = aws_security_group.admin_ssh_production.id
-  source_security_group_id = aws_security_group.admin_ssh_production.id  # Restriction au SG lui-même
-  from_port               = 9345
-  ip_protocol             = "tcp"
-  to_port                 = 9345
+  security_group_id = aws_security_group.admin_ssh_production.id
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 9345
+  ip_protocol       = "tcp"
+  to_port           = 9345
 }
-
-# Permet aux instances du Security Group "admin_ssh_production" de joindre l'API Server K8s sur le port 6443
+# temporairement pour le worker k8s
 resource "aws_vpc_security_group_ingress_rule" "allow_port_6443" {
-  security_group_id        = aws_security_group.admin_ssh_production.id
-  source_security_group_id = aws_security_group.admin_ssh_production.id
-  from_port               = 6443
-  ip_protocol             = "tcp"
-  to_port                 = 6443
+  security_group_id = aws_security_group.admin_ssh_production.id
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 6443
+  ip_protocol       = "tcp"
+  to_port           = 6443
 }
-
-# Autoriser la communication VXLAN (Flannel, Canal) sur le port 8472
-resource "aws_vpc_security_group_ingress_rule" "allow_port_8472" {
-  security_group_id        = aws_security_group.admin_ssh_production.id
-  source_security_group_id = aws_security_group.admin_ssh_production.id
-  from_port               = 8472
-  ip_protocol             = "udp"
-  to_port                 = 8472
+# temporairement pour le worker k8s
+resource "aws_vpc_security_group_ingress_rule" "allow_port_UDP" {
+  security_group_id = aws_security_group.admin_ssh_production.id
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 8472
+  ip_protocol       = "udp"
+  to_port           = 8472
 }
-
-# Autoriser la communication entre les instances sur le port Kubelet 10250
+# temporairement pour le worker k8s
 resource "aws_vpc_security_group_ingress_rule" "allow_port_10250" {
-  security_group_id        = aws_security_group.admin_ssh_production.id
-  source_security_group_id = aws_security_group.admin_ssh_production.id
-  from_port               = 10250
-  ip_protocol             = "tcp"
-  to_port                 = 10250
+  security_group_id = aws_security_group.admin_ssh_production.id
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 10250
+  ip_protocol       = "tcp"
+  to_port           = 10250
 }
-
 #========================================================================
 resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in" {
   for_each          = toset(var.admin-ips)
