@@ -134,6 +134,21 @@ output "ssh_private_key_filename" {
 
 # exportation d'IP masters
 
+#resource "null_resource" "generate_ansible_inventory-masters" {
+#  depends_on = [aws_instance.masters]
+#
+#  provisioner "local-exec" {
+#    command = <<EOT
+#      mkdir -p ../ansible_production
+#      echo "[masters]" >> ../ansible_production/inventory
+#      # Ajouter master1 avec l'IP spécifique
+#      echo "master1 ansible_host=${aws_instance.masters[0].public_ip} ansible_user=ubuntu ansible_ssh_private_key_file=./vockeyprod.pem ansible_ssh_extra_args='-o StrictHostKeyChecking=no'" >> ../ansible_production/inventory
+#      # Ajouter les autres masters
+#      ${join("\n", formatlist("echo ansible_host=%s ansible_user=ubuntu ansible_ssh_private_key_file=./vockeyprod.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible_production/inventory", slice(aws_instance.masters[*].public_ip, 1, length(aws_instance.masters))))}
+#    EOT
+#  }
+#}
+
 resource "null_resource" "generate_ansible_inventory-masters" {
   depends_on = [aws_instance.masters]
 
@@ -141,13 +156,16 @@ resource "null_resource" "generate_ansible_inventory-masters" {
     command = <<EOT
       mkdir -p ../ansible_production
       echo "[masters]" >> ../ansible_production/inventory
-      # Ajouter master1 avec l'IP spécifique
+
+      # Ajouter master1 avec son IP spécifique
       echo "master1 ansible_host=${aws_instance.masters[0].public_ip} ansible_user=ubuntu ansible_ssh_private_key_file=./vockeyprod.pem ansible_ssh_extra_args='-o StrictHostKeyChecking=no'" >> ../ansible_production/inventory
-      # Ajouter les autres masters
-      ${join("\n", formatlist("echo ansible_host=%s ansible_user=ubuntu ansible_ssh_private_key_file=./vockeyprod.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible_production/inventory", slice(aws_instance.masters[*].public_ip, 1, length(aws_instance.masters))))}
+
+      # Ajouter les autres masters avec un nom explicite
+      ${join("\n", formatlist("echo \"master%d ansible_host=%s ansible_user=ubuntu ansible_ssh_private_key_file=./vockeyprod.pem ansible_ssh_extra_args='-o StrictHostKeyChecking=no'\" >> ../ansible_production/inventory", range(2, length(aws_instance.masters) + 1), slice(aws_instance.masters[*].public_ip, 1, length(aws_instance.masters))))}
     EOT
   }
 }
+
 
 
 
