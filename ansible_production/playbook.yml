@@ -107,6 +107,26 @@
       command: ls -l /usr/local/bin/kubectl
       when: inventory_hostname == groups['masters'][0]
 
+    
+
+    - name: Activer et démarrer le serveur RKE2
+      systemd:
+        name: rke2-server
+        enabled: true
+        state: started
+
+    - name: Pause de 80 secondes pour laisser RKE2-server démarrer
+      ansible.builtin.pause:
+        seconds: 80
+
+    - name: Vérifier que RKE2 est actif sur master1 (attaendre avant de continuer)
+      command: systemctl is-active rke2-server
+      register: rke2_status
+      until: rke2_status.stdout == "active"
+      retries: 10
+      delay: 5
+      become: true
+#-------------------------------------=====================
     - name: Vérifie le contenu de /etc/rancher/rke2/rke2.yaml sur master1 après installation
       command: cat /etc/rancher/rke2/rke2.yaml | grep "server:"
       when: inventory_hostname == groups['masters'][0]
@@ -136,25 +156,7 @@
     - name: Vérifie le contenu de /etc/rancher/rke2/config.yaml sur master1 après installation
       command: cat /etc/rancher/rke2/rke2.yaml | grep "server:"
       when: inventory_hostname == groups['masters'][0]
-
-    - name: Activer et démarrer le serveur RKE2
-      systemd:
-        name: rke2-server
-        enabled: true
-        state: started
-
-    - name: Pause de 80 secondes pour laisser RKE2-server démarrer
-      ansible.builtin.pause:
-        seconds: 80
-
-    - name: Vérifier que RKE2 est actif sur master1 (attaendre avant de continuer)
-      command: systemctl is-active rke2-server
-      register: rke2_status
-      until: rke2_status.stdout == "active"
-      retries: 10
-      delay: 5
-      become: true
-
+#=====================================================
     - name: Redémarrer le serveur RKE2 master1
       systemd:
         name: rke2-server
