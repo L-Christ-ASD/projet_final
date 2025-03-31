@@ -1,0 +1,265 @@
+# Préparation des Machines pour un Cluster RKE2 
+
+## Sur chaque machine : 
+```bash
+sudo apt install -y iptables
+sudo hostnamectl set-hostname <nom_hote_machine>
+sudo vim /etc/hosts 
+
+# et on y rajoute la conf ci-dessous:
+127.0.0.1 localhost
+127.0.1.1 master1.christ.lan # dns de la machine
+
+# The following lines are desirable for IPv6 capable hosts
+::1     ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+
+192.168.1.35 rke2cluster.christ.lan # ip et dns du cluster
+
+```
+
+## Uniquement sur le premier master : 
+```bash
+sudo mkdir -p /etc/rancher/rke2
+sudo mkdir -p /var/lib/rancher/rke2/server/manifests
+sudo vim /etc/rancher/rke2/config.yaml
+# on y ajoujte:
+tls-san:
+ - master1.christ.lan # dns du master1
+ - master1            # nom de la machine (dns)
+ - 192.168.1.26       # ip de ma machine
+ - 192.168.1.35       # ip cluster
+cni: "canal"          # container network interface
+
+----
+sudo vim /var/lib/rancher/rke2/server/manifests/rke2-coredns-config.yaml 
+# on y rajoute:
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  creation: null
+  name: rke2-coredns
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    nodelocal:
+      enabled: true
+  bootstrap: true
+----
+# telechargement rke2
+sudo -i 
+curl -sfL https://get.rke2.io | INSTALL_RKE2_CHANNEL=stable INSTALL_RKE2_VERSION="v1.30.0+rke2r1" sh -
+exit
+/usr/local/bin/rke2 --version
+sudo systemctl status rke2-server
+sudo systemctl start rke2-server
+sudo /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock --namespace k8s.io  container ls
+
+# Kube-VIP
+# on se place dans le dossier manifest.
+cd /var/lib/rancher/rke2/server/manifests
+
+wget https://kube-vip.io/manifests/rbac.yaml # on va chercher le fichier rbac
+sudo mv rbac.yaml /var/lib/rancher/rke2/server/manifests/rbac.yaml
+
+sudo -i
+/var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock --namespace k8s.io image pull docker.io/plndr/kube-vip:latest 
+/var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock --namespace k8s.io run --rm --net-host docker.io/plndr/kube-vip:latest vip /kube-vip \
+      manifest daemonset \
+      --arp \
+      --interface eth0 \
+      --address 192.168.1.220 \
+      --controlplane \
+      --leaderElection \
+      --taint \
+      --services \
+      --inCluster | tee /var/lib/rancher/rke2/server/manifests/kube-vip.yaml
+
+cat /etc/rancher/rke2/rke2.yaml
+```
+
+## Sur notre VM pivot/bastion/etc. : 
+```bash
+mkdir -p ~/.kube
+
+# on y cree un fichier de config dans lequel on va copier le contenu de rke2.yaml:
+    mkdir -p ~/.kube/config.yml
+
+# on va chercher le contenu de  /etc/rancher/rke2/rke2.yaml et n y colle tout!
+# on mdifie "server: https://127.0.0.1:6443" par l'adress ip du cluster (on peut y rajouter le dns).
+
+# modification du fichier bash:
+    vim ~/.zshrc
+        export KUBECONFIG=/home/$USER/.kube/config.yaml
+        alias k=/usr/local/bin/kubectl # k = kubectl
+
+# Lancer la commande :
+    export KUBECONFIG=/home/christ/.kube/config.yml # dans le terminal
+    kubectl config view
+
+# mettre à jour la config bash:
+    source ~/.zshrc
+
+# On installe kubectl comme vu dans la doc 
+# https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/
+
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+
+# Véification d'intégrité
+    echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check  # cubctl: ok
+
+ 
+# Rendre le binaire executable:
+    sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+# Vérification: 
+    kubectl version --client
+
+# s'assurer que le pod est bien présent:
+k -n kube-system get po -n kube-system | grep "kube-vip-ds"|awk '{print $1}'
+
+# Voir les logs du pod
+k -n kube-system logs $(k -n kube-system get po -n kube-system | grep "kube-vip-ds"|awk '{print $1}')
+``` 
+
+## On peut alors configurer nos deux autres master : 
+```bash
+sudo mkdir -p /etc/rancher/rke2
+sudo mkdir -p /var/lib/rancher/rke2/server/manifests
+
+# on va chercher la config SUR LE PREMIER master 
+    sudo cat /etc/rancher/rke2/config.yaml
+# pour le renseigner dans la config
+# du MASTER SUR LEQUEL ON EST. (master2,3...)
+    sudo nano /etc/rancher/rke2/config.yaml
+tls-san:
+ - "master3.christ.lan"
+ - "master3"
+ - "192.168.1.108"
+ - "192.168.1.35"
+ - "127.0.0.1"
+ - "rke2cluster.christ.lan"
+ - "rke2cluster"
+
+
+# on va chercher le token SUR LE PREMIER master pour le renseigner dans la config
+# du MASTER SUR LEQUEL ON EST. 
+# Pour obtenir le token, SUR LE PREMIER master on lance la commande : 
+    sudo cat /var/lib/rancher/rke2/server/node-token
+
+sudo vim /etc/rancher/rke2/config.yaml
+
+# on rajoute le token et le server pour qu'il rejoignent le master
+# on on peut utiliser ANSIBLE Vault si on travail sur avec ansible pour ne pas exposer le token
+
+token: K105xxxxxxxxxxxxxxxxxxxb4c2963d35e2ffa68::server:039xxxxxxxxxxxxxxxxxxxxxxxx438b0e00de0
+server: https://rke2cluster.christ.lan:9345 # dns du cluster (ou ip cluster) ne pas oublier de spécifier le port 9345
+tls-san:
+ - "master3.christ.lan"
+ - "master3"
+ - "192.168.1.108"
+ - "192.168.1.35"
+ - "127.0.0.1"
+ - "rke2cluster.christ.lan"
+ - "rke2cluster"
+
+
+# On install rke2
+sudo -i 
+curl -sfL https://get.rke2.io | INSTALL_RKE2_CHANNEL=stable INSTALL_RKE2_VERSION="v1.30.0+rke2r1" sh -
+```
+
+Sur un des deux masters, par exemple Master2 (un master après l'autre !), on lui fait rejoindre le cluster :  
+
+```bash
+sudo systemctl start rke2-server
+```
+PS: il est essentiel de start un master à la fois avec un interval de temps!
+
+Sur notre bastion on peut vérifier que le master à rejoint le cluster : 
+```bash
+k get nodes
+```
+
+On répète l'opération pour notre troisième master : 
+
+```bash
+sudo systemctl start rke2-server
+```
+
+On vérifie sur notre bastion que le 3e master est bien dans le cluster : 
+
+```bash
+k get nodes
+```
+
+## Configuration de notre worker : 
+```bash
+sudo mkdir -p /etc/rancher/rke2
+sudo vim /etc/rancher/rke2/config.yaml 
+# token + server! c'est tout!
+    token: K1053xxxxxxxxxxxxxxxxxxxxxx5e2ffa68::server:03xxxxxxxxxxxxb0e00de0
+    server: https://192.168.1.35:9345
+
+# on install rke2
+sudo -i
+curl -sfL https://get.rke2.io | INSTALL_RKE2_CHANNEL=stable INSTALL_RKE2_VERSION="v1.30.0+rke2r1" sh -
+systemctl start rke2-agent
+```
+
+De retour sur notre **bastion**, on vérifie que notre worker a rejoint le cluster :  
+
+```bash
+k get nodes 
+k get pod -o=custom-columns=NODE:.spec.nodeName,NAME:.metadata.name --all-namespaces # affiche toutes les charges de mon cluster
+# On peut aussi trier, afficher les charge d'un service spécifique: | grep worker
+k get pod -o=custom-columns=NODE:.spec.nodeName,NAME:.metadata.name --all-namespaces | grep worker
+
+# Output:
+        worker    kube-proxy-worker
+        worker    node-local-dns-g7rzm
+        worker    rke2-canal-k747n
+        worker    rke2-ingress-nginx-controller-5n7gh
+
+```
+
+Si tout s'est bien passé on obtient alors un cluster RKE2 avec : 
+- 3 Master Nodes
+  - Kube-VIP (une addresse IP virtuelle) pour faire du HA entre notre master
+    - Cad. si un noeud master tombe, les autres prendront automatiquement le relais
+- 1 Worker Node
+
+Sur le **bastion**, la command `k get nodes` nous donne alors une sortie similaire à la suivante : 
+```
+k get nodes
+NAME                 STATUS   ROLES                       AGE    VERSION
+master1.oclock.lan   Ready    control-plane,etcd,master   108m   v1.30.0+rke2r1
+master2.oclock.lan   Ready    control-plane,etcd,master   20m    v1.30.0+rke2r1
+master3.oclock.lan   Ready    control-plane,etcd,master   15m    v1.30.0+rke2r1
+worker1.oclock.lan   Ready    <none>                      11m    v1.30.0+rke2r1
+```
+
+
+PS:
+
+## Réinstaller RKE2 si nécessaire
+Si rien ne fonctionne, il se peut que l'installation de RKE2 soit corrompue. Vous pouvez essayer de réinstaller RKE2 :
+
+```bash
+sudo rke2-uninstall.sh
+```
+
+Puis réinstaller avec :
+```bash
+curl -sfL https://get.rke2.io | INSTALL_RKE2_CHANNEL=stable INSTALL_RKE2_VERSION="v1.30.0+rke2r1" sh -
+```
+Ou teste avec :
+```bash
+curl -sfL https://get.rke2.io | sh -
+sudo systemctl enable --now rke2-server
+
+``` 

@@ -8,8 +8,8 @@
       ansible.builtin.ping:
 
 
-- name: Installer et configurer RKE2 (HA) sur tous les servers
-  hosts: all
+- name: Installer et configurer RKE2 (HA) sur les servers masters
+  hosts: masters
   become: true
   tasks:
 
@@ -138,8 +138,8 @@
       replace:
         path: /etc/rancher/rke2/rke2.yaml
         regexp: '^server: https://.*:6443'
-        replace: 'server: https://{{ hostvars[groups["masters"][0]] }}:6443'
-      #when: inventory_hostname == groups['masters'][0]
+        replace: 'server: https://{{ ansible_host }}:6443'
+      when: inventory_hostname == groups['masters'][0]
 
     - name: Redémarrer le serveur RKE2 master1
       systemd:
