@@ -144,7 +144,7 @@ resource "null_resource" "generate_ansible_inventory-masters" {
       # Ajouter master1 avec l'IP spécifique
       echo "master1 ansible_host=${aws_instance.masters[0].public_ip} ansible_user=ubuntu ansible_ssh_private_key_file=./vockeyprod.pem ansible_ssh_extra_args='-o StrictHostKeyChecking=no'" >> ../ansible_production/inventory
       # Ajouter les autres masters
-      ${join("\n", formatlist("echo %s ansible_user=ubuntu ansible_ssh_private_key_file=./vockeyprod.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible_production/inventory", slice(aws_instance.masters[*].public_ip, 1, length(aws_instance.masters))))}
+      ${join("\n", formatlist("echo ansible_host=%s ansible_user=ubuntu ansible_ssh_private_key_file=./vockeyprod.pem ansible_ssh_extra_args='\"-o StrictHostKeyChecking=no\"' >> ../ansible_production/inventory", slice(aws_instance.masters[*].public_ip, 1, length(aws_instance.masters))))}
     EOT
   }
 }

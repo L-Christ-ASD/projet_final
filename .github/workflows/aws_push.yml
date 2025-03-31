@@ -275,7 +275,7 @@ jobs:
         ansible-playbook -i inventory playbook.yml
       working-directory: ./ansible_production/
 
-    - name: Vérification du kubeconfig.yaml
+    - name: Vérification du kubeconfig.yaml dans -> ansible_production/
       run: ls -lah ./ansible_production/
     
 
