@@ -120,13 +120,35 @@
       become: true
 #-----------------Avant modif--------------------=====================
 
+    - name: Vérifier l'emplacement de kubectl
+      command: which kubectl
+      register: kubectl_path
+      ignore_errors: true
+
+    - name: Afficher l'emplacement de kubectl
+      debug:
+        var: kubectl_path.stdout
+
+    - name: Vérifier si kubectl de RKE2 est installé
+      stat:
+        path: /var/lib/rancher/rke2/bin/kubectl
+      register: kubectl_rke2
+
+    - name: Créer un lien symbolique vers kubectl
+      file:
+        src: /var/lib/rancher/rke2/bin/kubectl
+        dest: /usr/local/bin/kubectl
+        state: link
+      when: kubectl_rke2.stat.exists
+
+
     - name: Vérifier si le fichier kubeconfig existe
       stat:
         path: /etc/rancher/rke2/rke2.yaml
       register: kubeconfig_file
 
     - name: Vérifier la configuration du cluster avec kubectl
-      command: KUBECONFIG=/etc/rancher/rke2/rke2.yaml /var/lib/rancher/rke2/bin/kubectl get nodes
+      command: KUBECONFIG=/etc/rancher/rke2/rke2.yaml kubectl get nodes
       register: kubectl_nodes
       changed_when: false
       when: kubeconfig_file.stat.exists  # Exécute la commande seulement si le fichier existe
