@@ -127,8 +127,12 @@
       delay: 5
       become: true
 #-------------------------------------=====================
+    - name: Vérifie le contenu de /etc/rancher/rke2/ sur master1 après installation
+      command: ls /etc/rancher/rke2/
+      when: inventory_hostname == groups['masters'][0]
+
     - name: Vérifie le contenu de /etc/rancher/rke2/rke2.yaml sur master1 après installation
-      command: cat /etc/rancher/rke2/rke2.yaml | grep "server:"
+      command: cat /etc/rancher/rke2/rke2.yaml
       when: inventory_hostname == groups['masters'][0]
 
     # Mise à jour du fichier rke2.yml
@@ -140,7 +144,7 @@
       when: inventory_hostname == groups['masters'][0]
 
     - name: Vérifie le contenu de /etc/rancher/rke2/rke2.yaml sur master1 après installation
-      command: cat /etc/rancher/rke2/rke2.yaml | grep "server:"
+      command: cat /etc/rancher/rke2/rke2.yaml
       when: inventory_hostname == groups['masters'][0]
 
     - name: Configurer /etc/rancher/rke2/config.yaml master1
@@ -154,7 +158,7 @@
         when: inventory_hostname == groups['masters'][0]
 
     - name: Vérifie le contenu de /etc/rancher/rke2/config.yaml sur master1 après installation
-      command: cat /etc/rancher/rke2/rke2.yaml | grep "server:"
+      command: cat /etc/rancher/rke2/rke2.yaml 
       when: inventory_hostname == groups['masters'][0]
 #=====================================================
     - name: Redémarrer le serveur RKE2 master1
@@ -174,6 +178,10 @@
       retries: 10
       delay: 5
       become: true
+
+    - name: Vérifie le contenu de /etc/rancher/rke2/rke2.yaml sur master1 après redémarage
+      command: cat /etc/rancher/rke2/rke2.yaml
+      when: inventory_hostname == groups['masters'][0]
 
     - name: Vérifier si le fichier node-token existe sur master1
       stat:
@@ -286,6 +294,13 @@
   become: true
   tasks:
 
+    - name: Installer les dépendances nécessaires
+      apt:
+        name:
+          - curl
+          - iptables
+        state: present
+
     - name: Vérifier si le token a bien été récupéré
       debug:
         var: hostvars[groups['masters'][0]]['rke2_token_value']
@@ -348,16 +363,6 @@
   hosts: "{{ groups['masters'][0] }}"  # Sélectionne directement master1
   become: true
   tasks:
-
-    - name: Installer les dépendances nécessaires
-      apt:
-        name:
-          - curl
-          - iptables
-          - socat
-          - unzip
-          - iproute2
-        state: present
 
     - name: Vérifier si le fichier kubeconfig existe
       stat:
