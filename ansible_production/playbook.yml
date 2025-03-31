@@ -101,7 +101,7 @@
       command: chmod +x /usr/local/bin/kubectl
       when: inventory_hostname == groups['masters'][0]
  
-    - name: Activer et démarrer le serveur RKE2
+    - name: Activer et démarrer le serveur RKE2 master-1
       systemd:
         name: rke2-server
         enabled: true
@@ -122,11 +122,12 @@
 
     - name: Lire rke2.yaml sur master1
       command: cat /etc/rancher/rke2/rke2.yaml
-      when: rke2_status.rc == 0 
+      when: rke2_status.rc == 0
+      register: rke2_yaml_content
 
     - name: Afficher rke2.yaml sur master1
       debug:
-        var: rke2_token.stdout
+        var: rke2_yaml_content.stdout
       when: rke2_status.rc == 0
 
 #=================== Mise à jour du fichier rke2.yml=================
@@ -139,21 +140,23 @@
 
     - name: Lire rke2.yaml sur master1
       command: cat /etc/rancher/rke2/rke2.yaml
-      when: rke2_status.rc == 0 
+      when: rke2_status.rc == 0
+      register: rke2_yaml_content
 
     - name: Afficher rke2.yaml sur master1
       debug:
-        var: rke2_token.stdout
+        var: rke2_yaml_content.stdout
       when: rke2_status.rc == 0
 
 #==================config.yaml=====================
     - name: Lire config.yaml sur master1
       command: cat /etc/rancher/rke2/rke2.yaml
-      when: rke2_status.rc == 0 
+      when: rke2_status.rc == 0
+      register: rke2_yaml_content
 
     - name: Afficher config.yaml sur master1
       debug:
-        var: rke2_token.stdout
+        var: rke2_yaml_content.stdout
       when: rke2_status.rc == 0 
 
     - name: Configurer /etc/rancher/rke2/config.yaml master1
@@ -163,15 +166,16 @@
           tls-san:
             - "{{ hostvars[groups['masters'][0]]["ansible_host"] }}"
           write-kubeconfig-mode: "0644"
-        when: inventory_hostname == groups['masters'][0]
+      when: inventory_hostname == groups['masters'][0]
 
     - name: Lire le contenu config.yaml 
       command: cat /etc/rancher/rke2/rke2.yaml 
-      when: rke2_status.rc == 0 
+      when: rke2_status.rc == 0
+      register: rke2_yaml_content
 
     - name: Afficher config.yaml sur master1 après modif
       debug:
-        var: rke2_token.stdout
+        var: rke2_yaml_content.stdout
       when: rke2_status.rc == 0 
 #=====================================================
     - name: Redémarrer le serveur RKE2 master1
