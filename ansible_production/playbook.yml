@@ -240,9 +240,9 @@
       debug:
         var: rke2_version.stdout
 
-    - name: Pause de 20 secondes pour laisser RKE2-agent s'installer tranquilement!
+    - name: Pause de 180 secondes pour laisser RKE2 master1 démarer tranquilement!
       ansible.builtin.pause:
-        seconds: 20
+        seconds: 180
 
     - name: Démarrer RKE2 server
       systemd:
@@ -251,9 +251,9 @@
         state: started
       when: inventory_hostname == "master2"
 
-    - name: Attendre 60 secondes avant de démarrer master3
+    - name: Attendre 120 secondes avant de démarrer master3
       pause:
-        seconds: 60
+        seconds: 120
       when: inventory_hostname == "master2"
 
     - name: Vérifier si RKE2 est actif sur master2
@@ -272,6 +272,9 @@
         state: started
       when: inventory_hostname == "master3"
 
+    - name: Attendre 120 secondes avant de démarrer le worker
+      pause:
+        seconds: 120
 #==================Worker=============================
 - name: Configurer le worker
   hosts: workers
