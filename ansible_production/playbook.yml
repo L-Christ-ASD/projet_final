@@ -15,14 +15,14 @@
       blockinfile:
         path: /etc/hosts
         block: |
-          127.0.0.1 localhost
+          
           {{ ansible_facts['default_ipv4']['address'] }} {{ inventory_hostname }}
           ::1     ip6-localhost ip6-loopback
           fe00::0 ip6-localnet
           ff00::0 ip6-mcastprefix
           ff02::1 ip6-allnodes
           ff02::2 ip6-allrouters
-          192.168.1.35 rke2cluster.christ.lan
+          {{ hostvars[groups["masters"][0]]["ansible_host"] }} rke2cluster.christ.lan
 
 - name: Configurer le premier master
   hosts: master1
@@ -36,18 +36,25 @@
         - /etc/rancher/rke2
         - /var/lib/rancher/rke2/server/manifests
 
-    - name: Ajouter la configuration RKE2
+    - name: Ajouter la configuration RKE2.yaml
       copy:
         dest: /etc/rancher/rke2/config.yaml
         content: |
           tls-san:
-            - 192.168.1.35
+            - {{ hostvars[groups["masters"][0]]["ansible_host"] }}
             - rke2cluster.christ.lan
             - master1.christ.lan
             - master1
-            - {{ ansible_facts['default_ipv4']['address'] }}
-            
+            - {{ ansible_facts['default_ipv4']['address'] }}      
           cni: "canal"
+
+    - name: Mettre à jour le fichier rke2.yaml avec l'IP publique sur master1
+      lineinfile:
+        path: /etc/rancher/rke2/rke2.yaml
+        regexp: '^    server: https://.*:6443'
+        line: '    server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
+      when: inventory_hostname == groups['masters'][0]
+      become: true
     
     - name: Ajouter rke2-coredns-config.yaml
       copy:
@@ -181,7 +188,7 @@
 
 
 - name: Configurer les autres masters
-  hosts: master2,master3
+  hosts: masters #master2,master3
   become: true
   tasks:
 
@@ -198,9 +205,8 @@
         dest: /etc/rancher/rke2/config.yaml
         content: |
           token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
-          server: https://192.168.1.35:9345
+          server:"https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}
           tls-san:
-            - 192.168.1.35
             - rke2cluster.christ.lan
             - {{ inventory_hostname }}
             - {{ ansible_host }}
