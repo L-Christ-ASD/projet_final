@@ -202,7 +202,7 @@
 
 
 - name: Configurer les autres masters
-  hosts: master2,master3
+  hosts: masters #master2,master3
   become: true
   tasks:
 
@@ -314,6 +314,49 @@
     - name: Attendre 180 secondes avant de démarrer le worker
       pause:
         seconds: 180
+
+    - name: Mettre à jour le fichier rke2.yaml avec l'IP publique sur master2 et 3
+      lineinfile:
+        path: /etc/rancher/rke2/rke2.yaml
+        regexp: '^    server: https://.*:6443'
+        line: '    server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
+      when: inventory_hostname != groups['masters'][0]
+      become: true 
+
+    #=========== REDEMARGE M2 ET 3==================
+    - name: Rdémarrer RKE2 server master2
+      systemd:
+        name: rke2-server
+        enabled: true
+        state: restarted
+      when: inventory_hostname == "master2"
+
+    - name: Attendre 180 secondes avant de redémarrer master3
+      pause:
+        seconds: 180
+      when: inventory_hostname == "master2"
+
+    - name: Vérifier si RKE2 est actif sur master2
+      command: systemctl is-active rke2-server
+      register: rke2_status_master2
+      until: rke2_status_master2.stdout == "active"
+      retries: 10
+      delay: 5
+      when: inventory_hostname == "master2"
+
+
+    - name: Rdémarrer RKE2 server sur master3
+      systemd:
+        name: rke2-server
+        enabled: true
+        state: restarted
+      when: inventory_hostname == "master3"
+
+    - name: Attendre 180 secondes avant de démarrer le worker
+      pause:
+        seconds: 180
+
+
 #==================Worker=============================
 - name: Configurer le worker
   hosts: workers
@@ -333,14 +376,6 @@
         content: |    
           token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
           server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:9345
-
-
-    #- name: Copier la configuration RKE2
-    #  copy:
-    #    dest: /etc/rancher/rke2/config.yaml
-    #    content: |
-    #      server: https://{{ hostvars['master1']['ansible_host'] }}:9345
-    #      token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
 
     - name: Télécharger et installer RKE2
       get_url:
@@ -384,45 +419,45 @@
   tasks:
 
     - name: Vérifier l'existence de kubectl
-  stat:
-    path: /var/lib/rancher/rke2/bin/kubectl
-  register: kubectl_stat
+      stat:
+        path: /var/lib/rancher/rke2/bin/kubectl
+      register: kubectl_stat
 
-- name: Afficher les informations sur kubectl
-  debug:
-    msg: "Kubectl existe avec les permissions: {{ kubectl_stat.stat.mode }}"
-  when: kubectl_stat.stat.exists
+    - name: Afficher les informations sur kubectl
+      debug:
+        msg: "Kubectl existe avec les permissions: {{ kubectl_stat.stat.mode }}"
+      when: kubectl_stat.stat.exists
 
-- name: Ajouter /var/lib/rancher/rke2/bin au PATH de l'utilisateur
-  lineinfile:
-    path: ~/.bashrc
-    line: 'export PATH=$PATH:/var/lib/rancher/rke2/bin'
-    create: yes
+    - name: Ajouter /var/lib/rancher/rke2/bin au PATH de l'utilisateur
+      lineinfile:
+        path: ~/.bashrc
+        line: 'export PATH=$PATH:/var/lib/rancher/rke2/bin'
+        create: yes
 
-- name: Charger le nouveau PATH
-  shell: source ~/.bashrc
-  args:
-    executable: /bin/bash
+    - name: Charger le nouveau PATH
+      shell: source ~/.bashrc
+      args:
+        executable: /bin/bash
 
-- name: Vérifier la version du client kubectl
-  command: /var/lib/rancher/rke2/bin/kubectl version --client
-  register: kubectl_version
-  changed_when: false
+    - name: Vérifier la version du client kubectl
+      command: /var/lib/rancher/rke2/bin/kubectl version --client
+      register: kubectl_version
+      changed_when: false
 
-- name: Afficher la version de kubectl
-  debug:
-    msg: "{{ kubectl_version.stdout }}"
+    - name: Afficher la version de kubectl
+      debug:
+        msg: "{{ kubectl_version.stdout }}"
 
-- name: Modifier les permissions de rke2.yaml
-  file:
-    path: /etc/rancher/rke2/rke2.yaml
-    mode: '0644'
+    - name: Modifier les permissions de rke2.yaml
+      file:
+        path: /etc/rancher/rke2/rke2.yaml
+        mode: '0644'
 
-- name: Vérifier les nœuds Kubernetes
-  command: /var/lib/rancher/rke2/bin/kubectl get nodes
-  register: kubectl_nodes
-  changed_when: false
+    - name: Vérifier les nœuds Kubernetes
+      command: /var/lib/rancher/rke2/bin/kubectl get nodes
+      register: kubectl_nodes
+      changed_when: false
 
-- name: Afficher la liste des nœuds
-  debug:
-    msg: "{{ kubectl_nodes.stdout }}"
+    - name: Afficher la liste des nœuds
+      debug:
+        msg: "{{ kubectl_nodes.stdout }}"
