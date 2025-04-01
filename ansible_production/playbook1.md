@@ -153,6 +153,12 @@
         content: |
           tls-san:
             - "{{ hostvars[groups['masters'][0]]["ansible_host"] }}"
+            - {{ hostvars[groups["masters"][1]]["ansible_host"] }}
+            - {{ hostvars[groups["masters"][2]]["ansible_host"] }}
+            - rke2cluster.christ.lan
+            - master1.christ.lan
+            - {{ inventory_hostname }}
+            - {{ ansible_facts['default_ipv4']['address'] }}  
           write-kubeconfig-mode: "0644"
       when: inventory_hostname == groups['masters'][0]
 
@@ -240,6 +246,12 @@
           token: "{{ hostvars[groups['masters'][0]]['ansible_host']['rke2_token_value'] }}"
           tls-san:
             - "{{ hostvars[groups['masters'][0]]['ansible_host'] }}"
+            - {{ hostvars[groups["masters"][1]]["ansible_host"] }}
+            - {{ hostvars[groups["masters"][2]]["ansible_host"] }}
+            - rke2cluster.christ.lan
+            - master1.christ.lan
+            - {{ inventory_hostname }}
+            - {{ ansible_facts['default_ipv4']['address'] }}  
           write-kubeconfig-mode: "0644"
           server: "https://{{ hostvars[groups['masters'][0]]['ansible_host'] }}:6443"
         when: inventory_hostname != groups['masters'][0]

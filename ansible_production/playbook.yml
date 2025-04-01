@@ -54,13 +54,21 @@
         path: /etc/rancher/rke2/rke2.yaml
       register: rke2_yaml_file
 
-    - name: Mettre à jour le fichier rke2.yaml avec l'IP publique sur master1
-      lineinfile:
-        path: /etc/rancher/rke2/rke2.yaml
-        regexp: '^    server: https://.*:6443'
-        line: '    server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
+    - name: Configurer le fichier rke2.yaml avec l'IP publique sur master1
+      copy:
+        dest: /etc/rancher/rke2/rke2.yaml
+        content: |
+          server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443
       when: inventory_hostname == groups['masters'][0]
       become: true
+
+    #- name: Mettre à jour le fichier rke2.yaml avec l'IP publique sur master1
+    #  lineinfile:
+    #    path: /etc/rancher/rke2/rke2.yaml
+    #    regexp: '^    server: https://.*:6443'
+    #    line: '    server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
+    #  when: inventory_hostname == groups['masters'][0]
+    #  become: true
     
     - name: Ajouter rke2-coredns-config.yaml
       copy:
@@ -221,13 +229,21 @@
             - {{ ansible_host }}
             - {{ ansible_facts['default_ipv4']['address'] }}
 
-    - name: Mettre à jour le fichier rke2.yaml avec l'IP publique sur master1
-      lineinfile:
-        path: /etc/rancher/rke2/rke2.yaml
-        regexp: '^    server: https://.*:6443'
-        line: '    server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
-      when: inventory_hostname != groups['masters'][0]
-      become: true 
+    - name: Configurer le fichier rke2.yaml avec l'IP publique sur master1
+      copy:
+        dest: /etc/rancher/rke2/rke2.yaml
+        content: |
+          server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443
+      when: inventory_hostname == groups['masters'][0]
+      become: true
+
+    #- name: Mettre à jour le fichier rke2.yaml avec l'IP publique sur master1
+    #  lineinfile:
+    #    path: /etc/rancher/rke2/rke2.yaml
+    #    regexp: '^    server: https://.*:6443'
+    #    line: '    server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
+    #  when: inventory_hostname != groups['masters'][0]
+    #  become: true 
 
 
     #- name: Copier la configuration RKE2
