@@ -34,7 +34,6 @@
       loop:
         - /etc/rancher/rke2
         - /var/lib/rancher/rke2/server/manifests
-        - /etc/rancher/rke2/config.yaml
 
     - name: Ajouter la configuration RKE2
       copy:
@@ -233,7 +232,7 @@
         enabled: true
         state: started
       when: inventory_hostname == "master3"
-      
+
 #==================Worker=============================
 - name: Configurer le worker
   hosts: workers
