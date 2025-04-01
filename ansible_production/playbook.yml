@@ -234,7 +234,7 @@
         dest: /etc/rancher/rke2/rke2.yaml
         content: |
           server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443
-      when: inventory_hostname == groups['masters'][0]
+      when: inventory_hostname != groups['masters'][0]
       become: true
 
     #- name: Mettre à jour le fichier rke2.yaml avec l'IP publique sur master1
