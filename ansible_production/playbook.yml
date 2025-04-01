@@ -68,38 +68,7 @@
 
 #-------------------configuration master1-------------------------------
 
-- name: Installer kubectl et Vérifer que RKE2 fonctionne sur master1
-  hosts: masters[0]
-  become: true
-  tasks:
 
-      # Installer kubectl sur master1
-    - name: Télécharger la version stable de kubectl
-      command: "curl -L -s https://dl.k8s.io/release/stable.txt"
-      register: kubectl_version
-      when: inventory_hostname == groups['masters'][0]
-
-    - name: Télécharger kubectl sur master1
-      command: "curl -LO https://dl.k8s.io/release/{{ kubectl_version.stdout }}/bin/linux/amd64/kubectl"
-      args:
-        chdir: /usr/local/bin
-      when: inventory_hostname == groups['masters'][0]
-
-    - name: Télécharger le fichier checksum de kubectl
-      command: "curl -LO https://dl.k8s.io/release/{{ kubectl_version.stdout }}/bin/linux/amd64/kubectl.sha256"
-      args:
-        chdir: /usr/local/bin
-      when: inventory_hostname == groups['masters'][0]
-
-    - name: Vérification d'intégrité de kubectl sur master1
-      command: "echo $(cat kubectl.sha256)  kubectl | sha256sum --check"
-      args:
-        chdir: /usr/local/bin
-      when: inventory_hostname == groups['masters'][0]
-
-    - name: Rendre kubectl exécutable
-      command: chmod +x /usr/local/bin/kubectl
-      when: inventory_hostname == groups['masters'][0]
  
     - name: Activer et démarrer le serveur RKE2 master-1
       systemd:
@@ -119,45 +88,6 @@
       delay: 5
       become: true
 #-----------------Avant modif--------------------=====================
-
-    - name: Vérifier l'emplacement de kubectl
-      command: which kubectl
-      register: kubectl_path
-      ignore_errors: true
-
-    - name: Afficher l'emplacement de kubectl
-      debug:
-        var: kubectl_path.stdout
-
-    - name: Vérifier si kubectl de RKE2 est installé
-      stat:
-        path: /var/lib/rancher/rke2/bin/kubectl
-      register: kubectl_rke2
-
-    - name: Créer un lien symbolique vers kubectl
-      file:
-        src: /var/lib/rancher/rke2/bin/kubectl
-        dest: /usr/local/bin/kubectl
-        state: link
-      when: kubectl_rke2.stat.exists
-
-
-    - name: Vérifier si le fichier kubeconfig existe
-      stat:
-        path: /etc/rancher/rke2/rke2.yaml
-      register: kubeconfig_file
-
-    - name: Vérifier la configuration du cluster avec kubectl
-      command: KUBECONFIG=/etc/rancher/rke2/rke2.yaml kubectl get nodes
-      register: kubectl_nodes
-      changed_when: false
-      when: kubeconfig_file.stat.exists  # Exécute la commande seulement si le fichier existe
-
-    - name: Afficher les nœuds du cluster
-      debug:
-        var: kubectl_nodes.stdout_lines
-      when: kubeconfig_file.stat.exists
-    #============================================
 
     - name: Lire rke2.yaml sur master1
       command: cat /etc/rancher/rke2/rke2.yaml
@@ -397,24 +327,60 @@
       ignore_errors: true  
 
 #===================Vérifs==================================
-- name: Vérifier que RKE2 fonctionne via master1
-  hosts: "{{ groups['masters'][0] }}"  # Sélectionne directement master1
+- name: Installer kubectl et Vérifer que RKE2 fonctionne sur master1
+  hosts: masters[0]
   become: true
   tasks:
+
+      # Installer kubectl sur master1
+    - name: Télécharger la version stable de kubectl
+      command: "curl -L -s https://dl.k8s.io/release/stable.txt"
+      register: kubectl_version
+      when: inventory_hostname == groups['masters'][0]
+
+    - name: Télécharger kubectl sur master1
+      command: "curl -LO https://dl.k8s.io/release/{{ kubectl_version.stdout }}/bin/linux/amd64/kubectl"
+      args:
+        chdir: /usr/local/bin
+      when: inventory_hostname == groups['masters'][0]
+
+    - name: Télécharger le fichier checksum de kubectl
+      command: "curl -LO https://dl.k8s.io/release/{{ kubectl_version.stdout }}/bin/linux/amd64/kubectl.sha256"
+      args:
+        chdir: /usr/local/bin
+      when: inventory_hostname == groups['masters'][0]
+
+    - name: Vérification d'intégrité de kubectl sur master1
+      command: "echo $(cat kubectl.sha256)  kubectl | sha256sum --check"
+      args:
+        chdir: /usr/local/bin
+      when: inventory_hostname == groups['masters'][0]
+
+    - name: Rendre kubectl exécutable
+      command: chmod +x /usr/local/bin/kubectl
+      when: inventory_hostname == groups['masters'][0]
+
+    - name: Vérifier l'emplacement de kubectl
+      command: which kubectl
+      register: kubectl_path
+      ignore_errors: true
+
+    - name: Afficher l'emplacement de kubectl
+      debug:
+        var: kubectl_path.stdout
+
+    - name: Vérifier si kubectl de RKE2 est installé
+      stat:
+        path: /var/lib/rancher/rke2/bin/kubectl
+      register: kubectl_rke2
 
     - name: Vérifier si le fichier kubeconfig existe
       stat:
         path: /etc/rancher/rke2/rke2.yaml
       register: kubeconfig_file
 
-    - name: Vérifier que le service RKE2 est actif
-      command: systemctl is-active rke2-server
-      register: rke2_status
-      changed_when: false
-      failed_when: rke2_status.stdout != "active"
-
     - name: Vérifier la configuration du cluster avec kubectl
-      command: KUBECONFIG=/etc/rancher/rke2/rke2.yaml /var/lib/rancher/rke2/bin/kubectl get nodes
+      command: KUBECONFIG=/etc/rancher/rke2/rke2.yaml kubectl get nodes
       register: kubectl_nodes
       changed_when: false
       when: kubeconfig_file.stat.exists  # Exécute la commande seulement si le fichier existe
@@ -423,6 +389,45 @@
       debug:
         var: kubectl_nodes.stdout_lines
       when: kubeconfig_file.stat.exists
+    #============================================
+
+
+
+
+#- name: Vérifier que RKE2 fonctionne via master1
+#  hosts: "{{ groups['masters'][0] }}"  # Sélectionne directement master1
+#  become: true
+#  tasks:
+#
+#    - name: Vérifier si le fichier kubeconfig existe
+#      stat:
+#        path: /etc/rancher/rke2/rke2.yaml
+#      register: kubeconfig_file
+#
+#    - name: Vérifier que le service RKE2 est actif
+#      command: systemctl is-active rke2-server
+#      register: rke2_status
+#      changed_when: false
+#      failed_when: rke2_status.stdout != "active"
+#
+#    - name: Vérifier la configuration du cluster avec kubectl
+#      command: KUBECONFIG=/etc/rancher/rke2/rke2.yaml /var/lib/rancher/rke2/bin/kubectl get nodes
+#      register: kubectl_nodes
+#      changed_when: false
+#      when: kubeconfig_file.stat.exists  # Exécute la commande seulement si le fichier existe
+#
+#    - name: Afficher les nœuds du cluster
+#      debug:
+#        var: kubectl_nodes.stdout_lines
+#      when: kubeconfig_file.stat.exists
+    #- name: Créer un lien symbolique vers kubectl
+    #  file:
+    #    src: /usr/local/bin/kubectl
+    #    dest: /var/lib/rancher/rke2/bin/kubectl
+    #    state: link
+    #  when: kubectl_rke2.stat.exists
+
+
 
 
 
