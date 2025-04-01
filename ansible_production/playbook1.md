@@ -227,6 +227,14 @@
           server: "https://{{ hostvars[groups['masters'][0]]['ansible_host'] }}:6443"
         when: inventory_hostname != groups['masters'][0]
 
+    - name: Mettre à jour le fichier rke2.yaml avec l'IP publique sur master1
+      lineinfile:
+        path: /etc/rancher/rke2/rke2.yaml
+        regexp: '^    server: https://.*:6443'
+        line: '    server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
+      when: inventory_hostname != groups['masters'][0]
+      become: true        
+
     - name: Vérifier que le token est bien défini
       debug:
         var: hostvars[groups['masters'][0]]['rke2_token_value']

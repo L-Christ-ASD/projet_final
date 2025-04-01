@@ -36,17 +36,22 @@
         - /etc/rancher/rke2
         - /var/lib/rancher/rke2/server/manifests
 
-    - name: Ajouter la configuration RKE2.yaml
+    - name: Ajouter la configuration RKE2
       copy:
         dest: /etc/rancher/rke2/config.yaml
         content: |
           tls-san:
-            - {{ hostvars[groups["masters"][0]]["ansible_host"] }}
+            - {{ hostvars[groups["masters"][*]]["ansible_host"] }}
             - rke2cluster.christ.lan
             - master1.christ.lan
-            - master1
+            - {{ inventory_hostname }}
             - {{ ansible_facts['default_ipv4']['address'] }}      
           cni: "canal"
+          
+    - name: Vérifier si le fichier rke2.yaml existe
+      stat:
+        path: /etc/rancher/rke2/rke2.yaml
+      register: rke2_yaml_file
 
     - name: Mettre à jour le fichier rke2.yaml avec l'IP publique sur master1
       lineinfile:
@@ -207,10 +212,19 @@
           token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
           server:"https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}
           tls-san:
+            - {{ hostvars[groups["masters"][*]]["ansible_host"] }}
             - rke2cluster.christ.lan
             - {{ inventory_hostname }}
             - {{ ansible_host }}
             - {{ ansible_facts['default_ipv4']['address'] }}
+
+    - name: Mettre à jour le fichier rke2.yaml avec l'IP publique sur master1
+      lineinfile:
+        path: /etc/rancher/rke2/rke2.yaml
+        regexp: '^    server: https://.*:6443'
+        line: '    server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
+      when: inventory_hostname != groups['masters'][0]
+      become: true 
 
 
     #- name: Copier la configuration RKE2
