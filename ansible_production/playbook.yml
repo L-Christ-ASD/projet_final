@@ -202,7 +202,7 @@
 
 
 - name: Configurer les autres masters
-  hosts: masters #master2,master3
+  hosts: master2,master3
   become: true
   tasks:
 
@@ -219,7 +219,7 @@
         dest: /etc/rancher/rke2/config.yaml
         content: |
           token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
-          server:"https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}
+          server: "https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}"
           tls-san:
             - {{ hostvars[groups["masters"][0]]["ansible_host"] }}
             - {{ hostvars[groups["masters"][1]]["ansible_host"] }}
@@ -229,13 +229,13 @@
             - {{ ansible_host }}
             - {{ ansible_facts['default_ipv4']['address'] }}
 
-    - name: Configurer le fichier rke2.yaml avec l'IP publique sur master1
-      copy:
-        dest: /etc/rancher/rke2/rke2.yaml
-        content: |
-          server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443
-      when: inventory_hostname != groups['masters'][0]
-      become: true
+    #- name: Configurer le fichier rke2.yaml avec l'IP publique sur master1
+    #  copy:
+    #    dest: /etc/rancher/rke2/rke2.yaml
+    #    content: |
+    #      server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443
+    #  when: inventory_hostname != groups['masters'][0]
+    #  become: true
 
     #- name: Mettre à jour le fichier rke2.yaml avec l'IP publique sur master1
     #  lineinfile:
@@ -375,3 +375,54 @@
     - name: Pause de 180 secondes pour laisser RKE2-agent s'installer tranquilement!
       ansible.builtin.pause:
         seconds: 180
+
+# bonus kubectl sur master1
+
+- name: Configurer kubectl le premier master
+  hosts: master1
+  become: true
+  tasks:
+
+    - name: Vérifier l'existence de kubectl
+  stat:
+    path: /var/lib/rancher/rke2/bin/kubectl
+  register: kubectl_stat
+
+- name: Afficher les informations sur kubectl
+  debug:
+    msg: "Kubectl existe avec les permissions: {{ kubectl_stat.stat.mode }}"
+  when: kubectl_stat.stat.exists
+
+- name: Ajouter /var/lib/rancher/rke2/bin au PATH de l'utilisateur
+  lineinfile:
+    path: ~/.bashrc
+    line: 'export PATH=$PATH:/var/lib/rancher/rke2/bin'
+    create: yes
+
+- name: Charger le nouveau PATH
+  shell: source ~/.bashrc
+  args:
+    executable: /bin/bash
+
+- name: Vérifier la version du client kubectl
+  command: /var/lib/rancher/rke2/bin/kubectl version --client
+  register: kubectl_version
+  changed_when: false
+
+- name: Afficher la version de kubectl
+  debug:
+    msg: "{{ kubectl_version.stdout }}"
+
+- name: Modifier les permissions de rke2.yaml
+  file:
+    path: /etc/rancher/rke2/rke2.yaml
+    mode: '0644'
+
+- name: Vérifier les nœuds Kubernetes
+  command: /var/lib/rancher/rke2/bin/kubectl get nodes
+  register: kubectl_nodes
+  changed_when: false
+
+- name: Afficher la liste des nœuds
+  debug:
+    msg: "{{ kubectl_nodes.stdout }}"

@@ -272,7 +272,7 @@ jobs:
     - name: Installlation du cluster rke2 avec le playbook Ansible_prod
       run: |
         ls ../production_tf/
-        ansible-playbook -i inventory playbook.yml -vvv
+        ansible-playbook -i inventory playbook.yml 
       working-directory: ./ansible_production/
 
     - name: Attendre 60s
