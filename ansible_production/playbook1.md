@@ -38,6 +38,23 @@
           - iproute2
         state: present
 
+    - name: Définir le hostname
+      command: hostnamectl set-hostname {{ inventory_hostname }}
+
+    - name: Configurer le fichier /etc/hosts
+      blockinfile:
+        path: /etc/hosts
+        block: |
+          
+          {{ ansible_facts['default_ipv4']['address'] }} {{ inventory_hostname }}
+          ::1     ip6-localhost ip6-loopback
+          fe00::0 ip6-localnet
+          ff00::0 ip6-mcastprefix
+          ff02::1 ip6-allnodes
+          ff02::2 ip6-allrouters
+          {{ hostvars[groups["masters"][0]]["ansible_host"] }} rke2cluster.christ.lan
+
+
     - name: Créer le répertoire /etc/rancher/rke2 si nécessaire
       file:
         path: /etc/rancher/rke2
