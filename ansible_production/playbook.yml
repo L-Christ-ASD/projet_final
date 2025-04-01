@@ -22,6 +22,7 @@
           ff00::0 ip6-mcastprefix
           ff02::1 ip6-allnodes
           ff02::2 ip6-allrouters
+          192.168.1.35 rke2cluster.christ.lan
 
 - name: Configurer le premier master
   hosts: master1
@@ -40,9 +41,12 @@
         dest: /etc/rancher/rke2/config.yaml
         content: |
           tls-san:
+            - 192.168.1.35
+            - rke2cluster.christ.lan
             - master1.christ.lan
             - master1
             - {{ ansible_facts['default_ipv4']['address'] }}
+            
           cni: "canal"
     
     - name: Ajouter rke2-coredns-config.yaml
@@ -152,7 +156,7 @@
       command: >
         /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock 
         --namespace k8s.io run --rm --net-host docker.io/plndr/kube-vip:latest vip /kube-vip 
-        manifest daemonset --arp --interface eth0 --address {{ ansible_facts['default_ipv4']['address'] }} 
+        manifest daemonset --arp --interface enX0 --address {{ ansible_facts['default_ipv4']['address'] }} 
         --controlplane --leaderElection --taint --services --inCluster
       register: kube_vip_manifest
 
@@ -193,12 +197,28 @@
       copy:
         dest: /etc/rancher/rke2/config.yaml
         content: |
-          server: https://{{ hostvars['master1']['ansible_host'] }}:9345
           token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
+          server: https://192.168.1.35:9345
           tls-san:
+            - 192.168.1.35
+            - rke2cluster.christ.lan
             - {{ inventory_hostname }}
             - {{ ansible_host }}
             - {{ ansible_facts['default_ipv4']['address'] }}
+
+
+    #- name: Copier la configuration RKE2
+    #  copy:
+    #    dest: /etc/rancher/rke2/config.yaml
+    #    content: |
+    #      server: https://{{ hostvars['master1']['ansible_host'] }}:9345
+    #      token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
+    #      tls-san:
+    #        - {{ inventory_hostname }}
+    #        - {{ ansible_host }}
+    #        - {{ ansible_facts['default_ipv4']['address'] }}
+    #        - 192.168.1.35
+    #        - rke2cluster.christ.lan
 
     - name: Télécharger et installer RKE2
       get_url:
@@ -268,9 +288,17 @@
     - name: Copier la configuration RKE2
       copy:
         dest: /etc/rancher/rke2/config.yaml
-        content: |
-          server: https://{{ hostvars['master1']['ansible_host'] }}:9345
+        content: |    
           token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
+          server: https://192.168.1.35:9345
+
+
+    #- name: Copier la configuration RKE2
+    #  copy:
+    #    dest: /etc/rancher/rke2/config.yaml
+    #    content: |
+    #      server: https://{{ hostvars['master1']['ansible_host'] }}:9345
+    #      token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
 
     - name: Télécharger et installer RKE2
       get_url:
