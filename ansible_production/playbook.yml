@@ -67,14 +67,6 @@
           server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443
       when: inventory_hostname == groups['masters'][0]
       become: true
-
-    #- name: Mettre à jour le fichier rke2.yaml avec l'IP publique sur master1
-    #  lineinfile:
-    #    path: /etc/rancher/rke2/rke2.yaml
-    #    regexp: '^    server: https://.*:6443'
-    #    line: '    server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
-    #  when: inventory_hostname == groups['masters'][0]
-    #  become: true
     
     - name: Ajouter rke2-coredns-config.yaml
       copy:
@@ -91,11 +83,6 @@
               nodelocal:
                 enabled: true
             bootstrap: true
-
-    #- name: Installer RKE2
-    #  shell: curl -sfL https://get.rke2.io | INSTALL_RKE2_CHANNEL=stable INSTALL_RKE2_VERSION="v1.30.0+rke2r1" sh -
-    #  args:
-    #    creates: /usr/local/bin/rke2
 
     - name: Télécharger et installer RKE2
       get_url:
@@ -161,6 +148,28 @@
       register: node_token
       when: node_token_file.stat.exists
 
+  # ----------------- Récupérer le token automatiquement -----------------
+
+    - name: Vérifier que le service RKE2 est actif sur master1
+      command: systemctl status rke2-server
+      register: rke2_status
+      ignore_errors: true  # Ignore l'erreur si le service est inactif
+    
+    - name: Lire le token RKE2 sur master1
+      command: cat /var/lib/rancher/rke2/server/node-token
+      register: rke2_token
+      when: rke2_status.rc == 0  # Exécute seulement si le service est actif
+
+    - name: Afficher le token récupéré sur master1
+      debug:
+        var: rke2_token.stdout
+      when: rke2_status.rc == 0  # Affiche seulement si le service est actif
+
+    - name: Partager le token avec les autres hôtes
+      set_fact:
+        rke2_token_value: "{{ rke2_token.stdout }}"
+      when: rke2_status.rc == 0
+
     #============== Installation et configuration de Kube-VIP =========
     - name: Télécharger le fichier RBAC de Kube-VIP
       get_url:
@@ -224,7 +233,7 @@
       copy:
         dest: /etc/rancher/rke2/config.yaml
         content: |
-          token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
+          token: "{{ hostvars[groups['masters'][0]]['ansible_host']['rke2_token_value'] }}"
           server: "https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}"
           tls-san:
             - {{ hostvars[groups["masters"][0]]["ansible_host"] }}
@@ -237,6 +246,7 @@
             - {{ inventory_hostname }}
             - {{ ansible_host }}
             - {{ ansible_facts['default_ipv4']['address'] }}
+        # token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
 
     #- name: Configurer le fichier rke2.yaml avec l'IP publique sur master1
     #  copy:
@@ -330,12 +340,12 @@
         seconds: 180
       when: inventory_hostname == "master3"
 
-    - name: Mettre à jour le fichier rke2.yaml avec l'IP publique sur master2 et 3
-      lineinfile:
-        path: /etc/rancher/rke2/rke2.yaml
-        regexp: '^    server: https://.*:6443'
-        line: '    server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
-      become: true 
+    ##- name: Mettre à jour le fichier rke2.yaml avec l'IP publique sur master2 et 3
+    ##  lineinfile:
+    ##    path: /etc/rancher/rke2/rke2.yaml
+    ##    regexp: '^    server: https://.*:6443'
+    ##    line: '    server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
+    ##  become: true 
 
     #=========== REDEMARGE M2 ET 3==================
     - name: Rdémarrer RKE2 server master2
