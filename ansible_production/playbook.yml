@@ -16,7 +16,10 @@
         path: /etc/hosts
         block: |
           
-          {{ ansible_facts['default_ipv4']['address'] }} {{ inventory_hostname }}
+          {{ ansible_facts['default_ipv4']['address'] }} 
+          {{ inventory_hostname }}
+          127.0.0.1 localhost
+          127.0.1.1 {{ inventory_hostname }}.christ.lan 
           ::1     ip6-localhost ip6-loopback
           fe00::0 ip6-localnet
           ff00::0 ip6-mcastprefix
@@ -289,12 +292,13 @@
       ansible.builtin.pause:
         seconds: 360
 
-    - name: Démarrer RKE2 server
+    - name: Démarrer RKE2 server master2
       systemd:
         name: rke2-server
         enabled: true
         state: started
       when: inventory_hostname == "master2"
+      ignore_errors: true
 
     - name: Attendre 180 secondes avant de démarrer master3
       pause:
@@ -319,6 +323,7 @@
         enabled: true
         state: started
       when: inventory_hostname == "master3"
+      ignore_errors: true
 
     - name: Attendre 180 secondes avant de Mettre à jour le fichier rke2.yaml
       pause:
@@ -330,7 +335,6 @@
         path: /etc/rancher/rke2/rke2.yaml
         regexp: '^    server: https://.*:6443'
         line: '    server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
-      #when: inventory_hostname != groups['masters'][0]
       become: true 
 
     #=========== REDEMARGE M2 ET 3==================
@@ -442,7 +446,7 @@
       lineinfile:
         path: ~/.bashrc
         line: 'export PATH=$PATH:/var/lib/rancher/rke2/bin'
-        create: yes
+        create: true
 
     - name: Charger le nouveau PATH
       shell: source ~/.bashrc
@@ -463,7 +467,10 @@
         path: /etc/rancher/rke2/rke2.yaml
         mode: '0644'
       when: inventory_hostname == groups['masters'][0]
-      become: true 
+      become: true
+
+    - name: Exporter KUBECONFIG
+      command: export KUBECONFIG=/etc/rancher/rke2/rke2.yaml
 
     - name: Vérifier les nœuds Kubernetes
       command: /var/lib/rancher/rke2/bin/kubectl get nodes
