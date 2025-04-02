@@ -202,7 +202,7 @@
 
 
 - name: Configurer les autres masters
-  hosts: masters #master2,master3
+  hosts: master2,master3
   become: true
   tasks:
 
@@ -320,7 +320,7 @@
         path: /etc/rancher/rke2/rke2.yaml
         regexp: '^    server: https://.*:6443'
         line: '    server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
-      when: inventory_hostname != groups['masters'][0]
+      #when: inventory_hostname != groups['masters'][0]
       become: true 
 
     #=========== REDEMARGE M2 ET 3==================
@@ -452,6 +452,8 @@
       file:
         path: /etc/rancher/rke2/rke2.yaml
         mode: '0644'
+      when: inventory_hostname == groups['masters'][0]
+      become: true 
 
     - name: Vérifier les nœuds Kubernetes
       command: /var/lib/rancher/rke2/bin/kubectl get nodes
