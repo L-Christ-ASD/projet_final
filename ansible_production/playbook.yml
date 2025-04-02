@@ -217,7 +217,7 @@
 
 
 - name: Configurer les autres masters
-  hosts: master2,master3
+  hosts: masters #master2,master3
   become: true
   tasks:
 
@@ -246,6 +246,7 @@
             - {{ inventory_hostname }}
             - {{ ansible_host }}
             - {{ ansible_facts['default_ipv4']['address'] }}
+      when: inventory_hostname != "master1"
 
     # token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
     #- name: Configurer le fichier rke2.yaml avec l'IP publique sur master1
@@ -283,20 +284,24 @@
         url: "https://get.rke2.io"
         dest: /tmp/install_rke2.sh
         mode: '0755'
+      when: inventory_hostname != "master1"
 
     - name: Exécuter le script d'installation RKE2
       command: /tmp/install_rke2.sh
       args:
         creates: /usr/local/bin/rke2
+      when: inventory_hostname != "master1"
 
     - name: Vérifier la version de RKE2
       command: /usr/local/bin/rke2 --version
       register: rke2_version
       changed_when: false
+      when: inventory_hostname != "master1"
 
     - name: Afficher la version de RKE2
       debug:
         var: rke2_version.stdout
+      when: inventory_hostname != "master1"
 
     - name: Pause de 360 secondes pour laisser master1 démarer le service RKE2 tranquilement!
       ansible.builtin.pause:
