@@ -41,12 +41,15 @@
         dest: /etc/rancher/rke2/config.yaml
         content: |
           tls-san:
+            - {{ hostvars[groups["masters"][0]]["ansible_host"] }}
             - {{ hostvars[groups["masters"][1]]["ansible_host"] }}
             - {{ hostvars[groups["masters"][2]]["ansible_host"] }}
             - rke2cluster.christ.lan
             - master1.christ.lan
+            - master2.christ.lan
+            - master3.christ.lan
             - {{ inventory_hostname }}
-            - {{ ansible_facts['default_ipv4']['address'] }}      
+            - {{ ansible_facts['default_ipv4']['address'] }} 
           cni: "canal"
 
     - name: Vérifier si le fichier rke2.yaml existe
@@ -225,6 +228,9 @@
             - {{ hostvars[groups["masters"][1]]["ansible_host"] }}
             - {{ hostvars[groups["masters"][2]]["ansible_host"] }}
             - rke2cluster.christ.lan
+            - master1.christ.lan
+            - master2.christ.lan
+            - master3.christ.lan
             - {{ inventory_hostname }}
             - {{ ansible_host }}
             - {{ ansible_facts['default_ipv4']['address'] }}
@@ -459,6 +465,8 @@
       command: /var/lib/rancher/rke2/bin/kubectl get nodes
       register: kubectl_nodes
       changed_when: false
+      when: inventory_hostname == groups['masters'][0]
+      become: true 
 
     - name: Afficher la liste des nœuds
       debug:
