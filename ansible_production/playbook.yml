@@ -193,7 +193,7 @@
         /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock 
         --namespace k8s.io run --rm --net-host docker.io/plndr/kube-vip:latest vip /kube-vip 
         manifest daemonset --arp --interface enX0 --address {{ hostvars[groups["masters"][0]]["ansible_host"] }} 
-        --controlplane --leaderElection --taint --services --inCluster
+        --controlplane --leaderElection --taint --services --inCluster 
       register: kube_vip_manifest
 
     - name: Sauvegarder le manifeste Kube-VIP
@@ -246,8 +246,8 @@
             - {{ inventory_hostname }}
             - {{ ansible_host }}
             - {{ ansible_facts['default_ipv4']['address'] }}
-        # token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
 
+    # token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
     #- name: Configurer le fichier rke2.yaml avec l'IP publique sur master1
     #  copy:
     #    dest: /etc/rancher/rke2/rke2.yaml
@@ -323,9 +323,9 @@
       delay: 5
       when: inventory_hostname == "master2"
 
-    #- name: Attendre 180 secondes avant de démarrer master3
-    #  pause:
-    #    seconds: 180
+    - name: Attendre 180 secondes avant de démarrer master3
+      pause:
+        seconds: 180
 
     - name: Démarrer RKE2 server sur master3
       systemd:
@@ -339,46 +339,46 @@
       pause:
         seconds: 180
       when: inventory_hostname == "master3"
-
-    ##- name: Mettre à jour le fichier rke2.yaml avec l'IP publique sur master2 et 3
-    ##  lineinfile:
-    ##    path: /etc/rancher/rke2/rke2.yaml
-    ##    regexp: '^    server: https://.*:6443'
-    ##    line: '    server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
-    ##  become: true 
-
-    #=========== REDEMARGE M2 ET 3==================
-    - name: Rdémarrer RKE2 server master2
-      systemd:
-        name: rke2-server
-        enabled: true
-        state: restarted
-      when: inventory_hostname == "master2"
-
-    - name: Attendre 180 secondes avant de redémarrer master3
-      pause:
-        seconds: 180
-      when: inventory_hostname == "master2"
-
-    - name: Vérifier si RKE2 est actif sur master2
-      command: systemctl is-active rke2-server
-      register: rke2_status_master2
-      until: rke2_status_master2.stdout == "active"
-      retries: 10
-      delay: 5
-      when: inventory_hostname == "master2"
-
-
-    - name: Rdémarrer RKE2 server sur master3
-      systemd:
-        name: rke2-server
-        enabled: true
-        state: restarted
-      when: inventory_hostname == "master3"
-
-    - name: Attendre 180 secondes avant de démarrer le worker
-      pause:
-        seconds: 180
+#
+    ###- name: Mettre à jour le fichier rke2.yaml avec l'IP publique sur master2 et 3
+    ###  lineinfile:
+    ###    path: /etc/rancher/rke2/rke2.yaml
+    ###    regexp: '^    server: https://.*:6443'
+    ###    line: '    server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
+    ###  become: true 
+#
+    ##=========== REDEMARGE M2 ET 3==================
+    #- name: Rdémarrer RKE2 server master2
+    #  systemd:
+    #    name: rke2-server
+    #    enabled: true
+    #    state: restarted
+    #  when: inventory_hostname == "master2"
+#
+    #- name: Attendre 180 secondes avant de redémarrer master3
+    #  pause:
+    #    seconds: 180
+    #  when: inventory_hostname == "master2"
+#
+    #- name: Vérifier si RKE2 est actif sur master2
+    #  command: systemctl is-active rke2-server
+    #  register: rke2_status_master2
+    #  until: rke2_status_master2.stdout == "active"
+    #  retries: 10
+    #  delay: 5
+    #  when: inventory_hostname == "master2"
+#
+#
+    #- name: Rdémarrer RKE2 server sur master3
+    #  systemd:
+    #    name: rke2-server
+    #    enabled: true
+    #    state: restarted
+    #  when: inventory_hostname == "master3"
+#
+    #- name: Attendre 180 secondes avant de démarrer le worker
+    #  pause:
+    #    seconds: 180
 
 
 #==================Worker=============================
