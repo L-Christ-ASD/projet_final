@@ -309,6 +309,9 @@
       delay: 5
       when: inventory_hostname == "master2"
 
+    #- name: Attendre 180 secondes avant de démarrer master3
+    #  pause:
+    #    seconds: 180
 
     - name: Démarrer RKE2 server sur master3
       systemd:
@@ -317,9 +320,10 @@
         state: started
       when: inventory_hostname == "master3"
 
-    - name: Attendre 180 secondes avant de démarrer le worker
+    - name: Attendre 180 secondes avant de Mettre à jour le fichier rke2.yaml
       pause:
         seconds: 180
+      when: inventory_hostname == "master3"
 
     - name: Mettre à jour le fichier rke2.yaml avec l'IP publique sur master2 et 3
       lineinfile:
