@@ -56,18 +56,18 @@
             - {{ ansible_facts['default_ipv4']['address'] }} 
           cni: "canal"
 
-    - name: Vérifier si le fichier rke2.yaml existe
-      stat:
-        path: /etc/rancher/rke2/rke2.yaml
-      register: rke2_yaml_file
-
-    - name: Configurer le fichier rke2.yaml avec l'IP publique sur master1
-      copy:
-        dest: /etc/rancher/rke2/rke2.yaml
-        content: |
-          server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
-      when: inventory_hostname == groups['masters'][0]
-      become: true
+    #- name: Vérifier si le fichier rke2.yaml existe
+    #  stat:
+    #    path: /etc/rancher/rke2/rke2.yaml
+    #  register: rke2_yaml_file
+#
+    #- name: Configurer le fichier rke2.yaml avec l'IP publique sur master1
+    #  copy:
+    #    dest: /etc/rancher/rke2/rke2.yaml
+    #    content: |
+    #      server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
+    #  when: inventory_hostname == groups['masters'][0]
+    #  become: true
     
     - name: Ajouter rke2-coredns-config.yaml
       copy:
@@ -261,16 +261,16 @@
     #    path: /etc/rancher/rke2/rke2.yaml
     #    mode: '0644'
 
-    - name: Vérifier les nœuds Kubernetes
-      command: /var/lib/rancher/rke2/bin/kubectl get nodes
-      register: kubectl_nodes
-      changed_when: false
-      when: inventory_hostname == groups['masters'][0]
-      become: true 
-
-    - name: Afficher la liste des nœuds
-      debug:
-        msg: "{{ kubectl_nodes.stdout }}"
+    #- name: Vérifier les nœuds Kubernetes
+    #  command: /var/lib/rancher/rke2/bin/kubectl get nodes
+    #  register: kubectl_nodes
+    #  changed_when: false
+    #  when: inventory_hostname == groups['masters'][0]
+    #  become: true 
+#
+    #- name: Afficher la liste des nœuds
+    #  debug:
+    #    msg: "{{ kubectl_nodes.stdout }}"
 
 
 
