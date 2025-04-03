@@ -271,13 +271,15 @@ resource "aws_vpc_security_group_ingress_rule" "allow_port_10250" {
 
 #=======================================================================
 # permettre le trafic interne entre les ressources qui appartiennent au groupe admin_ssh_production
-resource "aws_vpc_security_group_ingress_rule" "allow_tcp_2379" {
+resource "aws_security_group_rule" "allow_tcp_2379" {
+  type                     = "ingress"
   from_port                = 2379
   to_port                  = 2379
   protocol                 = "tcp"
   security_group_id        = aws_security_group.admin_ssh_production.id # Groupe de sécurité cible
   source_security_group_id = aws_security_group.admin_ssh_production.id # Groupe de sécurité source
 }
+
 
 
 
