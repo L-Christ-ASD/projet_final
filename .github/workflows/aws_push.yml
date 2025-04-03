@@ -254,7 +254,7 @@ jobs:
 
     - name: Attendre le demarrage complet des instances 60s
       run: |
-        sleep 60s
+        sleep 120s
 
     # Vérifier la connexion SSH avec Ansible (ping sur toutes les machines)
     - name: Copier la clé SSH dans ./ pour le ping workflow
