@@ -103,7 +103,7 @@
       retries: 10
       delay: 5
 
-    # ==================Vérifs=====================
+
     - name: Vérifier le statut du service RKE2 après démarrage
       command: systemctl status rke2-server
       register: rke2_status
@@ -112,6 +112,42 @@
     - name: Afficher le statut du service RKE2
       debug:
         var: rke2_status.stdout_lines
+
+    - name: Mettre à jour le fichier rke2.yaml avec l'IP privée sur master1
+      lineinfile:
+        path: /etc/rancher/rke2/rke2.yaml
+        regexp: '^    server: https://.*:6443'
+        line: '    server: https://{{ ansible_facts["default_ipv4"]["address"] }}:6443'
+                      
+
+    - name: Redémarer RKE2 server sur master1 avec l'IP privée
+      systemd:
+        name: rke2-server
+        enabled: true
+        state: restarted
+
+    - name: Pause de 120 secondes pour laisser RKE2-server redémarrer
+      ansible.builtin.pause:
+        seconds: 120
+
+    - name: Attendre que RKE2 soit actif
+      command: systemctl is-active rke2-server
+      register: rke2_status
+      until: rke2_status.stdout == "active"
+      retries: 10
+      delay: 5
+
+
+    - name: Vérifier le statut du service RKE2 après démarrage
+      command: systemctl status rke2-server
+      register: rke2_status
+      changed_when: false
+
+    - name: Afficher le statut du service RKE2
+      debug:
+        var: rke2_status.stdout_lines
+
+    # ==================Vérifs=====================
 
     - name: Lister les conteneurs dans containerd
       command: /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock --namespace k8s.io container ls
@@ -309,8 +345,9 @@
         dest: /etc/rancher/rke2/config.yaml
         content: |
           token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
-          server: "172.31.76.101:9345"
+          server: "https://{{ hostvars['master1']['master1_private_ip'] }}:9345"
           tls-san:
+            - {{ hostvars['master1']['master1_private_ip'] }}
             - {{ inventory_hostname }}.christ.lan
             - {{ inventory_hostname }}
             - {{ ansible_facts['default_ipv4']['address'] }}
@@ -444,7 +481,7 @@
         dest: /etc/rancher/rke2/config.yaml
         content: |    
           token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
-          server: https://172.31.76.101:9345
+          server: "https://{{ hostvars['master1']['master1_private_ip'] }}:9345"
 
     - name: Télécharger et installer RKE2
       get_url:
