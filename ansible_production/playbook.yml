@@ -25,7 +25,7 @@
           ff02::1 ip6-allnodes
           ff02::2 ip6-allrouters
           
-          {{ ansible_facts['default_ipv4']['address'] }} master1
+          {{ ansible_facts['default_ipv4']['address'] }} {{ inventory_hostname }}
           172.31.64.101 rke2cluster.christ.lan
 
 
@@ -402,9 +402,9 @@
         var: rke2_version.stdout
       #when: inventory_hostname != "master1"
 
-    - name: Pause de 300 secondes pour laisser master1 démarer le service RKE2 tranquilement!
+    - name: Pause de 360 secondes pour laisser master1 démarer le service RKE2 tranquilement!
       ansible.builtin.pause:
-        seconds: 300
+        seconds: 360
 
     - name: Démarrer RKE2 server master2
       systemd:
@@ -413,6 +413,10 @@
         state: started
       ignore_errors: true
       when: inventory_hostname == "master2"
+
+    - name: Pause de 360 secondes pour laisser master1 démarer le service RKE2 tranquilement!
+      ansible.builtin.pause:
+        seconds: 360
 
     - name: Attendre que RKE2 soit actif
       command: systemctl is-active rke2-server
@@ -540,6 +544,9 @@
         name: rke2-agent
         enabled: true
         state: started
+    - name: Pause de 360 secondes pour laisser master1 démarer le service RKE2 tranquilement!
+      ansible.builtin.pause:
+        seconds: 360
 
     
 
