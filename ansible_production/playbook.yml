@@ -15,9 +15,9 @@
       blockinfile:
         path: /etc/hosts
         block: |
-          172.31.0.1 localhost
-          {{ ansible_facts['default_ipv4']['address'] }}
-          {{ inventory_hostname }}.christ.lan 
+          127.0.0.1 localhost
+          127.0.1.1 {{ inventory_hostname }}.christ.lan 
+
           ::1     ip6-localhost ip6-loopback
           fe00::0 ip6-localnet
           ff00::0 ip6-mcastprefix
@@ -44,16 +44,14 @@
         dest: /etc/rancher/rke2/config.yaml
         content: |
           tls-san:
-            - 172.31.76.101 
+            - rke2cluster.christ.lan
+            - {{ inventory_hostname }}.christ.lan
+            - {{ inventory_hostname }}
+            - {{ ansible_facts['default_ipv4']['address'] }}
+            - 172.31.76.101
             - {{ hostvars[groups["masters"][0]]["ansible_host"] }}
             - {{ hostvars[groups["masters"][1]]["ansible_host"] }}
             - {{ hostvars[groups["masters"][2]]["ansible_host"] }}
-            - rke2cluster.christ.lan
-            - master1.christ.lan
-            - master2.christ.lan
-            - master3.christ.lan
-            - {{ inventory_hostname }}
-            - {{ ansible_facts['default_ipv4']['address'] }} 
           cni: "canal"
 
     - name: Ajouter rke2-coredns-config.yaml
@@ -313,52 +311,20 @@
           token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
           server: "172.31.76.101:9345"
           tls-san:
+            - {{ inventory_hostname }}.christ.lan
+            - {{ inventory_hostname }}
+            - {{ ansible_facts['default_ipv4']['address'] }}
             - 172.31.76.101 
-            - {{ hostvars[groups["masters"][0]]["ansible_host"] }}
-            - {{ hostvars[groups["masters"][1]]["ansible_host"] }}
-            - {{ hostvars[groups["masters"][2]]["ansible_host"] }}
+            - 127.0.0.1
             - rke2cluster.christ.lan
             - master1.christ.lan
-            - master2.christ.lan
-            - master3.christ.lan
-            - {{ inventory_hostname }}
-            - {{ ansible_host }}
-            - {{ ansible_facts['default_ipv4']['address'] }}
           write-kubeconfig-mode: "0644"
-      #when: inventory_hostname != "master1"
+    
+#  {{ hostvars[groups["masters"][0]]["ansible_host"] }}
+#  {{ hostvars[groups["masters"][1]]["ansible_host"] }}
+#  {{ hostvars[groups["masters"][2]]["ansible_host"] }}
+#
 
-
-    # Installé et configuré Kube-VIP sur les 2 masters 
-    - name: Télécharger le fichier RBAC de Kube-VIP
-      get_url:
-        url: https://kube-vip.io/manifests/rbac.yaml
-        dest: /var/lib/rancher/rke2/server/manifests/rbac.yaml
-        mode: '0644'
-
-    - name: Télécharger l'image Kube-VIP
-      command: >
-        /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock 
-        --namespace k8s.io image pull docker.io/plndr/kube-vip:latest
-      register: kube_vip_pull
-      changed_when: "'unpacking' in kube_vip_pull.stdout"
-
-    - name: Vérifier le téléchargement de l'image Kube-VIP
-      debug:
-        var: kube_vip_pull.stdout_lines
-
-    - name: Générer le manifeste Kube-VIP
-      command: >
-        /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock 
-        --namespace k8s.io run --rm --net-host docker.io/plndr/kube-vip:latest vip /kube-vip 
-        manifest daemonset --arp --interface eth0 --address 172.31.76.100
-        --controlplane --leaderElection --taint --services --inCluster 
-      register: kube_vip_manifest
-
-    - name: Sauvegarder le manifeste Kube-VIP
-      copy:
-        content: "{{ kube_vip_manifest.stdout }}"
-        dest: /var/lib/rancher/rke2/server/manifests/kube-vip.yaml
-        mode: '0644'
 
 
     - name: Télécharger et installer RKE2
@@ -426,6 +392,39 @@
         seconds: 180
       when: inventory_hostname == "master3"
 
+
+
+    # Installé et configuré Kube-VIP sur les 2 masters 
+    - name: Télécharger le fichier RBAC de Kube-VIP
+      get_url:
+        url: https://kube-vip.io/manifests/rbac.yaml
+        dest: /var/lib/rancher/rke2/server/manifests/rbac.yaml
+        mode: '0644'
+
+    - name: Télécharger l'image Kube-VIP
+      command: >
+        /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock 
+        --namespace k8s.io image pull docker.io/plndr/kube-vip:latest
+      register: kube_vip_pull
+      changed_when: "'unpacking' in kube_vip_pull.stdout"
+
+    - name: Vérifier le téléchargement de l'image Kube-VIP
+      debug:
+        var: kube_vip_pull.stdout_lines
+
+    - name: Générer le manifeste Kube-VIP
+      command: >
+        /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock 
+        --namespace k8s.io run --rm --net-host docker.io/plndr/kube-vip:latest vip /kube-vip 
+        manifest daemonset --arp --interface eth0 --address 172.31.76.100
+        --controlplane --leaderElection --taint --services --inCluster 
+      register: kube_vip_manifest
+
+    - name: Sauvegarder le manifeste Kube-VIP
+      copy:
+        content: "{{ kube_vip_manifest.stdout }}"
+        dest: /var/lib/rancher/rke2/server/manifests/kube-vip.yaml
+        mode: '0644'
 
 #==================Worker=============================
 - name: Configurer le worker
