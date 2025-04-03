@@ -39,7 +39,7 @@ resource "aws_instance" "masters" {
   ami           = "ami-04b4f1a9cf54c11d0"
   instance_type = var.ec2_type_preprod
   key_name      = aws_key_pair.vockeyprod.key_name
-  #subnet_id              = "subnet-0c90a1be41664ad8e" #  sous-réseau appartenant à vpc-013d1e316d56835ef
+  #subnet_id              = "subnet-07ef8d731542349d5" #  sous-réseau appartenant au vpc-09c4b38653df63f28
   vpc_security_group_ids = [aws_security_group.admin_ssh_production.id]
 
 
@@ -63,7 +63,7 @@ resource "aws_instance" "worker1" {
   ami           = "ami-04b4f1a9cf54c11d0"
   instance_type = "t2.xlarge" #var.ec2_type_preprod
   key_name      = aws_key_pair.vockeyprod.key_name
-  #subnet_id              = "subnet-0c90a1be41664ad8e" #  sous-réseau appartenant à vpc-013d1e316d56835ef
+  #subnet_id              = "subnet-07ef8d731542349d5" #  sous-réseau vpc-09c4b38653df63f28
   vpc_security_group_ids = [aws_security_group.admin_ssh_production.id]
 
 
@@ -79,6 +79,14 @@ resource "aws_instance" "worker1" {
 
 }
 
+
+#resource "aws_network_interface" "VIP" {
+#  subnet_id   = "subnet-07ef8d731542349d5"   # ID du sous-réseau
+#  private_ips = ["10.0.1.100"]       # Adresse IP privée
+#  security_groups = [aws_security_group.admin_ssh_production.id]  # ID du groupe de sécurité
+#  depends_on = [aws_security_group.admin_ssh_production, aws_key_pair.vockeyprod]
+#
+#}
 
 #création de la clé SSH pour la prod
 
@@ -205,8 +213,7 @@ resource "null_resource" "generate_ansible_inventory_w1" {
 
 # Création du groupe de sécurité s'il n'existe pas déjà
 resource "aws_security_group" "admin_ssh_production" {
-  name = "admin_ssh_production"
-  #description = "groupe-de sécurité pour accès ssh"
+  name   = "admin_ssh_production"
   vpc_id = "vpc-09c4b38653df63f28" # The chosen vpc
 
   lifecycle {
