@@ -25,7 +25,8 @@
           ff00::0 ip6-mcastprefix
           ff02::1 ip6-allnodes
           ff02::2 ip6-allrouters
-          {{ hostvars[groups["masters"][0]]["ansible_host"] }} rke2cluster.christ.lan
+          {{ hostvars[groups["masters"][0]]["ansible_host"] }}
+          192.168.1.35 rke2cluster.christ.lan 
 
 - name: Configurer le premier master
   hosts: master1
@@ -150,25 +151,26 @@
 
   # ----------------- Récupérer le token automatiquement -----------------
 
-    - name: Vérifier que le service RKE2 est actif sur master1
-      command: systemctl status rke2-server
-      register: rke2_status
-      ignore_errors: true  # Ignore l'erreur si le service est inactif
-    
-    - name: Lire le token RKE2 sur master1
-      command: cat /var/lib/rancher/rke2/server/node-token
-      register: rke2_token
-      when: rke2_status.rc == 0  # Exécute seulement si le service est actif
-
-    - name: Afficher le token récupéré sur master1
-      debug:
-        var: rke2_token.stdout
-      when: rke2_status.rc == 0  # Affiche seulement si le service est actif
-
-    - name: Partager le token avec les autres hôtes
-      set_fact:
-        rke2_token_value: "{{ rke2_token.stdout }}"
-      when: rke2_status.rc == 0
+    #- name: Vérifier que le service RKE2 est actif sur master1
+    #  command: systemctl status rke2-server
+    #  register: rke2_status
+    #  ignore_errors: true  # Ignore l'erreur si le service est inactif
+    #
+    #- name: Lire le token RKE2 sur master1
+    #  command: cat /var/lib/rancher/rke2/server/node-token
+    #  register: rke2_token
+    #  when: rke2_status.rc == 0  # Exécute seulement si le service est actif
+#
+    #- name: Afficher le token récupéré sur master1
+    #  debug:
+    #    var: rke2_token.stdout
+    #  when: rke2_status.rc == 0  # Affiche seulement si le service est actif
+#
+    #- name: Partager le token avec les autres hôtes
+    #  set_fact:
+    #    rke2_token_value: "{{ rke2_token.stdout }}"
+    #  when: rke2_status.rc == 0
+    #  
 
     #============== Installation et configuration de Kube-VIP =========
     - name: Télécharger le fichier RBAC de Kube-VIP
@@ -217,7 +219,7 @@
 
 
 - name: Configurer les autres masters
-  hosts: masters #master2,master3
+  hosts: master2,master3
   become: true
   tasks:
 
@@ -233,7 +235,7 @@
       copy:
         dest: /etc/rancher/rke2/config.yaml
         content: |
-          token: "{{ hostvars[groups['masters'][0]]['ansible_host']['rke2_token_value'] }}"
+          token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
           server: "https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}"
           tls-san:
             - {{ hostvars[groups["masters"][0]]["ansible_host"] }}
@@ -246,79 +248,47 @@
             - {{ inventory_hostname }}
             - {{ ansible_host }}
             - {{ ansible_facts['default_ipv4']['address'] }}
-      when: inventory_hostname != "master1"
-
-    # token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
-    #- name: Configurer le fichier rke2.yaml avec l'IP publique sur master1
-    #  copy:
-    #    dest: /etc/rancher/rke2/rke2.yaml
-    #    content: |
-    #      server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443
-    #  when: inventory_hostname != groups['masters'][0]
-    #  become: true
-
-    #- name: Mettre à jour le fichier rke2.yaml avec l'IP publique sur master1
-    #  lineinfile:
-    #    path: /etc/rancher/rke2/rke2.yaml
-    #    regexp: '^    server: https://.*:6443'
-    #    line: '    server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
-    #  when: inventory_hostname != groups['masters'][0]
-    #  become: true 
-
-
-    #- name: Copier la configuration RKE2
-    #  copy:
-    #    dest: /etc/rancher/rke2/config.yaml
-    #    content: |
-    #      server: https://{{ hostvars['master1']['ansible_host'] }}:9345
-    #      token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
-    #      tls-san:
-    #        - {{ inventory_hostname }}
-    #        - {{ ansible_host }}
-    #        - {{ ansible_facts['default_ipv4']['address'] }}
-    #        - 192.168.1.35
-    #        - rke2cluster.christ.lan
+      #when: inventory_hostname != "master1"
 
     - name: Télécharger et installer RKE2
       get_url:
         url: "https://get.rke2.io"
         dest: /tmp/install_rke2.sh
         mode: '0755'
-      when: inventory_hostname != "master1"
+      #when: inventory_hostname != "master1"
 
     - name: Exécuter le script d'installation RKE2
       command: /tmp/install_rke2.sh
       args:
         creates: /usr/local/bin/rke2
-      when: inventory_hostname != "master1"
+      #when: inventory_hostname != "master1"
 
     - name: Vérifier la version de RKE2
       command: /usr/local/bin/rke2 --version
       register: rke2_version
       changed_when: false
-      when: inventory_hostname != "master1"
+      #when: inventory_hostname != "master1"
 
     - name: Afficher la version de RKE2
       debug:
         var: rke2_version.stdout
-      when: inventory_hostname != "master1"
+      #when: inventory_hostname != "master1"
 
-    - name: Pause de 360 secondes pour laisser master1 démarer le service RKE2 tranquilement!
+    - name: Pause de 60 secondes pour laisser master1 démarer le service RKE2 tranquilement!
       ansible.builtin.pause:
-        seconds: 360
+        seconds: 60
 
     - name: Démarrer RKE2 server master2
       systemd:
         name: rke2-server
         enabled: true
         state: started
-      when: inventory_hostname == "master2"
       ignore_errors: true
-
-    - name: Attendre 180 secondes avant de démarrer master3
-      pause:
-        seconds: 180
       when: inventory_hostname == "master2"
+
+    - name: Attendre 240 secondes avant de démarrer master3
+      pause:
+        seconds: 240
 
     - name: Vérifier si RKE2 est actif sur master2
       command: systemctl is-active rke2-server
@@ -337,53 +307,13 @@
         name: rke2-server
         enabled: true
         state: started
-      when: inventory_hostname == "master3"
       ignore_errors: true
+      when: inventory_hostname == "master3"
 
     - name: Attendre 180 secondes avant de Mettre à jour le fichier rke2.yaml
       pause:
         seconds: 180
       when: inventory_hostname == "master3"
-#
-    ###- name: Mettre à jour le fichier rke2.yaml avec l'IP publique sur master2 et 3
-    ###  lineinfile:
-    ###    path: /etc/rancher/rke2/rke2.yaml
-    ###    regexp: '^    server: https://.*:6443'
-    ###    line: '    server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
-    ###  become: true 
-#
-    ##=========== REDEMARGE M2 ET 3==================
-    #- name: Rdémarrer RKE2 server master2
-    #  systemd:
-    #    name: rke2-server
-    #    enabled: true
-    #    state: restarted
-    #  when: inventory_hostname == "master2"
-#
-    #- name: Attendre 180 secondes avant de redémarrer master3
-    #  pause:
-    #    seconds: 180
-    #  when: inventory_hostname == "master2"
-#
-    #- name: Vérifier si RKE2 est actif sur master2
-    #  command: systemctl is-active rke2-server
-    #  register: rke2_status_master2
-    #  until: rke2_status_master2.stdout == "active"
-    #  retries: 10
-    #  delay: 5
-    #  when: inventory_hostname == "master2"
-#
-#
-    #- name: Rdémarrer RKE2 server sur master3
-    #  systemd:
-    #    name: rke2-server
-    #    enabled: true
-    #    state: restarted
-    #  when: inventory_hostname == "master3"
-#
-    #- name: Attendre 180 secondes avant de démarrer le worker
-    #  pause:
-    #    seconds: 180
 
 
 #==================Worker=============================
@@ -463,6 +393,21 @@
         line: 'export PATH=$PATH:/var/lib/rancher/rke2/bin'
         create: true
 
+    - name: Ajouter les variables KUBECONFIG au PATH de l'utilisateur
+      lineinfile:
+        path: ~/.bashrc
+        line: "{{ item }}"
+        create: true
+      with_items:
+        - 'export KUBECONFIG=/home/{{ ansible_user }}/.kube/config.yaml'
+        - 'alias k=/usr/local/bin/kubectl'
+
+    - name: Exécuter export KUBECONFIG temporaire dans le terminal
+      shell: export KUBECONFIG=/home/{{ ansible_user }}/.kube/config.yml
+
+    - name: Afficher la configuration de kubectl
+      command: kubectl config view
+
     - name: Charger le nouveau PATH
       shell: source ~/.bashrc
       args:
@@ -484,8 +429,8 @@
       when: inventory_hostname == groups['masters'][0]
       become: true
 
-    - name: Exporter KUBECONFIG
-      command: export KUBECONFIG=/etc/rancher/rke2/rke2.yaml
+    #- name: Exporter KUBECONFIG
+    #  command: export KUBECONFIG=/etc/rancher/rke2/rke2.yaml
 
     - name: Vérifier les nœuds Kubernetes
       command: /var/lib/rancher/rke2/bin/kubectl get nodes
