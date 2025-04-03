@@ -275,25 +275,23 @@ jobs:
         ansible-playbook -i inventory playbook.yml 
       working-directory: ./ansible_production/
 
-    - name: Attendre 60s
+    - name: Cluster RKE2 déployé avec succès!! (Attendre 30s)
       run: |
-        sleep 60s
+        sleep 30s
 
-    - name: Vérification du kubeconfig.yaml dans -> ansible_production/
-      run: ls -lah ./ansible_production/
-    
-
-    - name: Télécharger kubeconfig comme Artifact (pour bastion)
-      uses: actions/upload-artifact@v4
-      with:
-        name: kubeconfig
-        path: ./ansible_production/kubeconfig.yaml
-        retention-days: 7  # Garde le fichier pendant 7 jours
-        
-
-    - name: Désactiver l'accès SSH depuis n'importe où
-      run: |
-        aws ec2 revoke-security-group-ingress --group-name admin_ssh_production \
-          --protocol tcp --port 22 --cidr 0.0.0.0/0 --region us-east-1
-
-
+    #- name: Vérification du kubeconfig.yaml dans -> ansible_production/
+    #  run: ls -lah ./ansible_production/
+    #
+#
+    #- name: Télécharger kubeconfig comme Artifact (pour bastion)
+    #  uses: actions/upload-artifact@v4
+    #  with:
+    #    name: kubeconfig
+    #    path: ./ansible_production/kubeconfig.yaml
+    #    retention-days: 7  # Garde le fichier pendant 7 jours
+    #    
+#
+    #- name: Désactiver l'accès SSH depuis n'importe où
+    #  run: |
+    #    aws ec2 revoke-security-group-ingress --group-name admin_ssh_production \
+    #      --protocol tcp --port 22 --cidr 0.0.0.0/0 --region us-east-1
