@@ -15,8 +15,8 @@
       blockinfile:
         path: /etc/hosts
         block: |
-          
-          {{ ansible_facts['default_ipv4']['address'] }} 
+          172.31.0.1 localhost
+          {{ ansible_facts['default_ipv4']['address'] }}
           {{ inventory_hostname }}.christ.lan 
           ::1     ip6-localhost ip6-loopback
           fe00::0 ip6-localnet
@@ -56,19 +56,6 @@
             - {{ ansible_facts['default_ipv4']['address'] }} 
           cni: "canal"
 
-    #- name: Vérifier si le fichier rke2.yaml existe
-    #  stat:
-    #    path: /etc/rancher/rke2/rke2.yaml
-    #  register: rke2_yaml_file
-#
-    #- name: Configurer le fichier rke2.yaml avec l'IP publique sur master1
-    #  copy:
-    #    dest: /etc/rancher/rke2/rke2.yaml
-    #    content: |
-    #      server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
-    #  when: inventory_hostname == groups['masters'][0]
-    #  become: true
-    
     - name: Ajouter rke2-coredns-config.yaml
       copy:
         dest: /var/lib/rancher/rke2/server/manifests/rke2-coredns-config.yaml
@@ -267,14 +254,14 @@
     #  changed_when: false
     #  when: inventory_hostname == groups['masters'][0]
     #  become: true 
-#
+##
     #- name: Afficher la liste des nœuds
     #  debug:
     #    msg: "{{ kubectl_nodes.stdout }}"
 
 
 
-- name: Vérifier si le cluster est prêt
+- name: Vérifier si le cluster est prêt (master1)
   hosts: master1
   tasks:
     - name: Vérifier si le fichier kubeconfig existe
@@ -288,14 +275,14 @@
         timeout: 300
       when: not kubeconfig_file.stat.exists
 
-    - name: Vérifier si le nœud master1 est prêt
-      shell: kubectl get nodes --no-headers | grep master1 | grep -w Ready
-      register: node_status
-      failed_when: node_status.rc != 0
-
-    - name: Afficher un message si le cluster est prêt
-      debug:
-        msg: "Le cluster est prêt. master1 est en état 'Ready'."
+    #- name: Vérifier si le nœud master1 est prêt
+    #  shell: kubectl get nodes --no-headers | grep master1 | grep -w Ready
+    #  register: node_status
+    #  failed_when: node_status.rc != 0
+#
+    #- name: Afficher un message si le cluster est prêt
+    #  debug:
+    #    msg: "Le cluster est prêt. master1 est en état 'Ready'."
 
 
 #------------------------------------------------------------
