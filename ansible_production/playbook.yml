@@ -24,7 +24,7 @@
           ff02::1 ip6-allnodes
           ff02::2 ip6-allrouters
           {{ hostvars[groups["masters"][0]]["ansible_host"] }}
-          192.168.1.35 rke2cluster.christ.lan
+          172.31.76.101 rke2cluster.christ.lan
 
 
 - name: Configurer le premier master
@@ -44,6 +44,7 @@
         dest: /etc/rancher/rke2/config.yaml
         content: |
           tls-san:
+            - 172.31.76.101 
             - {{ hostvars[groups["masters"][0]]["ansible_host"] }}
             - {{ hostvars[groups["masters"][1]]["ansible_host"] }}
             - {{ hostvars[groups["masters"][2]]["ansible_host"] }}
@@ -64,7 +65,7 @@
       copy:
         dest: /etc/rancher/rke2/rke2.yaml
         content: |
-          server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443
+          server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:6443'
       when: inventory_hostname == groups['masters'][0]
       become: true
     
@@ -219,17 +220,27 @@
         line: 'export PATH=$PATH:/var/lib/rancher/rke2/bin'
         create: true
 
-    - name: Ajouter les variables KUBECONFIG au PATH de l'utilisateur
+    - name: Ajouter la configuration KUBECONFIG au PATH
       lineinfile:
         path: ~/.bashrc
-        line: "{{ item }}"
+        line: 'export KUBECONFIG=/etc/rancher/rke2/rke2.yaml'
         create: true
-      with_items:
-        - 'export KUBECONFIG=/home/{{ ansible_user }}/.kube/config.yaml'
-        - 'alias k=/usr/local/bin/kubectl'
 
-    - name: Exécuter export KUBECONFIG 
-      shell: export KUBECONFIG=/home/{{ ansible_user }}/.kube/config.yml
+    - name: Ajouter l'alias k=/usr/local/bin/kubectl
+      lineinfile:
+        path: ~/.bashrc
+        line: 'alias k=/usr/local/bin/kubectl'
+        create: true
+
+    - name: Vérifier que le fichier de configuration KUBECONFIG existe
+      stat:
+        path: /etc/rancher/rke2/rke2.yaml
+      register: kubeconfig_stat
+
+    - name: Afficher l'état du fichier KUBECONFIG
+      debug:
+        msg: "Le fichier rke2.yaml existe avec les permissions: {{ kubeconfig_stat.stat.mode }}"
+      when: kubeconfig_stat.stat.exists
 
     - name: Charger le nouveau PATH
       shell: source ~/.bashrc
@@ -245,16 +256,10 @@
       debug:
         msg: "{{ kubectl_version.stdout }}"
 
-    - name: Modifier les permissions de rke2.yaml
-      file:
-        path: /etc/rancher/rke2/rke2.yaml
-        mode: '0644'
-      #when: inventory_hostname == groups['masters'][0]
-      #{{ hostvars[groups["masters"][0]]["ansible_host"] }}
-      #become: true
-
-    #- name: Exporter KUBECONFIG
-    #  command: export KUBECONFIG=/etc/rancher/rke2/rke2.yaml
+    #- name: Modifier les permissions de rke2.yaml
+    #  file:
+    #    path: /etc/rancher/rke2/rke2.yaml
+    #    mode: '0644'
 
     - name: Vérifier les nœuds Kubernetes
       command: /var/lib/rancher/rke2/bin/kubectl get nodes
@@ -293,6 +298,14 @@
         msg: "Le cluster est prêt. master1 est en état 'Ready'."
 
 
+#------------------------------------------------------------
+    - name: Stocker l'IP privée de master1 dans hostvars
+      set_fact:
+        master1_private_ip: "{{ ansible_facts['default_ipv4']['address'] }}"
+
+
+
+
 - name: Configurer les 2 autres masters
   hosts: master2,master3
   become: true
@@ -306,13 +319,14 @@
         - /etc/rancher/rke2
         - /var/lib/rancher/rke2/server/manifests
 
-    - name: Copier la configuration RKE2
+    - name: Copier la configuration RKE2 sur les 2 masters
       copy:
         dest: /etc/rancher/rke2/config.yaml
         content: |
           token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
-          server: "https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}"
+          server: "172.31.76.101:9345"
           tls-san:
+            - 172.31.76.101 
             - {{ hostvars[groups["masters"][0]]["ansible_host"] }}
             - {{ hostvars[groups["masters"][1]]["ansible_host"] }}
             - {{ hostvars[groups["masters"][2]]["ansible_host"] }}
@@ -327,7 +341,7 @@
       #when: inventory_hostname != "master1"
 
 
-    # Installé et configuré Kube-VIP sur tous les masters 
+    # Installé et configuré Kube-VIP sur les 2 masters 
     - name: Télécharger le fichier RBAC de Kube-VIP
       get_url:
         url: https://kube-vip.io/manifests/rbac.yaml
@@ -444,7 +458,7 @@
         dest: /etc/rancher/rke2/config.yaml
         content: |    
           token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
-          server: https://{{ hostvars[groups["masters"][0]]["ansible_host"] }}:9345
+          server: https://172.31.76.101:9345
 
     - name: Télécharger et installer RKE2
       get_url:
