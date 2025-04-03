@@ -35,11 +35,11 @@ variable "mon_ip" {
 # 3 Masters
 resource "aws_instance" "masters" {
 
-  count         = var.counterInstance_preprod # creation multiple des instances
-  ami           = "ami-04b4f1a9cf54c11d0"
-  instance_type = var.ec2_type_preprod
-  key_name      = aws_key_pair.vockeyprod.key_name
-  #subnet_id              = "subnet-07ef8d731542349d5" #  sous-réseau appartenant au vpc-09c4b38653df63f28
+  count                  = var.counterInstance_preprod # creation multiple des instances
+  ami                    = "ami-04b4f1a9cf54c11d0"
+  instance_type          = var.ec2_type_preprod
+  key_name               = aws_key_pair.vockeyprod.key_name
+  subnet_id              = "subnet-07ef8d731542349d5" #  sous-réseau appartenant au vpc-09c4b38653df63f28
   vpc_security_group_ids = [aws_security_group.admin_ssh_production.id]
 
 
@@ -60,10 +60,10 @@ resource "aws_instance" "masters" {
 resource "aws_instance" "worker1" {
 
   #count         = var.counterInstance_preprod # creation multiple des instances
-  ami           = "ami-04b4f1a9cf54c11d0"
-  instance_type = "t2.xlarge" #var.ec2_type_preprod
-  key_name      = aws_key_pair.vockeyprod.key_name
-  #subnet_id              = "subnet-07ef8d731542349d5" #  sous-réseau vpc-09c4b38653df63f28
+  ami                    = "ami-04b4f1a9cf54c11d0"
+  instance_type          = "t2.xlarge" #var.ec2_type_preprod
+  key_name               = aws_key_pair.vockeyprod.key_name
+  subnet_id              = "subnet-07ef8d731542349d5" #  sous-réseau vpc-09c4b38653df63f28
   vpc_security_group_ids = [aws_security_group.admin_ssh_production.id]
 
 

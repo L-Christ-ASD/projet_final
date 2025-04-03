@@ -16,14 +16,16 @@
         path: /etc/hosts
         block: |
           127.0.0.1 localhost
-          127.0.1.1 {{ inventory_hostname }}.christ.lan 
+          127.0.1.1 {{ inventory_hostname }}.christ.lan
+          {{ inventory_hostname }}
 
           ::1     ip6-localhost ip6-loopback
           fe00::0 ip6-localnet
           ff00::0 ip6-mcastprefix
           ff02::1 ip6-allnodes
           ff02::2 ip6-allrouters
-          {{ hostvars[groups["masters"][0]]["ansible_host"] }} master1
+          
+          {{ ansible_facts['default_ipv4']['address'] }} master1
           172.31.76.101 rke2cluster.christ.lan
 
 
@@ -49,9 +51,6 @@
             - {{ inventory_hostname }}
             - {{ ansible_facts['default_ipv4']['address'] }}
             - 172.31.76.101
-            - {{ hostvars[groups["masters"][0]]["ansible_host"] }}
-            - {{ hostvars[groups["masters"][1]]["ansible_host"] }}
-            - {{ hostvars[groups["masters"][2]]["ansible_host"] }}
           cni: "canal"
 
     - name: Ajouter rke2-coredns-config.yaml
@@ -128,9 +127,9 @@
         enabled: true
         state: restarted
 
-    - name: Pause de 120 secondes pour laisser RKE2-server redémarrer
+    - name: Pause de 300 secondes pour laisser master1 démarer le service RKE2 tranquilement!
       ansible.builtin.pause:
-        seconds: 120
+        seconds: 300
 
     - name: Attendre que RKE2 soit actif
       command: systemctl is-active rke2-server
@@ -203,7 +202,7 @@
       command: >
         /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock 
         --namespace k8s.io run --rm --net-host docker.io/plndr/kube-vip:latest vip /kube-vip 
-        manifest daemonset --arp --interface eth0 --address 172.31.76.100 
+        manifest daemonset --arp --interface enX0 --address 172.31.76.100 
         --controlplane --leaderElection --taint --services --inCluster 
       register: kube_vip_manifest
 
@@ -362,16 +361,18 @@
             - {{ inventory_hostname }}
             - {{ ansible_facts['default_ipv4']['address'] }}
             - 172.31.76.101 
-            - 127.0.0.1
             - rke2cluster.christ.lan
             - master1.christ.lan
             - master1
           write-kubeconfig-mode: "0644"
-    
-#  {{ hostvars[groups["masters"][0]]["ansible_host"] }}
-#  {{ hostvars[groups["masters"][1]]["ansible_host"] }}
-#  {{ hostvars[groups["masters"][2]]["ansible_host"] }}
-#
+
+# tls-san de master1:
+#            - rke2cluster.christ.lan
+#            - {{ inventory_hostname }}.christ.lan
+#            - {{ inventory_hostname }}
+#            - {{ ansible_facts['default_ipv4']['address'] }}
+#            - 172.31.76.101
+#            - 127.0.0.1
 
 
 
