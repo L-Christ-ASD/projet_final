@@ -402,9 +402,9 @@
         var: rke2_version.stdout
       #when: inventory_hostname != "master1"
 
-    - name: Pause de 360 secondes pour laisser master1 démarer le service RKE2 tranquilement!
+    - name: Pause de 300 secondes pour laisser master1 démarer le service RKE2 tranquilement!
       ansible.builtin.pause:
-        seconds: 360
+        seconds: 300
 
     - name: Démarrer RKE2 server master2
       systemd:
@@ -414,11 +414,11 @@
       ignore_errors: true
       when: inventory_hostname == "master2"
 
-    - name: Pause de 360 secondes pour laisser master1 démarer le service RKE2 tranquilement!
+    - name: Pause de 420 secondes pour laisser master2 démarer le service RKE2 tranquilement!
       ansible.builtin.pause:
-        seconds: 360
+        seconds: 420
 
-    - name: Attendre que RKE2 soit actif
+    - name: Vérifier le status rke2-server sur master2
       command: systemctl is-active rke2-server
       register: rke2_status
       until: rke2_status.stdout == "active"
@@ -426,17 +426,26 @@
       delay: 10
       when: inventory_hostname == "master2"
 
+    - name: Afficher le statut du service RKE2 master2
+      debug:
+        var: rke2_status.stdout_lines
+      when: inventory_hostname == "master2"
+
+    - name: Pause de 60 secondes pour laisser master2 démarer le service RKE2 tranquilement!
+      ansible.builtin.pause:
+        seconds: 60
+
     - name: Vérifier si RKE2 est actif sur master2
       command: systemctl is-active rke2-server
       register: rke2_status_master2
       until: rke2_status_master2.stdout == "active"
-      retries: 10
-      delay: 5
+      retries: 20
+      delay: 10
       when: inventory_hostname == "master2"
 
-    - name: Attendre 180 secondes avant de démarrer master3
-      pause:
-        seconds: 180
+    #- name: Attendre 60 secondes avant de démarrer master3
+    #  pause:
+    #    seconds: 60
 
     - name: Démarrer RKE2 server sur master3
       systemd:
@@ -446,6 +455,10 @@
       ignore_errors: true
       when: inventory_hostname == "master3"
 
+    - name: Pause de 420 secondes pour laisser master3 démarer le service RKE2 tranquilement!
+      ansible.builtin.pause:
+        seconds: 420
+
     - name: Attendre que RKE2 soit actif
       command: systemctl is-active rke2-server
       register: rke2_status
@@ -454,10 +467,10 @@
       delay: 10
       when: inventory_hostname == "master3"
 
-    - name: Attendre 180 secondes avant de Mettre à jour le fichier rke2.yaml
-      pause:
-        seconds: 180
-      when: inventory_hostname == "master3"
+    #- name: Attendre 60 secondes avant de Mettre à jour le fichier rke2.yaml
+    #  pause:
+    #    seconds: 60
+    #  when: inventory_hostname == "master3"
 
 
 
