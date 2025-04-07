@@ -276,6 +276,10 @@
       file:
         path: /etc/rancher/rke2/rke2.yaml
         mode: '0644'
+      
+    - name: Vérifier les permissions de rke2.yaml
+      stat:
+        path: /etc/rancher/rke2/rke2.yaml
       register: kubeconfig_stat
 
     - name: Afficher les nouvelles permissions de rke2.yml
@@ -296,12 +300,6 @@
     - name: Afficher la version de kubectl
       debug:
         msg: "{{ kubectl_version.stdout }}"
-
-
-    #- name: Vérifier les nœuds Kubernetes
-    #  command: /var/lib/rancher/rke2/bin/kubectl get nodes
-    #  register: kubectl_nodes
-    #  changed_when: false
 
     - name: Attendre que les nœuds soient prêts
       command: /var/lib/rancher/rke2/bin/kubectl get nodes --no-headers
