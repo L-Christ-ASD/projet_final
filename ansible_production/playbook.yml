@@ -17,7 +17,6 @@
         block: |
           127.0.0.1 localhost
           127.0.1.1 {{ inventory_hostname }}.christ.lan
-          {{ inventory_hostname }}
 
           ::1     ip6-localhost ip6-loopback
           fe00::0 ip6-localnet
@@ -25,8 +24,9 @@
           ff02::1 ip6-allnodes
           ff02::2 ip6-allrouters
           
-          {{ ansible_facts['default_ipv4']['address'] }} {{ inventory_hostname }}
           172.31.64.101 rke2cluster.christ.lan
+
+#         {{ ansible_facts['default_ipv4']['address'] }} {{ inventory_hostname }}
 
 
 - name: Configurer le premier master
@@ -46,12 +46,12 @@
         dest: /etc/rancher/rke2/config.yaml
         content: |
           tls-san:
-            - rke2cluster.christ.lan
             - {{ inventory_hostname }}.christ.lan
             - {{ inventory_hostname }}
             - {{ ansible_facts['default_ipv4']['address'] }}
             - 172.31.76.101
           cni: "canal"
+#           - rke2cluster.christ.lan
 
     - name: Ajouter rke2-coredns-config.yaml
       copy:
@@ -356,14 +356,11 @@
           token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
           server: "https://{{ hostvars['master1']['master1_private_ip'] }}:9345"
           tls-san:
-            - {{ hostvars['master1']['master1_private_ip'] }}
             - {{ inventory_hostname }}.christ.lan
             - {{ inventory_hostname }}
             - {{ ansible_facts['default_ipv4']['address'] }}
             - 172.31.64.101 
             - rke2cluster.christ.lan
-            - master1.christ.lan
-            - master1
           write-kubeconfig-mode: "0644"
 
 # tls-san de master1:
@@ -402,9 +399,9 @@
         var: rke2_version.stdout
       #when: inventory_hostname != "master1"
 
-    - name: Pause de 300 secondes pour laisser master1 démarer le service RKE2 tranquilement!
-      ansible.builtin.pause:
-        seconds: 300
+    #- name: Pause de 60 secondes pour laisser master1 démarer le service RKE2 tranquilement!
+    #  ansible.builtin.pause:
+    #    seconds: 60
 
     - name: Démarrer RKE2 server master2
       systemd:
@@ -417,13 +414,14 @@
     - name: Pause de 420 secondes pour laisser master2 démarer le service RKE2 tranquilement!
       ansible.builtin.pause:
         seconds: 420
+      when: inventory_hostname == "master2"
 
     - name: Vérifier le status rke2-server sur master2
       command: systemctl is-active rke2-server
       register: rke2_status
       until: rke2_status.stdout == "active"
-      retries: 20
-      delay: 10
+      retries: 30
+      delay: 20
       when: inventory_hostname == "master2"
 
     - name: Afficher le statut du service RKE2 master2
@@ -431,9 +429,12 @@
         var: rke2_status.stdout_lines
       when: inventory_hostname == "master2"
 
-    - name: Pause de 60 secondes pour laisser master2 démarer le service RKE2 tranquilement!
-      ansible.builtin.pause:
-        seconds: 60
+    - name: Attendre que SSH soit de nouveau disponible après démarrage de RKE2
+      wait_for_connection:
+        timeout: 300
+        delay: 20
+      when: inventory_hostname == "master2"
+      
 
     - name: Vérifier si RKE2 est actif sur master2
       command: systemctl is-active rke2-server
@@ -443,9 +444,10 @@
       delay: 10
       when: inventory_hostname == "master2"
 
-    #- name: Attendre 60 secondes avant de démarrer master3
-    #  pause:
-    #    seconds: 60
+    - name: Afficher le statut du service RKE2 master2
+      debug:
+        var: rke2_status.stdout_lines
+      when: inventory_hostname == "master2"
 
     - name: Démarrer RKE2 server sur master3
       systemd:
@@ -458,14 +460,28 @@
     - name: Pause de 420 secondes pour laisser master3 démarer le service RKE2 tranquilement!
       ansible.builtin.pause:
         seconds: 420
+      when: inventory_hostname == "master3"
+
+    - name: Attendre que SSH soit de nouveau disponible après démarrage de RKE2
+      wait_for_connection:
+        timeout: 300
+        delay: 20
+      when: inventory_hostname == "master3"
 
     - name: Attendre que RKE2 soit actif
       command: systemctl is-active rke2-server
       register: rke2_status
       until: rke2_status.stdout == "active"
-      retries: 20
-      delay: 10
+      retries: 30
+      delay: 20
       when: inventory_hostname == "master3"
+
+    - name: Afficher le statut du service RKE2 master2
+      debug:
+        var: rke2_status.stdout_lines
+      when: inventory_hostname == "master2"
+
+
 
     #- name: Attendre 60 secondes avant de Mettre à jour le fichier rke2.yaml
     #  pause:
