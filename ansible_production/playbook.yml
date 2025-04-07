@@ -114,48 +114,48 @@
       debug:
         var: rke2_status.stdout_lines
 
-    - name: Mettre à jour le fichier rke2.yaml avec l'IP privée sur master1
-      lineinfile:
-        path: /etc/rancher/rke2/rke2.yaml
-        regexp: '^    server: https://.*:6443'
-        line: '    server: https://{{ ansible_facts["default_ipv4"]["address"] }}:6443'
-                      
+    #- name: Mettre à jour le fichier rke2.yaml avec l'IP privée sur master1
+    #  lineinfile:
+    #    path: /etc/rancher/rke2/rke2.yaml
+    #    regexp: '^    server: https://.*:6443'
+    #    line: '    server: https://{{ ansible_facts["default_ipv4"]["address"] }}:6443'
+    #                  
+#
+    #- name: Redémarer RKE2 server sur master1 avec l'IP privée
+    #  systemd:
+    #    name: rke2-server
+    #    enabled: true
+    #    state: restarted
+#
+    #- name: Pause de 300 secondes pour laisser master1 démarer le service RKE2 tranquilement!
+    #  ansible.builtin.pause:
+    #    seconds: 300
 
-    - name: Redémarer RKE2 server sur master1 avec l'IP privée
-      systemd:
-        name: rke2-server
-        enabled: true
-        state: restarted
-
-    - name: Pause de 300 secondes pour laisser master1 démarer le service RKE2 tranquilement!
-      ansible.builtin.pause:
-        seconds: 300
-
-    - name: Attendre que RKE2 soit actif
-      command: systemctl is-active rke2-server
-      register: rke2_status
-      until: rke2_status.stdout == "active"
-      retries: 10
-      delay: 5
-
-
-    - name: Vérifier le statut du service RKE2 après démarrage
-      command: systemctl status rke2-server
-      register: rke2_status
-      changed_when: false
-
-    - name: Afficher le statut du service RKE2
-      debug:
-        var: rke2_status.stdout_lines
-
-    - name: Vérifier le fichier de configuration RKE2
-      command: cat /etc/rancher/rke2/rke2.yaml
-      register: rke2_config
-      changed_when: false
-
-    - name: Afficher le fichier de configuration RKE2
-      debug:
-        var: rke2_config.stdout_lines
+    #- name: Attendre que RKE2 soit actif
+    #  command: systemctl is-active rke2-server
+    #  register: rke2_status
+    #  until: rke2_status.stdout == "active"
+    #  retries: 10
+    #  delay: 5
+#
+#
+    #- name: Vérifier le statut du service RKE2 après démarrage
+    #  command: systemctl status rke2-server
+    #  register: rke2_status
+    #  changed_when: false
+#
+    #- name: Afficher le statut du service RKE2
+    #  debug:
+    #    var: rke2_status.stdout_lines
+#
+    #- name: Vérifier le fichier de configuration RKE2
+    #  command: cat /etc/rancher/rke2/rke2.yaml
+    #  register: rke2_config
+    #  changed_when: false
+#
+    #- name: Afficher le fichier de configuration RKE2
+    #  debug:
+    #    var: rke2_config.stdout_lines
 
     # ==================Vérifs=====================
 
@@ -250,7 +250,7 @@
         line: 'export PATH=$PATH:/var/lib/rancher/rke2/bin'
         state: present
 
-    - name: Ajouter la configuration KUBECONFIG au PATH
+    - name: Ajouter la variable d'environnement KUBECONFIG dans .bashrc
       lineinfile:
         path: ~/.bashrc
         line: 'export KUBECONFIG=/etc/rancher/rke2/rke2.yaml'
@@ -301,17 +301,11 @@
       debug:
         msg: "{{ kubectl_version.stdout }}"
 
-    #- name: Attendre que les nœuds soient prêts
-    #  command: /var/lib/rancher/rke2/bin/kubectl get nodes --no-headers
-    #  register: kubectl_nodes
-    #  changed_when: false
-    #  until: "'Ready' in kubectl_nodes.stdout"
-    #  retries: 40
-    #  delay: 30
-
     - name: Debug - Voir la sortie brute de kubectl get nodes
       command: /var/lib/rancher/rke2/bin/kubectl get nodes --no-headers
       register: kubectl_nodes
+      environment:
+        KUBECONFIG: /etc/rancher/rke2/rke2.yaml
       changed_when: false
       ignore_errors: true
 
@@ -322,6 +316,8 @@
     - name: Attendre que tous les nœuds soient Ready (loop avec attente)
       shell: /var/lib/rancher/rke2/bin/kubectl get nodes --no-headers
       register: kubectl_nodes
+      environment:
+        KUBECONFIG: /etc/rancher/rke2/rke2.yaml
       changed_when: false
       until: kubectl_nodes.stdout is search(" Ready ")
       retries: 40
@@ -331,6 +327,14 @@
       debug:
         msg: "{{ kubectl_nodes.stdout }}"
 
+
+    #- name: Attendre que les nœuds soient prêts
+    #  command: /var/lib/rancher/rke2/bin/kubectl get nodes --no-headers
+    #  register: kubectl_nodes
+    #  changed_when: false
+    #  until: "'Ready' in kubectl_nodes.stdout"
+    #  retries: 40
+    #  delay: 30
 
 #------------------------------------------------------------
     - name: Stocker l'IP privée de master1 dans hostvars
