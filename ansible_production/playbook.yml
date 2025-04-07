@@ -301,11 +301,29 @@
       debug:
         msg: "{{ kubectl_version.stdout }}"
 
-    - name: Attendre que les nœuds soient prêts
+    #- name: Attendre que les nœuds soient prêts
+    #  command: /var/lib/rancher/rke2/bin/kubectl get nodes --no-headers
+    #  register: kubectl_nodes
+    #  changed_when: false
+    #  until: "'Ready' in kubectl_nodes.stdout"
+    #  retries: 40
+    #  delay: 30
+
+    - name: Debug - Voir la sortie brute de kubectl get nodes
       command: /var/lib/rancher/rke2/bin/kubectl get nodes --no-headers
       register: kubectl_nodes
       changed_when: false
-      until: "'Ready' in kubectl_nodes.stdout"
+      ignore_errors: true
+
+    - name: Afficher ce que renvoie kubectl get nodes
+      debug:
+        var: kubectl_nodes.stdout_lines
+
+    - name: Attendre que tous les nœuds soient Ready (loop avec attente)
+      shell: /var/lib/rancher/rke2/bin/kubectl get nodes --no-headers
+      register: kubectl_nodes
+      changed_when: false
+      until: kubectl_nodes.stdout is search(" Ready ")
       retries: 40
       delay: 30
 
@@ -323,7 +341,7 @@
 
 
 - name: Configurer les 2 autres masters
-  hosts: master2,master3
+  hosts: master2, master3
   become: true
   tasks:
 
