@@ -237,7 +237,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh_in_myip" {
 # temporairement pour le worker k8s
 resource "aws_vpc_security_group_ingress_rule" "allow_port_9345" {
   security_group_id = aws_security_group.admin_ssh_production.id
-  cidr_ipv4         = "0.0.0.0/0"
+  cidr_ipv4         = "172.31.0.0/16"
   from_port         = 9345
   ip_protocol       = "tcp"
   to_port           = 9345
@@ -245,7 +245,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_port_9345" {
 # temporairement pour le worker k8s
 resource "aws_vpc_security_group_ingress_rule" "allow_port_6443" {
   security_group_id = aws_security_group.admin_ssh_production.id
-  cidr_ipv4         = "0.0.0.0/0"
+  cidr_ipv4         = "172.31.0.0/16"
   from_port         = 6443
   ip_protocol       = "tcp"
   to_port           = 6443
@@ -253,7 +253,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_port_6443" {
 # temporairement pour le worker k8s
 resource "aws_vpc_security_group_ingress_rule" "allow_port_UDP" {
   security_group_id = aws_security_group.admin_ssh_production.id
-  cidr_ipv4         = "0.0.0.0/0"
+  cidr_ipv4         = "172.31.0.0/16"
   from_port         = 8472
   ip_protocol       = "udp"
   to_port           = 8472
@@ -261,7 +261,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_port_UDP" {
 # temporairement pour le worker k8s
 resource "aws_vpc_security_group_ingress_rule" "allow_port_10250" {
   security_group_id = aws_security_group.admin_ssh_production.id
-  cidr_ipv4         = "0.0.0.0/0"
+  cidr_ipv4         = "172.31.0.0/16"
   from_port         = 10250
   ip_protocol       = "tcp"
   to_port           = 10250
@@ -280,6 +280,14 @@ resource "aws_security_group_rule" "allow_tcp_2379" {
   source_security_group_id = aws_security_group.admin_ssh_production.id # Groupe de sécurité source
 }
 
+resource "aws_security_group_rule" "allow_tcp_2380" {
+  type                     = "ingress"
+  from_port                = 2380
+  to_port                  = 2380
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.admin_ssh_production.id # Groupe de sécurité cible
+  source_security_group_id = aws_security_group.admin_ssh_production.id # Groupe de sécurité source
+}
 
 
 
