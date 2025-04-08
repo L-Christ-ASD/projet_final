@@ -49,6 +49,7 @@
             - {{ inventory_hostname }}.christ.lan
             - {{ inventory_hostname }}
             - {{ ansible_facts['default_ipv4']['address'] }}
+            - {{ hostvars[groups["masters"][1]]["ansible_host"] }}
             - 172.31.76.101
           cni: "canal"
 #           - rke2cluster.christ.lan
@@ -114,48 +115,6 @@
       debug:
         var: rke2_status.stdout_lines
 
-    #- name: Mettre à jour le fichier rke2.yaml avec l'IP privée sur master1
-    #  lineinfile:
-    #    path: /etc/rancher/rke2/rke2.yaml
-    #    regexp: '^    server: https://.*:6443'
-    #    line: '    server: https://{{ ansible_facts["default_ipv4"]["address"] }}:6443'
-    #                  
-#
-    #- name: Redémarer RKE2 server sur master1 avec l'IP privée
-    #  systemd:
-    #    name: rke2-server
-    #    enabled: true
-    #    state: restarted
-#
-    #- name: Pause de 300 secondes pour laisser master1 démarer le service RKE2 tranquilement!
-    #  ansible.builtin.pause:
-    #    seconds: 300
-
-    #- name: Attendre que RKE2 soit actif
-    #  command: systemctl is-active rke2-server
-    #  register: rke2_status
-    #  until: rke2_status.stdout == "active"
-    #  retries: 10
-    #  delay: 5
-#
-#
-    #- name: Vérifier le statut du service RKE2 après démarrage
-    #  command: systemctl status rke2-server
-    #  register: rke2_status
-    #  changed_when: false
-#
-    #- name: Afficher le statut du service RKE2
-    #  debug:
-    #    var: rke2_status.stdout_lines
-#
-    #- name: Vérifier le fichier de configuration RKE2
-    #  command: cat /etc/rancher/rke2/rke2.yaml
-    #  register: rke2_config
-    #  changed_when: false
-#
-    #- name: Afficher le fichier de configuration RKE2
-    #  debug:
-    #    var: rke2_config.stdout_lines
 
     # ==================Vérifs=====================
 
@@ -212,12 +171,6 @@
         dest: /var/lib/rancher/rke2/server/manifests/kube-vip.yaml
         mode: '0644'
 
-
-    #====== application des manifestes via bastion================
-    #- name: Appliquer le manifeste Kube-VIP
-    #  command: kubectl apply -f /var/lib/rancher/rke2/server/manifests/kube-vip.yaml
-    #  when: kube_vip_manifest.stdout is defined
-
     - name: Vérifier le fichier de configuration RKE2
       command: cat /etc/rancher/rke2/rke2.yaml
       register: rke2_config
@@ -228,7 +181,7 @@
         var: rke2_config.stdout_lines
 
 
-# kubectl sur master1
+# =============== kubectl sur master1 =====================
 - name: Configurer kubectl sur master-1
   hosts: master1
   become: true
@@ -489,52 +442,10 @@
       delay: 20
       when: inventory_hostname == "master3"
 
-    - name: Afficher le statut du service RKE2 master2
+    - name: Afficher le statut du service RKE2 master3
       debug:
         var: rke2_status.stdout_lines
-      when: inventory_hostname == "master2"
-
-
-
-    #- name: Attendre 60 secondes avant de Mettre à jour le fichier rke2.yaml
-    #  pause:
-    #    seconds: 60
-    #  when: inventory_hostname == "master3"
-
-
-#============== Installation et configuration de Kube-VIP =========
-#    # sur les 2 masters 
-#    - name: Télécharger le fichier RBAC de Kube-VIP pour les 2 autres masters
-#      get_url:
-#        url: https://kube-vip.io/manifests/rbac.yaml
-#        dest: /var/lib/rancher/rke2/server/manifests/rbac.yaml
-#        mode: '0644'
-#
-#    - name: Télécharger l'image Kube-VIP
-#      command: >
-#        /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock 
-#        --namespace k8s.io image pull docker.io/plndr/kube-vip:latest
-#      register: kube_vip_pull
-#      changed_when: "'unpacking' in kube_vip_pull.stdout"
-#
-#    - name: Vérifier le téléchargement de l'image Kube-VIP
-#      debug:
-#        var: kube_vip_pull.stdout_lines
-#
-#    - name: Générer le manifeste Kube-VIP
-#      command: >
-#        /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock 
-#        --namespace k8s.io run --rm --net-host docker.io/plndr/kube-vip:latest vip /kube-vip 
-#        manifest daemonset --arp --interface enX0 --address 172.31.64.101
-#        --controlplane --leaderElection --taint --services --inCluster 
-#      register: kube_vip_manifest
-#
-#    - name: Sauvegarder le manifeste Kube-VIP
-#      copy:
-#        content: "{{ kube_vip_manifest.stdout }}"
-#        dest: /var/lib/rancher/rke2/server/manifests/kube-vip.yaml
-#        mode: '0644'
-
+      when: inventory_hostname == "master3"
 
 
 #==================Worker=============================
@@ -610,4 +521,32 @@
     - name: Voici le resultat final du cluster. Merci Christ!!
       debug:
         var: kubectl_nodes.stdout_lines
+
+#=================================================================
+#               Pour la machine Bastionn:
+#=================================================================
+# Solution : 
+# 
+# Sur master1, tu peux copier le fichier kubeconfig vers ta machine locale.
+# 
+# Sur master1, vérifie le chemin du fichier :
+# 
+# sudo cat /etc/rancher/rke2/rke2.yaml
+# 
+# Copie ce fichier sur ta machine locale avec scp :
+# 
+# scp -i ~/chemin/vers/vockeyprod.pem ubuntu@<IP_PUBLIC_MASTER1>:/etc/rancher/rke2/rke2.yaml ~/.kube/config
+# 
+# Modifie le serveur dans le fichier copié :
+# 
+# nano ~/.kube/config
+# 
+# Et remplace l'adresse 127.0.0.1 ou localhost dans la ligne server: par l'IP publique de master1, comme ceci :
+# 
+# server: https://<IP_PUBLIC_MASTER1>:6443
+# Tu peux aussi mettre le DNS public s’il est dispo, genre : rke2cluster.christ.lan
+# 
+# Teste :
+# 
+# kubectl get nodes
 
