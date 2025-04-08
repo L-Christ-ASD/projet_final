@@ -348,16 +348,11 @@
   hosts: master2, master3
   become: true
   tasks:
-    #===================== stocker les ips des  masters 2 et 3 ========================
-    - name: Stocker l'IP privée de master2 dans hostvars
+    #===================== stocker les ips (chaque hôte le fait pour lui-même) ========================
+    - name: Stocker l'IP privée dans hostvars de  master 2 et 3
       set_fact:
-        master2_private_ip: "{{ ansible_facts['default_ipv4']['address'] }}"
-      when: inventory_hostname != "master2"
+        my_private_ip: "{{ ansible_facts['default_ipv4']['address'] }}"
 
-    - name: Stocker l'IP privée de master3 dans hostvars
-      set_fact:
-        master3_private_ip: "{{ ansible_facts['default_ipv4']['address'] }}"
-      when: inventory_hostname != "master3"
     #-------------------------------------------------------------------
 
     - name: Créer les dossiers nécessaires
@@ -380,8 +375,9 @@
             - master2
             - master3            
             - {{ hostvars['master1']['master1_private_ip'] }}
-            - {{ hostvars['master2']['master2_private_ip'] }}
-            - {{ hostvars['master3']['master3_private_ip'] }}
+            - {{ hostvars['master2']['my_private_ip'] }}
+            - {{ hostvars['master3']['my_private_ip'] }}
+
             - 172.31.64.101
             - {{ hostvars[groups['masters'][0]]["ansible_host"] }}
             - {{ hostvars[groups["masters"][1]]["ansible_host"] }}
