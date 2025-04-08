@@ -263,3 +263,19 @@ curl -sfL https://get.rke2.io | sh -
 sudo systemctl enable --now rke2-server
 
 ``` 
+
+
+
+# exemple ansible teste aws
+tls-san:
+    - master3.christ.lan
+    - master3
+    - 172.31.72.186 ok    privé master3{{ ansible_facts['default_ipv4']['address'] }}
+
+    - 44.221.47.249 IPv4  publique master2
+    - 3.236.73.132        publique master1
+    - 100.28.231.60       publique master3
+
+    - 172.31.79.40        privé master1
+    - 172.31.79.127       privé master2
+    - rke2cluster.christ.lan

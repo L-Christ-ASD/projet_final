@@ -348,6 +348,17 @@
   hosts: master2, master3
   become: true
   tasks:
+    #===================== stocker les ips des  masters 2 et 3 ========================
+    - name: Stocker l'IP privée de master2 dans hostvars
+      set_fact:
+        master2_private_ip: "{{ ansible_facts['default_ipv4']['address'] }}"
+      when: inventory_hostname != "master2"
+
+    - name: Stocker l'IP privée de master3 dans hostvars
+      set_fact:
+        master3_private_ip: "{{ ansible_facts['default_ipv4']['address'] }}"
+      when: inventory_hostname != "master3"
+    #-------------------------------------------------------------------
 
     - name: Créer les dossiers nécessaires
       file:
@@ -362,15 +373,24 @@
         dest: /etc/rancher/rke2/config.yaml
         content: |
           token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
-          server: "https://172.31.64.101:9345"
+          server: "https://{{ hostvars['master1']['master1_private_ip'] }}:9345"
           tls-san:
             - {{ inventory_hostname }}.christ.lan
-            - {{ inventory_hostname }}
-            - {{ ansible_facts['default_ipv4']['address'] }}
-            - 172.31.64.101 
+            - master1
+            - master2
+            - master3            
+            - {{ hostvars['master1']['master1_private_ip'] }}
+            - {{ hostvars['master2']['master2_private_ip'] }}
+            - {{ hostvars['master3']['master3_private_ip'] }}
+            - 172.31.64.101
+            - {{ hostvars[groups['masters'][0]]["ansible_host"] }}
+            - {{ hostvars[groups["masters"][1]]["ansible_host"] }}
+            - {{ hostvars[groups["masters"][2]]["ansible_host"] }}
             - rke2cluster.christ.lan
           write-kubeconfig-mode: "0644"
 
+
+#- {{ ansible_facts['default_ipv4']['address'] }}
 # server: "https://{{ hostvars['master1']['master1_private_ip'] }}:9345"
 
 
@@ -398,11 +418,7 @@
     - name: Afficher la version de RKE2
       debug:
         var: rke2_version.stdout
-      #when: inventory_hostname != "master1"
 
-    #- name: Pause de 60 secondes pour laisser master1 démarer le service RKE2 tranquilement!
-    #  ansible.builtin.pause:
-    #    seconds: 60
 
     - name: Démarrer RKE2 server master2
       systemd:
@@ -421,8 +437,8 @@
       command: systemctl is-active rke2-server
       register: rke2_status
       until: rke2_status.stdout == "active"
-      retries: 30
-      delay: 20
+      retries: 40
+      delay: 30
       when: inventory_hostname == "master2"
 
     - name: Afficher le statut du service RKE2 master2
@@ -491,37 +507,37 @@
 
 
 #============== Installation et configuration de Kube-VIP =========
-    # sur les 2 masters 
-    - name: Télécharger le fichier RBAC de Kube-VIP pour les 2 autres masters
-      get_url:
-        url: https://kube-vip.io/manifests/rbac.yaml
-        dest: /var/lib/rancher/rke2/server/manifests/rbac.yaml
-        mode: '0644'
-
-    - name: Télécharger l'image Kube-VIP
-      command: >
-        /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock 
-        --namespace k8s.io image pull docker.io/plndr/kube-vip:latest
-      register: kube_vip_pull
-      changed_when: "'unpacking' in kube_vip_pull.stdout"
-
-    - name: Vérifier le téléchargement de l'image Kube-VIP
-      debug:
-        var: kube_vip_pull.stdout_lines
-
-    - name: Générer le manifeste Kube-VIP
-      command: >
-        /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock 
-        --namespace k8s.io run --rm --net-host docker.io/plndr/kube-vip:latest vip /kube-vip 
-        manifest daemonset --arp --interface eth0 --address 172.31.64.100
-        --controlplane --leaderElection --taint --services --inCluster 
-      register: kube_vip_manifest
-
-    - name: Sauvegarder le manifeste Kube-VIP
-      copy:
-        content: "{{ kube_vip_manifest.stdout }}"
-        dest: /var/lib/rancher/rke2/server/manifests/kube-vip.yaml
-        mode: '0644'
+#    # sur les 2 masters 
+#    - name: Télécharger le fichier RBAC de Kube-VIP pour les 2 autres masters
+#      get_url:
+#        url: https://kube-vip.io/manifests/rbac.yaml
+#        dest: /var/lib/rancher/rke2/server/manifests/rbac.yaml
+#        mode: '0644'
+#
+#    - name: Télécharger l'image Kube-VIP
+#      command: >
+#        /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock 
+#        --namespace k8s.io image pull docker.io/plndr/kube-vip:latest
+#      register: kube_vip_pull
+#      changed_when: "'unpacking' in kube_vip_pull.stdout"
+#
+#    - name: Vérifier le téléchargement de l'image Kube-VIP
+#      debug:
+#        var: kube_vip_pull.stdout_lines
+#
+#    - name: Générer le manifeste Kube-VIP
+#      command: >
+#        /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock 
+#        --namespace k8s.io run --rm --net-host docker.io/plndr/kube-vip:latest vip /kube-vip 
+#        manifest daemonset --arp --interface enX0 --address 172.31.64.101
+#        --controlplane --leaderElection --taint --services --inCluster 
+#      register: kube_vip_manifest
+#
+#    - name: Sauvegarder le manifeste Kube-VIP
+#      copy:
+#        content: "{{ kube_vip_manifest.stdout }}"
+#        dest: /var/lib/rancher/rke2/server/manifests/kube-vip.yaml
+#        mode: '0644'
 
 
 
@@ -543,7 +559,7 @@
         dest: /etc/rancher/rke2/config.yaml
         content: |    
           token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
-          server: "https://172.31.64.101:9345"
+          server: "https://{{ hostvars['master1']['master1_private_ip'] }}:9345"
 
     - name: Télécharger et installer RKE2
       get_url:
@@ -576,10 +592,26 @@
         name: rke2-agent
         enabled: true
         state: started
+
     - name: Pause de 360 secondes pour laisser master1 démarer le service RKE2 tranquilement!
       ansible.builtin.pause:
         seconds: 360
 
     
+- name: Aficher le resultat final du Cluster RKE2 HA !
+  hosts: master1
+  become: true
+  tasks:
 
+    - name: Que renvoie "kubectl get nodes" ?
+      command: /var/lib/rancher/rke2/bin/kubectl get nodes --no-headers
+      register: kubectl_nodes
+      environment:
+        KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+      changed_when: false
+      ignore_errors: true
+
+    - name: Voici le resultat final du cluster. Merci Christ!!
+      debug:
+        var: kubectl_nodes.stdout_lines
 
