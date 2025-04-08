@@ -49,8 +49,9 @@
             - {{ inventory_hostname }}.christ.lan
             - {{ inventory_hostname }}
             - {{ ansible_facts['default_ipv4']['address'] }}
-            - {{ hostvars[groups["masters"][1]]["ansible_host"] }}
             - 172.31.76.101
+            - {{ ansible_host }}
+            - rke2cluster.christ.lan
           cni: "canal"
 #           - rke2cluster.christ.lan
 
@@ -280,16 +281,6 @@
       debug:
         msg: "{{ kubectl_nodes.stdout }}"
 
-
-    #- name: Attendre que les nœuds soient prêts
-    #  command: /var/lib/rancher/rke2/bin/kubectl get nodes --no-headers
-    #  register: kubectl_nodes
-    #  changed_when: false
-    #  until: "'Ready' in kubectl_nodes.stdout"
-    #  retries: 40
-    #  delay: 30
-
-#------------------------------------------------------------
     - name: Stocker l'IP privée de master1 dans hostvars
       set_fact:
         master1_private_ip: "{{ ansible_facts['default_ipv4']['address'] }}"
@@ -490,9 +481,9 @@
       debug:
         var: rke2_version.stdout
 
-    - name: Pause de 60 secondes avant de demarer le worker 
-      ansible.builtin.pause:
-        seconds: 60
+    #- name: Pause de 60 secondes avant de demarer le worker 
+    #  ansible.builtin.pause:
+    #    seconds: 60
 
     - name: Démarrer RKE2 agent
       systemd:
@@ -500,7 +491,7 @@
         enabled: true
         state: started
 
-    - name: Pause de 360 secondes pour laisser master1 démarer le service RKE2 tranquilement!
+    - name: Pause de 360 secondes pour laisser le worker1 démarer le service RKE2 tranquilement!
       ansible.builtin.pause:
         seconds: 360
 

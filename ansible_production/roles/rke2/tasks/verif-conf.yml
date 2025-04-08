@@ -1,6 +1,0 @@
----
-
-- name: verifier la configuration du cluster
-  command: |
-    export KUBECONFIG=/etc/rancher/rke2/rke2.yaml
-    kubectl get nodes

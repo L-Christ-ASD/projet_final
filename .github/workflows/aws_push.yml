@@ -181,7 +181,7 @@ jobs:
 #Ajoute ces secrets dans les paramètres de ton repo GitHub → Settings → Secrets → Actions :
 #AWS_ACCESS_KEY_ID
 #AWS_SECRET_ACCESS_KEY
-#SSH_PRIVATE_KEY (Ta clé privée pour accéder à l'instance)
+
 
 # Explication du Workflow
 
@@ -212,6 +212,12 @@ jobs:
     - name: Lancer Terraform apply
       run: terraform apply -auto-approve
       working-directory: ./production_tf
+
+    - name: Sauvegarder le fichier "terraform.tfstate"
+      uses: actions/upload-artifact@v4
+      with:
+        name: terraform-state
+        path: ./production_tf/terraform.tfstate
 
     - name: Sauvegarder la clé SSH
       uses: actions/upload-artifact@v4
@@ -261,7 +267,7 @@ jobs:
       run: |
         cp ./production_tf/vockeyprod.pem ./
 
-    - name: Copier la clé SSH dans ansible_production
+    - name: Copier la clé SSH dans ansible_production (Pour le fichier inventory)
       run: |
         cp ./production_tf/vockeyprod.pem ./ansible_production/
 
@@ -269,7 +275,7 @@ jobs:
       run: |
         ansible -m ping -i ./ansible_production/inventory all
   
-    - name: Installlation du cluster rke2 avec le playbook Ansible_prod
+    - name: Configuration et mise en place du cluster rke2 (playbook Ansible_prod)
       run: |
         ls ../production_tf/
         ansible-playbook -i inventory playbook.yml 
