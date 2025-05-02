@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: apotheose-full-access-binding
+  namespace: apotheose
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: apotheose
+roleRef:
+  kind: ClusterRole
+  name: apotheose-full-access
+  apiGroup: rbac.authorization.k8s.io

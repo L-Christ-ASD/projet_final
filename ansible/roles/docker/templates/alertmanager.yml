@@ -1,0 +1,15 @@
+global:
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'ton.email@gmail.com'
+  smtp_auth_username: 'ton.email@gmail.com'
+  smtp_auth_password: 'ton-mot-de-passe-ou-app-password'
+  smtp_require_tls: true
+
+route:
+  receiver: 'mail-alert'
+
+receivers:
+  - name: 'mail-alert'
+    email_configs:
+      - to: 'ton.email@gmail.com'
+        send_resolved: true

@@ -1,0 +1,25 @@
+namespace: apotheose
+
+pvc:
+  storage: 1Gi
+
+
+deployment:
+  replicas: 1
+  image: traefik:v3.3
+
+ingress:
+  email: christ.lumu@oclock.school
+
+domain: christ-devops.duckdns.org
+
+
+dashboardAuth: christ:monmotdepass
+
+subnet: subnet-07ef8d731542349d5
+
+service:
+  annotations: {}
+  type: LoadBalancer
+
+

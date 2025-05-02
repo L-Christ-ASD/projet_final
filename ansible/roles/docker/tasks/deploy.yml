@@ -1,0 +1,244 @@
+- name: Copier le fichier .env
+  copy:
+    src: templates/.env
+    dest: /home/ubuntu/.env
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Attendre que le fichier .env soit bien écrit
+  pause:
+    seconds: 2
+
+- name: Afficher le contenu brut du fichier .env
+  command: cat /home/ubuntu/.env
+  register: env_raw
+  changed_when: false
+
+- name: Afficher le contenu du fichier .env
+  debug:
+    msg: "{{ env_raw.stdout_lines }}"
+
+- name: Vérifier si le fichier .env existe
+  stat:
+    path: /home/ubuntu/.env
+  register: env_file_status
+
+- name: Afficher le statut du fichier .env
+  debug:
+    msg: "{{ env_file_status }}"
+
+- name: Charger les variables depuis le fichier .env
+  shell: cat /home/ubuntu/.env | grep -v '^#' | grep '='
+  register: env_output
+
+- name: Convertir en dictionnaire correctement
+  set_fact:
+    env_variables: "{{ dict(env_output.stdout | regex_findall('^([^=]+)=(.*)$', multiline=True)) }}"
+
+- name: Afficher toutes les clés extraites
+  debug:
+    msg: "{{ env_variables.keys() }}"
+
+- name: Vérifier les variables chargées
+  debug:
+    msg: "{{ env_variables }}"
+
+- name: Copier le fichier traefik_entrypoint.sh
+  copy:
+    src: templates/traefik_entrypoint.sh
+    dest: /home/ubuntu/traefik_entrypoint.sh
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755'
+
+- name: Créer le répertoire letsencrypt
+  file:
+    path: /home/ubuntu/letsencrypt
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755'
+
+
+- name: Créer le fichier acme.json vide si absent
+  file:
+    path: /home/ubuntu/letsencrypt/acme.json
+    state: touch
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755'
+
+- name: Afficher le contenu de acme.json
+  command: cat /home/ubuntu/letsencrypt/acme.json
+  register: acme_content
+  changed_when: false
+  ignore_errors: true
+
+- name: Afficher le contenu de acme.json
+  debug:
+    msg: "{{ acme_content.stdout_lines }}"
+  when: acme_content.rc == 0
+
+
+
+- name: Copier le fichier de config prometheus.yml
+  copy:
+    src: templates/prometheus.yml
+    dest: /home/ubuntu/prometheus/
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Copier le fichier alert.yml
+  copy:
+    src: templates/alert.yml
+    dest: /home/ubuntu/prometheus/
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Copier le fichier alertmanager.yml
+  copy:
+    src: templates/alertmanager.yml
+    dest: /home/ubuntu/alertmanager/
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+#- name: Copier le fichier apache-config.conf pour wp
+#  copy:
+#    src: templates/apache-config.conf
+#    dest: /home/ubuntu/apache-config.conf
+#    owner: ubuntu
+#    group: ubuntu
+#    mode: '0644'
+
+- name: Copier et templater docker-compose.yml
+  template:
+    src: templates/docker-compose.yml.j2
+    dest: /home/ubuntu/compose.yml
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+  vars:
+    env: "{{ env_variables }}"
+  notify: Restart Docker Compose
+
+
+- name: Vérifier la syntaxe de Docker Compose avant le lancement
+  shell: docker compose -f /home/ubuntu/compose.yml config
+  args:
+    chdir: /home/ubuntu
+  register: compose_check
+  changed_when: false
+
+- name: Afficher le résultat de la vérification Docker Compose
+  debug:
+    msg: "{{ compose_check.stdout_lines }}"
+
+- name: Démarrage de Docker Compose (up)
+  shell: |
+    docker compose -f /home/ubuntu/compose.yml up -d
+  args:
+    chdir: /home/ubuntu
+
+- name: Attendre 30s pour redemarer compose
+  pause:
+    seconds: 30
+#=================================================
+
+- name: Voir le contenu du répertoire letsencrypt
+  command: ls -l /home/ubuntu/letsencrypt/
+  register: ls_output
+  changed_when: false
+
+- name: Afficher le contenu du répertoire letsencrypt
+  debug:
+    msg: "{{ ls_output.stdout_lines }}"
+
+- name: Afficher le contenu de acme.json
+  command: cat /home/ubuntu/letsencrypt/acme.json
+  register: acme_content
+  changed_when: false
+  ignore_errors: true  # Permet d'éviter une erreur si le fichier n'existe pas
+
+- name: Vérifier si acme.json est un répertoire
+  command: test -d /home/ubuntu/letsencrypt/acme.json
+  register: acme_is_dir
+  failed_when: false
+  changed_when: false
+
+- name: Supprimer acme.json s'il est un répertoire
+  file:
+    path: /home/ubuntu/letsencrypt/acme.json
+    state: absent
+  when: acme_is_dir.rc == 0
+
+- name: Afficher le contenu de acme.json
+  debug:
+    msg: "{{ acme_content.stdout_lines }}"
+  when: acme_content.rc == 0
+
+- name: Restreindre les droits d'accès du répertoire letsencrypt
+  file:
+    path: /home/ubuntu/letsencrypt/acme.json
+    state: file
+    owner: ubuntu
+    group: ubuntu
+    mode: '0600'
+#========================================================
+- name: Lancer le redémarrage de Docker Compose (down-up)
+  shell: |
+    docker compose -f /home/ubuntu/compose.yml down
+    docker compose -f /home/ubuntu/compose.yml up -d
+  args:
+    chdir: /home/ubuntu
+#========================================================
+- name: Voir les containers en cours d'exécution
+  command: docker ps
+  register: docker_ps_output
+  changed_when: false
+
+- name: Afficher les containers en cours d'exécution
+  debug:
+    msg: "{{ docker_ps_output.stdout_lines }}"
+
+- name: Afficher les logs de Traefik
+  command: docker logs traefik --tail=50
+  register: traefik_logs
+  changed_when: false
+
+- name: Afficher les logs de Traefik
+  debug:
+    msg: "{{ traefik_logs.stdout_lines }}"
+
+# -----------------------redemaraer le server ++ pour le 'dns'-----------------------------
+
+- name: Attendre 30s pour redemarer compose
+  pause:
+    seconds: 60
+
+- name: Lancer le redémarrage de Docker Compose (down-up)
+  shell: |
+    docker compose -f /home/ubuntu/compose.yml down
+    docker compose -f /home/ubuntu/compose.yml up -d
+  args:
+    chdir: /home/ubuntu
+
+- name: Attendre 30s pour redemarer compose
+  pause:
+    seconds: 60
+
+- name: Lancer le redémarrage de Docker Compose (down-up)
+  shell: |
+    docker compose -f /home/ubuntu/compose.yml down
+    docker compose -f /home/ubuntu/compose.yml up -d
+  args:
+    chdir: /home/ubuntu
+
+- name: Fin du déploiement... 
+  debug:
+    msg: "Merci Christ ! "
+
+

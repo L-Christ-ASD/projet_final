@@ -1,0 +1,20 @@
+namespace: apotheose
+
+deployment:
+  replicas: 1
+  image: prom/node-exporter:latest
+  resources:
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+
+service:
+  port: 9100
+  type: ClusterIP
+
+ingress:
+  enabled: false
+  host: node-exporter.christ-devops.duckdns.org

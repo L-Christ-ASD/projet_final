@@ -1,0 +1,17 @@
+namespace: apotheose
+
+pvc:
+  dataStorage: 5Gi
+  extensionsStorage: 2Gi
+  logsStorage: 4Gi
+
+secrets:
+  jdbcUsername: "c29uYXJ1"
+  jdbcPassword: "c29uYXJw"
+
+deployment:
+  replicas: 1
+  image: sonarqube:lts
+
+ingress:
+  host: sonarqube.christ-devops.duckdns.org

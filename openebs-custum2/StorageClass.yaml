@@ -1,0 +1,22 @@
+# apiVersion: storage.k8s.io/v1
+# kind: StorageClass
+# metadata:
+#   name: openebs-sc
+#   namespace: apotheose
+# provisioner: openebs.io/provisioner-iscsi
+# reclaimPolicy: Retain
+# volumeBindingMode: Immediate
+
+# ./dns-wp/openebs-custum2/StorageClass.yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-cstor-repl3
+provisioner: cstor.csi.openebs.io
+allowVolumeExpansion: true
+parameters:
+  cas-type: cstor
+  replicaCount: "2"
+  cstorPoolCluster: cstor-disk-pool
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer

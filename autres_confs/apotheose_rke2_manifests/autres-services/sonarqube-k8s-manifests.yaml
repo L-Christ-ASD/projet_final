@@ -1,0 +1,131 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sonarqube-secret
+  namespace: apotheose
+type: Opaque
+data:
+  jdbc-username: c29uYXJ1 #{{ env.USERNAME | b64encode }}
+  jdbc-password: c29uYXJw #{{ env.PASSWORD | b64encode }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sonarqube-data
+  namespace: apotheose
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sonarqube-extensions
+  namespace: apotheose
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sonarqube-logs
+  namespace: apotheose
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonarqube
+  namespace: apotheose
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sonarqube
+  template:
+    metadata:
+      labels:
+        app: sonarqube
+    spec:
+      containers:
+        - name: sonarqube
+          image: sonarqube:lts
+          env:
+            - name: SONARQUBE_JDBC_URL
+              value: jdbc:postgresql://sonar-db:5432/sonar
+            - name: SONARQUBE_JDBC_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: sonarqube-secret
+                  key: jdbc-username
+            - name: SONARQUBE_JDBC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sonarqube-secret
+                  key: jdbc-password
+          volumeMounts:
+            - name: data
+              mountPath: /opt/sonarqube/data
+            - name: extensions
+              mountPath: /opt/sonarqube/extensions
+            - name: logs
+              mountPath: /opt/sonarqube/logs
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: sonarqube-data
+        - name: extensions
+          persistentVolumeClaim:
+            claimName: sonarqube-extensions
+        - name: logs
+          persistentVolumeClaim:
+            claimName: sonarqube-logs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sonarqube
+  namespace: apotheose
+spec:
+  selector:
+    app: sonarqube
+  ports:
+    - port: 9000
+      targetPort: 9000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sonarqube
+  namespace: apotheose
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls.certresolver: myresolver
+spec:
+  rules:
+    - host: sonarqube.christ-devops.duckdns.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sonarqube
+                port:
+                  number: 9000
+  tls:
+    - hosts:
+        - sonarqube.christ-devops.duckdns.org

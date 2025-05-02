@@ -1,0 +1,12 @@
+namespace: apotheose
+
+secrets:
+  pmaHost: ZGI=
+  mysqlRootPassword: cm9vdHBhc3N3b3Jk
+
+deployment:
+  replicas: 1
+  image: phpmyadmin/phpmyadmin:5.2.1
+
+ingress:
+  host: phpmyadmin.christ-devops.duckdns.org

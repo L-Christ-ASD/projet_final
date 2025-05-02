@@ -1,0 +1,18 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-hostpath-retain
+  namespace: apotheose
+  annotations:
+    cas.openebs.io/config: |
+      - name: StorageType
+        value: "hostpath"
+      - name: BasePath
+        value: "/var/openebs/local"
+    meta.helm.sh/release-name: openebs
+    meta.helm.sh/release-namespace: openebs
+    openebs.io/cas-type: local
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: openebs.io/local
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer

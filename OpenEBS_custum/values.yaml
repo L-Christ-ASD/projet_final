@@ -1,0 +1,68 @@
+openebs-crds:
+  csi:
+    volumeSnapshots:
+      enabled: true
+      keep: true
+
+# Refer to https://github.com/openebs/dynamic-localpv-provisioner/blob/HEAD/deploy/helm/charts/values.yaml for complete set of values.
+localpv-provisioner:
+  rbac:
+    create: true
+  localpv:
+    nodeSelector:
+      node-role.kubernetes.io/worker: "true"
+
+# Refer to https://github.com/openebs/zfs-localpv/blob/v2.6.2/deploy/helm/charts/values.yaml for complete set of values.
+zfs-localpv:
+  crds:
+    zfsLocalPv:
+      enabled: true
+    csi:
+      volumeSnapshots:
+        enabled: false
+  zfsNode:
+    nodeSelector:
+      node-role.kubernetes.io/worker: "true"
+  zfsController:
+    nodeSelector:
+      node-role.kubernetes.io/worker: "true"
+  
+# Refer to https://github.com/openebs/lvm-localpv/blob/lvm-localpv-1.6.2/deploy/helm/charts/values.yaml for complete set of values.
+lvm-localpv:
+  crds:
+    lvmLocalPv:
+      enabled: true
+    csi:
+      volumeSnapshots:
+        enabled: false
+  lvmNode:
+    nodeSelector:
+      node-role.kubernetes.io/worker: "true"
+  lvmController:
+    nodeSelector:
+      node-role.kubernetes.io/worker: "true"
+
+# -- Configuration options for pre-upgrade helm hook job.
+preUpgradeHook:
+  image:
+    # -- The container image registry URL for the hook job
+    registry: docker.io
+    # -- The container repository for the hook job
+    repo: bitnami/kubectl
+    # -- The container image tag for the hook job
+    tag: "1.25.15"
+    # -- The imagePullPolicy for the container
+    pullPolicy: IfNotPresent
+
+engines:
+  local:
+    lvm:
+      enabled: true
+    zfs:
+      enabled: true
+  replicated:
+    mayastor:
+      enabled: true
+
+
+      

@@ -1,0 +1,162 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: apotheose
+data:
+  prometheus.yaml: |
+    global:
+      scrape_interval: 30s
+      scrape_timeout: 10s
+
+    rule_files:
+    - alert.yml
+
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['prometheus:9090']
+
+      - job_name: 'node'
+        static_configs:
+          - targets: ['node-exporter:9100']
+
+      - job_name: 'cadvisor'
+        static_configs:
+          - targets: ['cadvisor:8080']
+
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets: ['alertmanager:9093']
+  
+  alert.yml: |
+    groups:
+    - name: system-alerts
+      rules:
+        - alert: InstanceDown
+          expr: up == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Instance {{ $labels.instance }} down"
+            description: "L'instance {{ $labels.instance }} ne répond plus depuis 1 minute."
+
+        - alert: HighCPUUsage
+          expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100) > 80
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "CPU élevé sur {{ $labels.instance }}"
+            description: "L'utilisation CPU est au-dessus de 80% sur {{ $labels.instance }}."
+
+        - alert: LowDiskSpace
+          expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Espace disque bas sur {{ $labels.instance }}"
+            description: "Moins de 15% d'espace disque disponible sur {{ $labels.instance }}."
+  
+  alertmanager.yml: |
+    global:
+      smtp_smarthost: 'smtp.gmail.com:587'
+      smtp_from: 'ton.email@gmail.com'
+      smtp_auth_username: 'ton.email@gmail.com'
+      smtp_auth_password: 'ton-mot-de-passe-ou-app-password'
+      smtp_require_tls: true
+
+    route:
+      receiver: 'mail-alert'
+
+    receivers:
+      - name: 'mail-alert'
+        email_configs:
+          - to: 'ton.email@gmail.com'
+            send_resolved: true
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-data-pvc
+  namespace: apotheose
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: apotheose
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.52.0
+          args:
+            - --web.enable-lifecycle
+            - --config.file=/etc/prometheus/prometheus.yml
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/prometheus
+            - name: prometheus-storage
+              mountPath: /prometheus
+      volumes:
+        - name: config-volume
+          configMap:
+            name: prometheus-config
+        - name: prometheus-storage
+          persistentVolumeClaim:
+            claimName: prometheus-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: apotheose
+spec:
+  selector:
+    app: prometheus
+  ports:
+    - protocol: TCP
+      port: 9090
+      targetPort: 9090
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prometheus-ingress
+  namespace: apotheose
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls.certresolver: myresolver
+spec:
+  rules:
+    - host: prometheus.christ-devops.duckdns.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: prometheus
+                port:
+                  number: 9090

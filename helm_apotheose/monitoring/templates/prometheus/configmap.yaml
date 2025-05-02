@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: apotheose
+data:
+  prometheus.yaml: |
+    global:
+      scrape_interval: 30s
+      scrape_timeout: 10s
+
+    rule_files:
+      - alert.yml
+
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['prometheus:9090']
+
+      - job_name: 'node'
+        static_configs:
+          - targets: ['node-exporter:9100']
+
+      - job_name: 'cadvisor'
+        static_configs:
+          - targets: ['cadvisor:8080']
+
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets: ['alertmanager:9093']
+
+  alert.yml: |
+    groups:
+      - name: system-alerts
+        rules:
+          - alert: InstanceDown
+            expr: up == 0
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "{{`Instance {{ $labels.instance }} down`}}"
+              description: "{{`L'instance {{ $labels.instance }} ne répond plus depuis 1 minute.`}}"
+
+  alertmanager.yml: |
+    global:
+      smtp_smarthost: 'smtp.gmail.com:587'
+      smtp_from: 'ton.email@gmail.com'
+      smtp_auth_username: 'ton.email@gmail.com'
+      smtp_auth_password: 'ton-mdp-ou-app-pass'
+      smtp_require_tls: true
+
+    route:
+      receiver: 'mail-alert'
+
+    receivers:
+      - name: 'mail-alert'
+        email_configs:
+          - to: 'ton.email@gmail.com'
+            send_resolved: true

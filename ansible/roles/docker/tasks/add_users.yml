@@ -1,0 +1,65 @@
+
+
+---
+
+- name: Installer pip3
+  ansible.builtin.apt:
+    name: python3-pip
+    state: present
+
+- name: Installer pipx
+  ansible.builtin.apt:
+    name: pipx
+    state: present
+
+- name: Assurer que pipx est bien installé
+  ansible.builtin.command:
+    cmd: pipx --version
+  register: pipx_version
+  changed_when: false
+
+- name: Afficher la version de pipx
+  ansible.builtin.debug:
+    msg: "La version de pipx est : {{ pipx_version.stdout }}"
+
+- name: Installer passlib avec pipx
+  ansible.builtin.command:
+    cmd: pipx install passlib
+  become: true
+
+- name: Vérifier que passlib est bien installé
+  command: python3 -c "import passlib"
+  register: passlib_check
+  ignore_errors: true
+
+- name: Afficher le résultat de la vérification
+  debug:
+    msg: "Passlib est installé !" 
+  when: passlib_check.rc == 0
+
+- name: Erreur si passlib est absent
+  fail:
+    msg: "Passlib n'est PAS installé !"
+  when: passlib_check.rc != 0
+
+
+- name: Créer un deuxième utilisateur avec accès SSH
+  user:
+    name: user1  # Remplace par le nom souhaité
+    shell: /bin/bash
+    groups: sudo
+    append: yes
+    createhome: yes
+    password: "{{ 'SuperMotDePasse' | password_hash('sha512') }}"  # Remplace avec un mot de passe sécurisé
+
+- name: Ajouter la clé SSH de user1
+  authorized_key:
+    user: user1
+    state: present
+    key: "{{ lookup('file', '/home/ubuntu/.ssh/id_rsa.pub') }}"  # Remplace avec le chemin de ta clé publique
+
+- name: Autoriser user1 à exécuter sudo sans mot de passe
+  copy:
+    dest: "/etc/sudoers.d/user1"
+    content: "user1 ALL=(ALL) NOPASSWD:ALL"
+    mode: '0440'

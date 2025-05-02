@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traefik
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: traefik
+  template:           
+    metadata:
+      labels:
+        app: traefik
+    spec:
+      #nodeSelector:
+        #kubernetes.io/workes: "true"
+      containers:
+        - name: traefik
+          image: {{ .Values.deployment.image }}
+          ports:
+            - containerPort: 80
+            - containerPort: 443
+            - containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: traefik-env-secrets
+          volumeMounts:
+            - name: docker-socket
+              mountPath: /var/run/docker.sock
+              readOnly: true
+            - name: letsencrypt
+              mountPath: /letsencrypt
+            - name: entrypoint-script
+              mountPath: /traefik_entrypoint.sh
+              subPath: traefik_entrypoint.sh
+              readOnly: true
+          command: ["/traefik_entrypoint.sh"]
+          args:
+            - "--api.insecure=true"
+            - "--api.dashboard=true"
+            - "--providers.kubernetescrd=true"
+            - "--entrypoints.web.address=:80"
+            - "--entrypoints.websecure.address=:443"
+            - "--certificatesresolvers.myresolver.acme.dnschallenge=true"
+            - "--certificatesresolvers.myresolver.acme.dnschallenge.provider=duckdns"
+            - "--certificatesresolvers.myresolver.acme.dnschallenge.propagation.delayBeforeChecks=2s"
+            - "--certificatesresolvers.myresolver.acme.email={{ .Values.ingress.email }}"
+            - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+            
+#            - "--certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53"
+#            - "--certificatesresolvers.letsencrypt.acme.domains=*.christ-devops.duckdns.org"
+#            - "--certificatesresolvers.letsencrypt.acme.domains=christ-devops.duckdns.org"
+            
+            - "--log.level=DEBUG"
+
+      volumes:
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+        - name: letsencrypt
+          persistentVolumeClaim:
+            claimName: traefik-letsencrypt
+        - name: entrypoint-script
+          configMap:
+            name: traefik-entrypoint-script
+            defaultMode: 0755
+            items:
+              - key: traefik_entrypoint.sh
+                path: traefik_entrypoint.sh
+

@@ -1,0 +1,24 @@
+
+Makefile
+markdown_to_pdf.sh
+aws
+awscliv2.zip
+.terraform/
+awscliv2.zip
+*.zip
+
+# Exclure les fichiers Terraform générés
+.terraform/
+*.zip
+terraform/.terraform/providers/
+
+# Ajout d'autres fichiers volumineux
+awscliv2.zip
+terraform-provider-aws_*
+.terraform/
+awscliv2.zip
+.terraform/
+awscliv2.zip
+terraform.tfstate
+terraform/vockey.pem
+terraform/terraform.tfstate

@@ -1,0 +1,4 @@
+apiVersion: v2
+name: openebs
+description: Helm chart pour déployer et configurer openebs
+version: 1.0.0

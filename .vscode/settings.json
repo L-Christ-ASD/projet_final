@@ -1,0 +1,8 @@
+{
+    "yaml.schemas": {
+        "https://json.schemastore.org/chart.json": [
+            "file:///home/christ/dns-wp/helm_apotheose/traefik/templates/service.yaml.tpl",
+            "file:///home/christ/dns-wp/helm_apotheose/traefik/templates/service.yaml"
+        ]
+    }
+}

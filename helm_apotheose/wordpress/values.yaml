@@ -1,0 +1,19 @@
+namespace: apotheose
+
+pvc:
+  storage: 5Gi
+
+secrets:
+  dbUser: wordpress
+  dbPassword: wordpressp
+  dbName: wordpress
+  dbHost: db:3306
+
+deployment:
+  image: wordpress:6.7
+  replicas: 1
+
+ingress:
+  enabled: true
+  host: wordpress.christ-devops.duckdns.org
+  tlsSecret: tls-secret

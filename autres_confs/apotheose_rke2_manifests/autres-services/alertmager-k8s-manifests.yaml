@@ -1,0 +1,93 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: apotheose
+  labels:
+    app: alertmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      containers:
+        - name: alertmanager
+          image: prom/alertmanager
+          args:
+            - "--config.file=/etc/alertmanager/alertmanager.yml"
+          ports:
+            - containerPort: 9093
+          volumeMounts:
+            - name: alertmanager-config
+              mountPath: /etc/alertmanager
+      volumes:
+        - name: alertmanager-config
+          configMap:
+            name: alertmanager-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+  namespace: apotheose
+spec:
+  selector:
+    app: alertmanager
+  ports:
+    - protocol: TCP
+      port: 9093
+      targetPort: 9093
+  type: ClusterIP
+---
+#apiVersion: networking.k8s.io/v1
+#kind: Ingress
+#metadata:
+#  name: alertmanager-ingress
+#  namespace: apotheose
+#  annotations:
+#    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+#    traefik.ingress.kubernetes.io/router.tls.certresolver: myresolver
+#spec:
+#  rules:
+#    - host: alertmanager.christ-devops.duckdns.org
+#      http:
+#        paths:
+#          - path: /
+#            pathType: Prefix
+#            backend:
+#              service:
+#                name: alertmanager
+#                port:
+#                  number: 9093
+#  tls:
+#    - hosts:
+#        - alertmanager.christ-devops.duckdns.org
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: apotheose
+data:
+  alertmanager.yml: |
+    global:
+      smtp_smarthost: 'smtp.gmail.com:587'
+      smtp_from: 'ton.email@gmail.com'
+      smtp_auth_username: 'ton.email@gmail.com'
+      smtp_auth_password: 'ton-mot-de-passe-ou-app-password'
+      smtp_require_tls: true
+
+    route:
+      receiver: 'mail-alert'
+
+    receivers:
+      - name: 'mail-alert'
+        email_configs:
+          - to: 'christ.devops75@gmail.com'
+            send_resolved: true

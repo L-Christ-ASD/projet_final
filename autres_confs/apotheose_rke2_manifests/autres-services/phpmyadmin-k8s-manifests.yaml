@@ -1,0 +1,76 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: phpmyadmin-secret
+  namespace: apotheose
+type: Opaque
+data:
+  pma-host: ZGI= #{{ env.PMA_HOST | b64encode }}
+  mysql-root-password: cm9vdHBhc3N3b3Jk #{{ env.MYSQL_RT_PASSWORD | b64encode }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: phpmyadmin
+  namespace: apotheose
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: phpmyadmin
+  template:
+    metadata:
+      labels:
+        app: phpmyadmin
+    spec:
+      containers:
+        - name: phpmyadmin
+          image: phpmyadmin/phpmyadmin:5.2.1
+          env:
+            - name: PMA_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: phpmyadmin-secret
+                  key: pma-host
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: phpmyadmin-secret
+                  key: mysql-root-password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: phpmyadmin
+  namespace: apotheose
+spec:
+  selector:
+    app: phpmyadmin
+  ports:
+    - port: 80
+      targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: phpmyadmin
+  namespace: apotheose
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls.certresolver: myresolver
+spec:
+  rules:
+    - host: phpmyadmin.christ-devops.duckdns.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: phpmyadmin
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - phpmyadmin.christ-devops.duckdns.org

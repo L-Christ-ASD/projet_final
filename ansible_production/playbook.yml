@@ -1,0 +1,1233 @@
+---
+#=================================================================
+- name: Preparer les disks EBS pour OpenEBS et containerd
+  hosts: all #workers
+  become: true
+  vars:
+    containerd_disk: /dev/nvme1n1
+    containerd_mount_point: /var/lib/containerd
+  tasks:
+
+    - name: Lister tous les disques disponibles sur l’hôte
+      shell: lsblk -o NAME,KNAME,FSTYPE,SIZE,MOUNTPOINT,LABEL
+      register: lsblk_output
+
+    - name: Afficher les disques détectés
+      debug:
+        var: lsblk_output.stdout_lines
+
+    - name: Vérifier si le disque containerd existe
+      stat:
+        path: "{{ containerd_disk }}"
+      register: containerd_disk_stat
+
+    - name: Formater le disque containerd en ext4
+      filesystem:
+        fstype: ext4
+        dev: "{{ containerd_disk }}"
+      when: containerd_disk_stat.stat.exists
+
+    - name: Créer le point de montage de containerd s'il n'existe pas
+      file:
+        path: "{{ containerd_mount_point }}"
+        state: directory
+        mode: '0755'
+
+    - name: Monter le disque containerd
+      mount:
+        path: "{{ containerd_mount_point }}"
+        src: "{{ containerd_disk }}"
+        fstype: ext4
+        opts: defaults
+        state: mounted
+
+    - name: Ajouter à fstab pour montage au démarrage
+      mount:
+        path: "{{ containerd_mount_point }}"
+        src: "{{ containerd_disk }}"
+        fstype: ext4
+        opts: defaults
+        state: present
+
+#=================================================================
+- name: Installation et configuration du cluster RKE2
+  hosts: all
+  become: true
+  tasks:
+    - name: Installer iptables
+      apt:
+        name: iptables
+        state: present
+
+    - name: Définir le hostname
+      command: hostnamectl set-hostname {{ inventory_hostname }}
+
+    - name: Configurer le fichier /etc/hosts
+      blockinfile:
+        path: /etc/hosts
+        block: |
+          127.0.0.1 localhost
+          127.0.1.1 {{ inventory_hostname }}.christ.lan
+
+          ::1     ip6-localhost ip6-loopback
+          fe00::0 ip6-localnet
+          ff00::0 ip6-mcastprefix
+          ff02::1 ip6-allnodes
+          ff02::2 ip6-allrouters
+          
+          172.31.64.101 rke2cluster.christ.lan
+
+#         {{ ansible_facts['default_ipv4']['address'] }} {{ inventory_hostname }}
+    - name: Configuration de l'environnement pour le service-proxy
+      debug:
+        msg: |
+          Liberer le port 80 du cluster !
+
+    - name: Supprimer Apache2 du cluster (hôtes)
+      apt:
+        name: apache2
+        state: absent
+
+    - name: Supprimer nginx du cluster (hôtes)
+      apt:
+        name: nginx
+        state: absent
+
+
+- name: Configurer le premier master
+  hosts: master1
+  become: true
+  tasks:
+    - name: Créer les dossiers nécessaires
+      file:
+        path: "{{ item }}"
+        state: directory
+      loop:
+        - /etc/rancher/rke2
+        - /var/lib/rancher/rke2/server/manifests
+
+    - name: Ajouter la configuration RKE2
+      copy:
+        dest: /etc/rancher/rke2/config.yaml
+        content: |
+          tls-san:
+            - {{ inventory_hostname }}.christ.lan
+            - {{ inventory_hostname }}
+            - {{ ansible_facts['default_ipv4']['address'] }}
+            - 172.31.76.101
+            - {{ ansible_host }}
+            - rke2cluster.christ.lan
+          cni: "canal"                  
+          cloud-provider-name: external
+
+          kube-apiserver-arg:
+            - "cloud-provider=external"
+
+          kube-controller-manager-arg:
+            - "cloud-provider=external"
+
+          kubelet-arg:
+            - "cloud-provider=external"
+
+          disable-cloud-controller: true
+
+# cloud-provider: aws
+
+    - name: Ajouter rke2-coredns-config.yaml
+      copy:
+        dest: /var/lib/rancher/rke2/server/manifests/rke2-coredns-config.yaml
+        content: |
+          apiVersion: helm.cattle.io/v1
+          kind: HelmChartConfig
+          metadata:
+            creation: null
+            name: rke2-coredns
+            namespace: kube-system
+          spec:
+            valuesContent: |-
+              nodelocal:
+                enabled: true
+            bootstrap: true
+
+    - name: Télécharger et installer RKE2
+      get_url:
+        url: "https://get.rke2.io"
+        dest: /tmp/install_rke2.sh
+        mode: '0755'
+
+    - name: Exécuter le script d'installation RKE2
+      environment:
+        INSTALL_RKE2_TYPE: "server"
+      command: /tmp/install_rke2.sh
+      args:
+        creates: /usr/local/bin/rke2
+
+    - name: Vérifier la version de RKE2
+      command: /usr/local/bin/rke2 --version
+      register: rke2_version
+      changed_when: false
+
+    - name: Afficher la version de RKE2
+      debug:
+        var: rke2_version.stdout
+
+    - name: Activer RKE2 server au boot
+      ansible.builtin.systemd:
+        name: rke2-server
+        enabled: true
+
+    - name: Démarrer RKE2 server master1 en arrière-plan
+      ansible.builtin.shell: systemctl start rke2-server
+      async: 45
+      poll: 0
+
+    - name: Pause de 60 secondes pour laisser respirer
+      ansible.builtin.pause:
+        seconds: 60
+
+    - name: Attendre que SSH soit de nouveau disponible après démarrage de RKE2
+      wait_for_connection:
+        timeout: 300
+        delay: 20
+
+    - name: Attendre que RKE2 soit actif
+      command: systemctl is-active rke2-server
+      register: rke2_status
+      until: rke2_status.stdout == "active"
+      retries: 40
+      delay: 30
+
+    - name: Vérifier le statut du service RKE2 après démarrage
+      command: systemctl status rke2-server
+      register: rke2_status
+      changed_when: false
+
+    - name: Afficher le statut du service RKE2
+      debug:
+        var: rke2_status.stdout_lines
+
+
+    # ==================Vérifs======================
+
+    - name: Lister les conteneurs dans containerd
+      command: /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock --namespace k8s.io container ls
+      register: container_list
+      changed_when: false
+
+    - name: Afficher les conteneurs en cours d'exécution
+      debug:
+        var: container_list.stdout_lines
+
+    #===================token du master================================
+    - name: Vérifier si le fichier node-token existe
+      stat:
+        path: /var/lib/rancher/rke2/server/node-token
+      register: node_token_file
+
+    - name: Récupérer le token du master
+      slurp:
+        src: /var/lib/rancher/rke2/server/node-token
+      register: node_token
+      when: node_token_file.stat.exists
+
+    #============== Installation et configuration de Kube-VIP =========
+    - name: Télécharger le fichier RBAC de Kube-VIP
+      get_url:
+        url: https://kube-vip.io/manifests/rbac.yaml
+        dest: /var/lib/rancher/rke2/server/manifests/rbac.yaml
+        mode: '0644'
+
+    - name: Télécharger l'image Kube-VIP
+      command: >
+        /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock 
+        --namespace k8s.io image pull docker.io/plndr/kube-vip:latest
+      register: kube_vip_pull
+      changed_when: "'unpacking' in kube_vip_pull.stdout"
+
+    - name: Vérifier le téléchargement de l'image Kube-VIP
+      debug:
+        var: kube_vip_pull.stdout_lines
+
+    - name: Générer le manifeste Kube-VIP
+      command: >
+        /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock 
+        --namespace k8s.io run --rm --net-host docker.io/plndr/kube-vip:latest vip /kube-vip 
+        manifest daemonset --arp --interface enX0 --address 172.31.64.101 
+        --controlplane --leaderElection --taint --services --inCluster 
+      register: kube_vip_manifest
+
+    - name: Sauvegarder le manifeste Kube-VIP
+      copy:
+        content: "{{ kube_vip_manifest.stdout }}"
+        dest: /var/lib/rancher/rke2/server/manifests/kube-vip.yaml
+        mode: '0644'
+
+    - name: Vérifier le fichier de configuration RKE2
+      command: cat /etc/rancher/rke2/rke2.yaml
+      register: rke2_config
+      changed_when: false
+
+    - name: Afficher le fichier de configuration RKE2
+      debug:
+        var: rke2_config.stdout_lines
+
+
+# =============== kubectl sur master1 =====================
+- name: Configurer kubectl sur master-1
+  hosts: master1
+  become: true
+  tasks:
+
+    - name: Vérifier l'existence de kubectl
+      stat:
+        path: /var/lib/rancher/rke2/bin/kubectl
+      register: kubectl_stat
+
+    - name: Afficher les informations sur kubectl
+      debug:
+        msg: "Kubectl existe avec les permissions: {{ kubectl_stat.stat.mode }}"
+      when: kubectl_stat.stat.exists
+
+    - name: Ajouter /var/lib/rancher/rke2/bin au PATH de l'utilisateur
+      lineinfile:
+        path: ~/.bashrc
+        line: 'export PATH=$PATH:/var/lib/rancher/rke2/bin'
+        state: present
+
+    - name: Ajouter la variable d'environnement KUBECONFIG dans .bashrc
+      lineinfile:
+        path: ~/.bashrc
+        line: 'export KUBECONFIG=/etc/rancher/rke2/rke2.yaml'
+        state: present
+
+    - name: Ajouter l'alias k=/usr/local/bin/kubectl
+      lineinfile:
+        path: ~/.bashrc
+        line: 'alias k=/usr/local/bin/kubectl'
+        state: present
+
+    - name: Vérifier que le fichier de configuration KUBECONFIG existe
+      stat:
+        path: /etc/rancher/rke2/rke2.yaml
+      register: kubeconfig_stat
+
+    - name: Afficher l'état du fichier KUBECONFIG
+      debug:
+        msg: "Le fichier rke2.yaml existe avec les permissions: {{ kubeconfig_stat.stat.mode }}"
+      when: kubeconfig_stat.stat.exists
+
+    - name: Modifier les permissions de rke2.yaml
+      file:
+        path: /etc/rancher/rke2/rke2.yaml
+        mode: '0644'
+      
+    - name: Vérifier les permissions de rke2.yaml
+      stat:
+        path: /etc/rancher/rke2/rke2.yaml
+      register: kubeconfig_stat
+
+    - name: Afficher les nouvelles permissions de rke2.yml
+      debug:
+        msg: "Les nouvelles permissions du fichier rke2.yaml: {{ kubeconfig_stat.stat.mode }}"
+      when: kubeconfig_stat.stat.exists
+
+    - name: Charger le nouveau PATH
+      shell: source ~/.bashrc
+      args:
+        executable: /bin/bash
+
+    - name: Vérifier la version du client kubectl (chemin absolu)
+      command: /var/lib/rancher/rke2/bin/kubectl version --client
+      register: kubectl_version
+      changed_when: false
+
+    - name: Afficher la version de kubectl
+      debug:
+        msg: "{{ kubectl_version.stdout }}"
+
+    - name: Debug - Voir la sortie brute de kubectl get nodes
+      command: /var/lib/rancher/rke2/bin/kubectl get nodes --no-headers
+      register: kubectl_nodes
+      environment:
+        KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+      changed_when: false
+      ignore_errors: true
+
+    - name: Afficher ce que renvoie kubectl get nodes
+      debug:
+        var: kubectl_nodes.stdout_lines
+
+    - name: Attendre que le nœud master1 soient Ready (loop avec attente)
+      shell: /var/lib/rancher/rke2/bin/kubectl get nodes --no-headers
+      register: kubectl_nodes
+      environment:
+        KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+      changed_when: false
+      until: kubectl_nodes.stdout is search(" Ready ")
+      retries: 40
+      delay: 30
+
+    - name: Afficher la liste des nœuds
+      debug:
+        msg: "{{ kubectl_nodes.stdout }}"
+
+    - name: Stocker l'IP privée de master1 dans hostvars
+      set_fact:
+        master1_private_ip: "{{ ansible_facts['default_ipv4']['address'] }}"
+
+
+
+
+# =====================================================================================================================
+
+- name: Configurer les 2 autres masters
+  hosts: master2, master3
+  become: true
+  tasks:
+    #===================== stocker les ips (chaque hôte le fait pour lui-même) ========================
+    - name: Stocker l'IP privée dans hostvars de  master 2 et 3
+      set_fact:
+        my_private_ip: "{{ ansible_facts['default_ipv4']['address'] }}"
+    #-------------------------------------------------------------------
+
+    - name: Créer les dossiers nécessaires
+      file:
+        path: "{{ item }}"
+        state: directory
+      loop:
+        - /etc/rancher/rke2
+        - /var/lib/rancher/rke2/server/manifests
+
+    - name: Copier la configuration RKE2 sur les 2 masters
+      copy:
+        dest: /etc/rancher/rke2/config.yaml
+        content: |
+          token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
+          server: "https://{{ hostvars['master1']['master1_private_ip'] }}:9345"
+          tls-san:
+            - {{ inventory_hostname }}.christ.lan
+            - master1
+            - master2
+            - master3            
+            - {{ hostvars['master1']['master1_private_ip'] }}
+            - {{ hostvars['master2']['my_private_ip'] }}
+            - {{ hostvars['master3']['my_private_ip'] }}
+
+            - 172.31.64.101
+            - {{ hostvars[groups['masters'][0]]["ansible_host"] }}
+            - {{ hostvars[groups["masters"][1]]["ansible_host"] }}
+            - {{ hostvars[groups["masters"][2]]["ansible_host"] }}
+            - rke2cluster.christ.lan            
+          write-kubeconfig-mode: "0644"
+          cloud-provider-name: external
+          kube-apiserver-arg:
+            - "cloud-provider=external"
+          kube-controller-manager-arg:
+            - "cloud-provider=external"
+          kubelet-arg:
+            - "cloud-provider=external"
+
+          disable-cloud-controller: true
+
+
+    - name: Télécharger et installer RKE2 sur les 2 M
+      get_url:
+        url: "https://get.rke2.io"
+        dest: /tmp/install_rke2.sh
+        mode: '0755'
+      #when: inventory_hostname != "master1"
+
+    - name: Exécuter le script d'installation RKE2
+      environment:
+        INSTALL_RKE2_TYPE: "server"
+      command: /tmp/install_rke2.sh
+      args:
+        creates: /usr/local/bin/rke2
+      #when: inventory_hostname != "master1"
+
+    - name: Vérifier la version de RKE2
+      command: /usr/local/bin/rke2 --version
+      register: rke2_version
+      changed_when: false
+      #when: inventory_hostname != "master1"
+
+    - name: Afficher la version de RKE2
+      debug:
+        var: rke2_version.stdout
+
+    - name: Activer RKE2 server sur master2/3
+      ansible.builtin.systemd:
+        name: rke2-server
+        enabled: true
+
+    - name: Démarrer RKE2 server master2 en arrière-plan
+      ansible.builtin.shell: systemctl start rke2-server
+      async: 45
+      poll: 0
+      when: inventory_hostname == "master2"
+
+    - name: Pause de 60 secondes pour laisser respirer
+      ansible.builtin.pause:
+        seconds: 60
+      when: inventory_hostname == "master2"
+
+    - name: Attendre que SSH soit de nouveau disponible après démarrage de RKE2
+      wait_for_connection:
+        timeout: 300
+        delay: 20
+      when: inventory_hostname == "master2"
+
+    - name: Attendre que RKE2 soit actif
+      command: systemctl is-active rke2-server
+      register: rke2_status
+      until: rke2_status.stdout == "active"
+      retries: 40
+      delay: 30
+      when: inventory_hostname == "master2"
+
+    - name: Vérifier le statut du service RKE2 après démarrage
+      command: systemctl status rke2-server
+      register: rke2_status
+      changed_when: false
+      when: inventory_hostname == "master2"
+
+    - name: Afficher le statut du service RKE2 master2
+      debug:
+        var: rke2_status.stdout_lines
+      when: inventory_hostname == "master2"
+
+    - name: Démarrer RKE2 server master3 en arrière-plan
+      ansible.builtin.shell: systemctl start rke2-server
+      async: 45
+      poll: 0
+      when: inventory_hostname == "master3"
+
+    - name: Pause de 60 secondes pour laisser respirer master3
+      ansible.builtin.pause:
+        seconds: 60
+      when: inventory_hostname == "master3"
+
+    - name: Attendre que SSH master3 soit de nouveau disponible après démarrage de RKE2
+      wait_for_connection:
+        timeout: 300
+        delay: 20
+      when: inventory_hostname == "master3"
+
+    - name: Attendre que RKE2 soit actif master3
+      command: systemctl is-active rke2-server
+      register: rke2_status
+      until: rke2_status.stdout == "active"
+      retries: 40
+      delay: 30
+      when: inventory_hostname == "master3"
+
+    - name: Vérifier le statut du service RKE2 master3 après démarrage
+      command: systemctl status rke2-server
+      register: rke2_status
+      changed_when: false
+      when: inventory_hostname == "master3"
+
+    - name: Afficher le statut du service RKE2 master3
+      debug:
+        var: rke2_status.stdout_lines
+      when: inventory_hostname == "master3"
+
+    
+
+
+
+#==================Worker=============================
+- name: Configurer les workers
+  hosts: workers
+  become: true
+  tasks:
+
+    - name: Créer les dossiers nécessaires
+      file:
+        path: "{{ item }}"
+        state: directory
+      loop:
+        - /etc/rancher/rke2
+        - /mnt/data/grafana
+        - /mnt/data/wordpress
+        - /mnt/data/prometheus
+        - /mnt/data/sonarqube/data
+        - /mnt/data/sonarqube/extensions
+        - /mnt/data/sonarqube/logs
+
+
+    - name: Copier la configuration RKE2
+      copy:
+        dest: /etc/rancher/rke2/config.yaml
+        content: |    
+          token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
+          server: "https://{{ hostvars['master1']['master1_private_ip'] }}:9345"
+          cloud-provider-name: external
+          kubelet-arg:
+            - "cloud-provider=external"
+          disable-cloud-controller: true
+          
+
+    - name: Télécharger et installer RKE2
+      get_url:
+        url: "https://get.rke2.io"
+        dest: /tmp/install_rke2.sh
+        mode: '0755'
+
+    - name: Exécuter le script d'installation RKE2
+      environment:
+        INSTALL_RKE2_TYPE: "agent"
+      command: /tmp/install_rke2.sh
+      args:
+        creates: /usr/local/bin/rke2
+
+    - name: Vérifier la version de RKE2
+      command: /usr/local/bin/rke2 --version
+      register: rke2_version
+      changed_when: false
+
+    - name: Afficher la version de RKE2
+      debug:
+        var: rke2_version.stdout
+
+    - name: Activer RKE2 server au boot
+      ansible.builtin.systemd:
+        name: rke2-agent
+        enabled: true
+    
+    - name: Démarrer RKE2 agent sur le worker1 en arrière-plan
+      ansible.builtin.shell: systemctl start rke2-agent
+      async: 45
+      poll: 0
+      when: inventory_hostname == "worker1"
+
+    - name: Pause de 60 secondes pour laisser respirer
+      ansible.builtin.pause:
+        seconds: 60
+
+    - name: Attendre que SSH soit de nouveau disponible après démarrage de RKE2
+      wait_for_connection:
+        timeout: 300
+        delay: 20
+      when: inventory_hostname == "worker1"
+
+    - name: Attendre que RKE2 soit actif
+      command: systemctl is-active rke2-agent
+      register: rke2_status
+      until: rke2_status.stdout == "active"
+      retries: 40
+      delay: 30
+      when: inventory_hostname == "worker1"
+
+    - name: Vérifier le statut du service RKE2 agent après démarrage
+      command: systemctl status rke2-agent
+      register: rke2_status
+      changed_when: false
+      when: inventory_hostname == "worker1"
+
+    - name: Afficher le statut du service RKE2
+      debug:
+        var: rke2_status.stdout_lines
+      when: inventory_hostname == "worker1"
+
+
+    - name: Démarrer RKE2 agent sur le worker2 en arrière-plan
+      ansible.builtin.shell: systemctl start rke2-agent
+      async: 45
+      poll: 0
+      when: inventory_hostname == "worker2"
+
+    - name: Pause de 60 secondes pour laisser respirer
+      ansible.builtin.pause:
+        seconds: 60
+
+    - name: Attendre que SSH soit de nouveau disponible après démarrage de RKE2
+      wait_for_connection:
+        timeout: 300
+        delay: 20
+      when: inventory_hostname == "worker2"
+
+    - name: Attendre que RKE2 soit actif
+      command: systemctl is-active rke2-agent
+      register: rke2_status
+      until: rke2_status.stdout == "active"
+      retries: 40
+      delay: 30
+      when: inventory_hostname == "worker2"
+
+    - name: Vérifier le statut du service RKE2 agent après démarrage
+      command: systemctl status rke2-agent
+      register: rke2_status
+      changed_when: false
+      when: inventory_hostname == "worker2"
+
+    - name: Afficher le statut du service RKE2
+      debug:
+        var: rke2_status.stdout_lines
+      when: inventory_hostname == "worker2"
+
+        
+
+#=================================================================
+    
+- name: Aficher le resultat final du Cluster RKE2 HA !
+  hosts: master1
+  become: true
+  tasks:
+
+    - name: Que renvoie "kubectl get nodes" ?
+      command: /var/lib/rancher/rke2/bin/kubectl get nodes --no-headers
+      register: kubectl_nodes
+      environment:
+        KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+      changed_when: false
+      ignore_errors: true
+
+    - name: Voici le resultat final du cluster. Merci Christ!!
+      debug:
+        var: kubectl_nodes.stdout_lines
+
+
+
+
+
+ # ====================================== Installer AWS CCM sur le Cluster Kubernetes =================================
+- name: Installer AWS CCM sur master1
+  hosts: master1
+  become: true
+  vars:
+    region: us-east-1
+  tasks:
+    - name: Installer Helm (master1)
+      ansible.builtin.shell: |
+        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      args:
+        creates: /usr/local/bin/helm
+
+    - name: Ajouter le repo Helm aws-ccm
+      ansible.builtin.shell: helm repo add aws-ccm https://kubernetes.github.io/cloud-provider-aws
+      args:
+        creates: /root/.cache/helm/repository/aws-ccm-index.yaml
+
+    - name: Mettre à jour les charts Helm
+      ansible.builtin.shell: helm repo update
+
+    # - name: Appliquer la ConfigMap aws-cloud-provider
+    #   ansible.builtin.command: >
+    #     /var/lib/rancher/rke2/bin/kubectl apply -f ./aws_cloud/aws-cloud-provider-configmap.yaml
+    #   environment:
+    #     KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+    #   register: aws_cloud_configmap
+    #   changed_when: "'configured' in aws_cloud_configmap.stdout or 'created' in aws_cloud_configmap.stdout"
+    #   failed_when: aws_cloud_configmap.rc != 0
+
+    # - name: Vérifier si le ConfigMap aws-cloud-provider existe
+    #   ansible.builtin.command: >
+    #     /var/lib/rancher/rke2/bin/kubectl get configmap aws-cloud-provider -n kube-system
+    #   environment:
+    #     KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+    #   register: aws_cloud_configmap_check
+    #   failed_when: false
+    #   changed_when: false
+
+
+
+
+    - name: Installer AWS Cloud Controller Manager via Helm
+      ansible.builtin.shell: |
+        
+        helm upgrade --install aws-ccm aws-ccm/aws-cloud-controller-manager \
+          --namespace kube-system \
+          --set cloudProvider.name=aws \
+          --set cloudProvider.region={{ region }} \
+          --set serviceAccount.create=true \
+          --set serviceAccount.name=cloud-controller-manager \
+          --set "args={--cloud-provider=aws,--configure-cloud-routes=false}" \
+          --set cloudConfig.name=aws-cloud-provider \
+          --set clusterName=apotheose-cluster \
+          --set replicaCount=3 \
+          --wait
+      environment:
+        KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+
+    - name: Pause de 60 secondes pour laisser respirer
+      ansible.builtin.pause:
+        seconds: 60
+
+    # ====================== Debug CCM ===============================================================================================
+    # ====================== Debug CCM ===============================================================================================
+
+    - name: Debug - Vérifier que CCM tourne bien
+      ansible.builtin.command: >
+        /var/lib/rancher/rke2/bin/kubectl -n kube-system get pods -l app.kubernetes.io/name=aws-cloud-controller-manager
+      register: ccm_pods
+      environment:
+        KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+      changed_when: false
+      ignore_errors: true
+
+    - name: Afficher les pods CCM (debug)
+      debug:
+        var: ccm_pods.stdout_lines
+
+    # Vérifie tous les pods du namespace kube-system
+    - name: Debug - Voir tous les pods dans kube-system
+      ansible.builtin.command: >
+        /var/lib/rancher/rke2/bin/kubectl -n kube-system get pods -o wide
+      register: all_kube_system_pods_wide
+      environment:
+        KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+      changed_when: false
+
+    - name: Affiche tous les pods kube-system (wide)
+      debug:
+        var: all_kube_system_pods_wide.stdout_lines
+
+    # Helm release pour confirmer que le chart est bien installé
+    - name: Liste des releases Helm dans kube-system
+      ansible.builtin.shell: helm list -n kube-system
+      register: helm_list
+      environment:
+        KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+      changed_when: false
+
+    - name: Affiche les releases Helm
+      debug:
+        var: helm_list.stdout_lines
+
+    # Rechercher "cloud" dans les pods kube-system
+    - name: Debug - Voir les pods contenant 'cloud' dans le nom
+      ansible.builtin.shell: >
+        /var/lib/rancher/rke2/bin/kubectl get pods -n kube-system | grep cloud || true
+      register: kube_system_cloud_pods
+      environment:
+        KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+      changed_when: false
+
+    - name: Affiche les pods contenant 'cloud'
+      debug:
+        var: kube_system_cloud_pods.stdout_lines
+
+    # - name: Vérifier que le DaemonSet aws-cloud-controller-manager est bien lancé
+    #   command: >
+    #     /var/lib/rancher/rke2/bin/kubectl -n kube-system get daemonset aws-cloud-controller-manager -o jsonpath='{.status.numberReady}'
+    #   register: ccm_ready
+    #   until: ccm_ready.stdout|int >= 1
+    #   retries: 10
+    #   delay: 15
+
+
+
+#=======================================================================================================================
+
+# Préparer son disque /dev/xvdbf afin qu’il soit détecté correctement par OpenEBS
+
+# roles:
+# ---
+# - name: Prepare EBS disks for OpenEBS
+#   hosts: all
+#   become: yes
+#   roles:
+#     - prepare_ebs_disk
+
+
+- name: VERIFIER le -> Preparer les disks EBS pour OpenEBS
+  hosts: workers
+  become: true
+  vars:
+    openebs_disk: /dev/nvme2n1
+  tasks:
+
+    - name: Lister tous les disques disponibles sur l’hôte
+      shell: lsblk -o NAME,KNAME,FSTYPE,SIZE,MOUNTPOINT,LABEL
+      register: lsblk_output
+
+    - name: Afficher les disques détectés
+      debug:
+        var: lsblk_output.stdout_lines
+
+    - name: Check if disk exists
+      stat:
+        path: "{{ openebs_disk }}"
+      register: disk_check
+
+    - name: Afficher les infos du disque
+      debug:
+        var: disk_check
+
+    - name: Wipe filesystem signatures
+      command: wipefs -a {{ openebs_disk }}
+      when: disk_check.stat.exists
+
+    - name: Zero out the beginning of the disk
+      command: dd if=/dev/zero of={{ openebs_disk }} bs=1M count=10
+      when: disk_check.stat.exists
+
+    - name: Wait a few seconds after wiping (10s)
+      pause:
+        seconds: 10
+
+
+# ================================ Via master1 ou dépuis Bastion ===========
+# - name: Preparer les disks EBS pour OpenEBS
+#   hosts: master1
+#   become: true
+#   tasks:
+#     - name: Get NDM pod name on this host
+#       shell: |
+#         kubectl get pods -n openebs -o wide | grep ndm | grep $(hostname) | awk '{print $1}'
+#       register: ndm_pod_name
+#       changed_when: false
+
+#     - name: Delete NDM pod to force rescan
+#       shell: "kubectl delete pod -n openebs {{ ndm_pod_name.stdout }}"
+#       when: ndm_pod_name.stdout != ""
+
+#     - name: Wait for NDM pod to restart
+#       shell: "kubectl wait --for=condition=Ready pod -n openebs -l app=openebs-ndm --timeout=60s"
+#       register: ndm_restart
+#       changed_when: false
+
+#     - name: List blockdevices for this node
+#       shell: >
+#         kubectl get blockdevices -n openebs -o custom-columns="NAME:.metadata.name,NODE:.spec.nodeAttributes.hostname"
+#       register: blockdevices_output
+#       changed_when: false
+
+#     - name: Show blockdevices list
+#       debug:
+#         var: blockdevices_output.stdout_lines
+
+
+
+# # ================================ Via Bastion ==================================
+# - name: Forcer le rescan des disques par NDM
+#   hosts: localhost  # ou bastion si tu l’as dans ton inventaire
+#   connection: local
+#   tasks:
+#     - name: Get NDM pod names
+#       shell: |
+#         kubectl get pods -n openebs -l app=openebs-ndm -o jsonpath='{.items[*].metadata.name}'
+#       register: ndm_pods
+#       changed_when: false
+
+#     - name: Delete each NDM pod to force rescan
+#       shell: |
+#         for pod in {{ ndm_pods.stdout.split() | join(' ') }}; do
+#           kubectl delete pod -n openebs $pod;
+#         done
+#       when: ndm_pods.stdout != ""
+
+#     - name: Wait for all NDM pods to restart
+#       shell: >
+#         kubectl wait --for=condition=Ready pod -n openebs -l app=openebs-ndm --timeout=90s
+#       register: ndm_restart
+#       changed_when: false
+
+#     - name: List blockdevices
+#       shell: >
+#         kubectl get blockdevices -n openebs -o custom-columns="NAME:.metadata.name,NODE:.spec.nodeAttributes.hostname"
+#       register: blockdevices_output
+#       changed_when: false
+
+#     - name: Show blockdevices list
+#       debug:
+#         var: blockdevices_output.stdout_lines
+
+
+
+
+
+
+
+
+
+
+
+
+  #  #============== Appliquer les manifests ====================
+  #  - name: Configuration de l'environnement pour apliquer les manifests
+  #    debug:
+  #      msg: |
+  #        Liberer le port 80 du cluster !
+#
+  #  - name: Supprimer Apache2 du cluster (de l'hôte)
+  #    apt:
+  #      name: apache2
+  #      state: absent
+#
+  #  - name: Supprimer nginx du cluster (de l'hôte)
+  #    apt:
+  #      name: nginx
+  #      state: absent
+
+#- name: Appliquer les manifests depuis GitHub Actions via l'API K8s
+#  hosts: localhost
+#  connection: local
+#  gather_facts: false
+#
+#  vars:
+#    kubeconfig_path: "./kubeconfig.yaml"
+#    manifests_dir: "./apotheose_rke2_manifests"
+#
+#  tasks:
+#    - name: Vérifier que le kubeconfig existe
+#      stat:
+#        path: "{{ kubeconfig_path }}"
+#      register: kubeconfig_check
+#
+#    - name: Échouer si kubeconfig manquant
+#      fail:
+#        msg: "Fichier kubeconfig.yaml introuvable sur le runner !"
+#      when: not kubeconfig_check.stat.exists
+#
+#    - name: Déployer les manifests critiques (Traefik, DB, etc.)
+#      k8s:
+#        kubeconfig: "{{ kubeconfig_path }}"
+#        state: present
+#        definition: "{{ lookup('file', item) | from_yaml }}"
+#      loop:
+#        - "{{ manifests_dir }}/Traefik-k8s-manifests.yaml"
+#        - "{{ manifests_dir }}/mysql-k8s-manifests.yaml"
+#        - "{{ manifests_dir }}/sonar_db-k8s-manifests.yaml"
+#      delegate_to: localhost
+#      register: deploy_critical
+#
+#    - name: Déployer les autres manifests
+#      k8s:
+#        kubeconfig: "{{ kubeconfig_path }}"
+#        state: present
+#        definition: "{{ lookup('file', item) | from_yaml }}"
+#      loop: "{{ lookup('fileglob', manifests_dir + '/*.yaml', wantlist=True) }}"
+#      when: item not in
+#        - "{{ manifests_dir }}/Traefik-k8s-manifests.yaml"
+#        - "{{ manifests_dir }}/mysql-k8s-manifests.yaml"
+#        - "{{ manifests_dir }}/sonar_db-k8s-manifests.yaml"
+#      delegate_to: localhost
+      
+
+  #  # Copier les manifests Kubernetes sur master1, master2 et master3
+  #  - name: Copier les manifests sur master1
+  #    copy:
+  #      src: ./apotheose_rke2_manifests
+  #      dest: /root/apotheose_rke2_manifests
+  #      mode: '0755#'
+
+  #  - name: Définir le chemin des manifests
+  #    set_fact:
+  #      manifests_dir: "/root/apotheose_rke2_manifests"
+  #      kubeconfig_path: "/etc/rancher/rke2/rke2.yaml#"
+
+  #  - name: Vérifier le chemin des manifests
+  #    debug:
+  #      msg: "{{ manifests_dir }}#"
+
+  #  - name: Installer la lib Python Kubernetes sur master1
+  #    become: true
+  #    ansible.builtin.pip:
+  #      name: kubernetes
+  #      executable: pip3
+
+  #  - name: Déployer les fichiers critiques (bases de données et Traefik)
+  #    k8s:
+  #      kubeconfig: "{{ kubeconfig_path }}"
+  #      state: present
+  #      src: "{{ item }}"
+  #    loop:
+  #      - "{{ manifests_dir }}/Traefik-k8s-manifests.yaml"
+  #      - "{{ manifests_dir }}/mysql-k8s-manifests.yaml"
+  #      - "{{ manifests_dir }}/sonar_db-k8s-manifests.yaml"
+  #    register: deploy_critical_manifest#s
+
+  #  - name: Résultat du déploiement des fichiers critiques
+  #    debug:
+  #      var: deploy_critical_manifests.result#s
+
+  #  - name: Déployer les autres manifests
+  #    k8s:
+  #      kubeconfig: "{{ kubeconfig_path }}"
+  #      state: present
+  #      src: "{{ item }}"
+  #    loop: "{{ lookup('fileglob', manifests_dir + '/*.yaml', wantlist=True) }}"
+  #    when: item not in
+  #      - "{{ manifests_dir }}/Traefik-k8s-manifests.yaml"
+  #      - "{{ manifests_dir }}/mysql-k8s-manifests.yaml"
+  #      - "{{ manifests_dir }}/sonar_db-k8s-manifests.yaml"
+  #    notify:
+  #      - Pause de 60 seconde#s
+
+  #handlers:
+  #  - name: Pause de 60 secondes
+  #    ansible.builtin.pause:
+  #      seconds: 60
+
+  #  - name: Déployer les fichiers critiques (bases de données et Traefik)
+  #    k8s:
+  #      kubeconfig: "{{ kubeconfig_path }}"
+  #      #state: present
+  #      definition: "{{ lookup('file', item) | from_yaml }}"
+  #    loop:
+  #      - "{{ manifests_dir }}/Traefik-k8s-manifests.yaml"
+  #      - "{{ manifests_dir }}/mysql-k8s-manifests.yaml"
+  #      - "{{ manifests_dir }}/sonar_db-k8s-manifests.yaml"
+  #    register: deploy_critical_manifest#s#
+
+  #  - name: Résultat du déploiement des fichiers critique#s
+  #    debug#:
+  #      var: deploy_critical_manifests.result#s
+  #     # 
+  #    notify:
+  #      - Pause de 60 seconde#s#
+
+  #  - name: Déployer les autres manifest#s
+  #    k8s#:
+  #      kubeconfig: "{{ kubeconfig_path }}#"
+  #      state: presen#t
+  #      definition: "{{ lookup('file', item) | from_yaml }}"
+  #    loop: "{{ lookup('fileglob', manifests_dir + '/*.yaml') }}"
+  #    when: item not in
+  #      [
+  #        "{{ manifests_dir }}/mysql-k8s-manifests.yaml",
+  #        "{{ manifests_dir }}/sonar_db-k8s-manifests.yaml",
+  #        "{{ manifests_dir }}/Traefik-k8s-manifests.yaml"
+  #      ]
+  #    notify:
+  #      - Pause de 60 seconde#s
+
+  #handlers:
+  #  - name: Pause de 60 secondes
+  #    ansible.builtin.pause:
+  #      seconds: 60
+
+
+
+
+
+
+
+    ## Optionnel: Copier le script deploy-all.sh si nécessaire (si tu veux qu'il soit copié sur master1)
+    #- name: Copier le script deploy-all.sh sur master1
+#    #  copy:
+#    #    src: ../apotheose_rke2_manifests/deploy-all.sh
+#    #    dest: /root/deploy-all.sh
+#    #    mode: '0755'
+##
+#    ## Copier les manifests Kubernetes sur master1, master2 et master3
+#    #- name: Copier les manifests sur master2 et master3 (optionnel mais recommandé)
+#    #  copy:
+#    #    src: ../apotheose_rke2_manifests
+#    #    dest: /root/apotheose_rke2_manifests
+#    #    mode: '0755'
+#    #  # Cette tâche peut être ajoutée sur les autres hôtes si nécessaire (master2, master3)
+##
+#    ## Exécuter le script de déploiement Kubernetes sur master1
+#    #- name: Exécuter le script de déploiement Kubernetes
+#    #  command: /root/deploy-all.sh
+#    #  environment:
+#    #    KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+##
+#    - name: Pause de 60 secondes après application des manifests
+#      ansible.builtin.pause:
+#        seconds: 60
+##
+#
+##============== tests de validations= ===================
+#    - name: tests de validations
+#      debug:
+#        msg: |
+#          verification_manifests déployés !
+#
+#    - name: Voir les namespaces du cluster
+#      command: /var/lib/rancher/rke2/bin/kubectl get ns --no-headers
+#      register: kubectl_namespace
+#      environment:
+#        KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+#      changed_when: false
+#      ignore_errors: true
+#
+#    - name: Voici le resultat final du cluster. Merci Christ!!
+#      debug:
+#        var: kubectl_namespace.stdout_lines
+#
+#    # Lister tous les objets dans le namespace apotheose
+#    - name: Lister tous les pods dans le namespace apotheose
+#      command: /var/lib/rancher/rke2/bin/kubectl get pods -n apotheose -o wide
+#      environment:
+#        KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+#      register: pods_apotheose
+#      changed_when: false
+#      ignore_errors: true
+#
+#    - name: Liste des pods déployés
+#      debug:
+#        var: pods_apotheose.stdout_lines
+#
+#    # Lister tous les services
+#    - name: Lister les services dans le namespace apotheose
+#      command: /var/lib/rancher/rke2/bin/kubectl get svc -n apotheose
+#      environment:
+#        KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+#      register: services_apotheose
+#      changed_when: false
+#      ignore_errors: true
+#
+#    - name: Services exposés
+#      debug:
+#        var: services_apotheose.stdout_lines
+#
+#    #  Lister les ingresses si tu utilises Traefik
+#    - name: Lister les ingresses dans le namespace apotheose
+#      command: /var/lib/rancher/rke2/bin/kubectl get ing -n apotheose
+#      environment:
+#        KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+#      register: ingresses_apotheose
+#      changed_when: false
+#      ignore_errors: true
+#
+#    - name: Ingress déployés
+#      debug:
+#        var: ingresses_apotheose.stdout_lines
+#
+#    - name: 🔎 Lister tous les pods de tous les namespaces
+#      command: /var/lib/rancher/rke2/bin/kubectl get pods --all-namespaces
+#      register: all_pods
+#      environment:
+#        KUBECONFIG: /etc/rancher/rke2/rke2.yaml
+#
+#    - name: 🧾 Liste complète des pods dans tous les namespaces
+#      debug:
+#        var: all_pods.stdout_lines
+
+
+
+
+
+
+#=================================================================
+#               Pour la machine Bastionn:
+#=================================================================
+# Solution : 
+# 
+# Sur master1, tu peux copier le fichier kubeconfig vers ta machine locale.
+# 
+# Sur master1, vérifie le chemin du fichier :
+# 
+# sudo cat /etc/rancher/rke2/rke2.yaml
+# 
+# Copie ce fichier sur ta machine locale avec scp :
+# 
+# scp -i ~/chemin/vers/vockeyprod.pem ubuntu@<IP_PUBLIC_MASTER1>:/etc/rancher/rke2/rke2.yaml ~/.kube/config
+# 
+# Modifie le serveur dans le fichier copié :
+# 
+# nano ~/.kube/config
+# 
+# Et remplace l'adresse 127.0.0.1 ou localhost dans la ligne server: par l'IP publique de master1, comme ceci :
+# 
+# server: https://<IP_PUBLIC_MASTER1>:6443
+# Tu peux aussi mettre le DNS public s’il est dispo, genre : rke2cluster.christ.lan
+# 
+# Teste :
+# 
+# kubectl get nodes
+

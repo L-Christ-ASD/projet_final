@@ -1,0 +1,21 @@
+namespace: apotheose
+
+prometheus:
+  pvc:
+    dataStorage: 5Gi
+  deployment:
+    image: prom/prometheus:v2.52.0
+    replicas: 1
+  ingress:
+    host: prometheus.christ-devops.duckdns.org
+
+
+grafana:
+  storage: 5Gi
+  replicas: 1
+  image: grafana/grafana:latest
+  ingress:
+    host: grafana.christ-devops.duckdns.org
+  adminCredentials:
+    adminUser: "YWRtaW4=" # base64
+    adminPassword: "cGFzc3dvcmQ=" # base64

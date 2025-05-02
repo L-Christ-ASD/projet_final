@@ -1,0 +1,105 @@
+- name: Installer les paquets nécessaires
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+    state: present
+  
+- name: nettoyer le serveur avant de relancer Ansible (supprimer compose.yml)
+  file:
+    path: /home/ubuntu/compose.yml
+    state: absent
+
+- name: Supprimer le fichier letsencrypt
+  file:
+    path: /home/ubuntu/letsencrypt
+    state: absent
+
+- name: Supprimer le fichier traefik_entrypoint.sh
+  file:
+    path: /home/ubuntu/traefik_entrypoint.sh
+    state: absent
+
+- name: Supprimer les anciennes clés GPG de Docker (si existantes)
+  file:
+    path: /etc/apt/keyrings/docker.asc
+    state: absent
+
+- name: Créer le répertoire pour la clé GPG de Docker
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+  
+
+- name: Télécharger la clé GPG de Docker
+  get_url:
+    url: "https://download.docker.com/linux/ubuntu/gpg"
+    dest: "/etc/apt/keyrings/docker.asc"
+    mode: '0644'
+
+- name: Ajouter le dépôt officiel Docker
+  shell: |
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+    $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | tee /etc/apt/sources.list.d/docker.list
+  args:
+    executable: /bin/bash
+
+- name: Mettre à jour les paquets
+  apt:
+    update_cache: yes
+
+- name: Installer Docker et Docker Compose
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+
+- name: Activer et démarrer Docker
+  systemd:
+    name: docker
+    enabled: yes
+    state: started
+
+- name: Vérifier l'installation de Docker et Docker Compose
+  command: docker --version
+  register: docker_version
+
+- name: Afficher la version de Docker
+  debug:
+    msg: "Docker installé avec succès: {{ docker_version.stdout }}"
+
+
+- name: Ajouter l'utilisateur "ubuntu" au groupe Docker
+  user:
+    name: ubuntu
+    groups: docker
+    append: yes
+
+- name: Redémarrer Docker après ajout de l'utilisateur au groupe Docker
+  systemd:
+    name: docker
+    state: restarted
+
+#- name: Vérifier et créer le réseau Docker "dns-wp_traefik-external-network"
+#  docker_network:
+#    name: dns-wp_traefik-external-network
+#    state: present
+
+- name: Supprimer Apache2 de l'hôte
+  apt:
+    name: apache2
+    state: absent
+
+
+
+
+  

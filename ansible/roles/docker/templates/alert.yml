@@ -1,0 +1,30 @@
+groups:
+  - name: system-alerts
+    rules:
+      - alert: InstanceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instance {{ $labels.instance }} down"
+          description: "L'instance {{ $labels.instance }} ne répond plus depuis 1 minute."
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100) > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU élevé sur {{ $labels.instance }}"
+          description: "L'utilisation CPU est au-dessus de 80% sur {{ $labels.instance }}."
+
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Espace disque bas sur {{ $labels.instance }}"
+          description: "Moins de 15% d'espace disque disponible sur {{ $labels.instance }}."
+
