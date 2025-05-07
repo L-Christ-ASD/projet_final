@@ -22,4 +22,13 @@ service:
   annotations: {}
   type: LoadBalancer
 
+resources:
+  requests:
+    cpu: "200m"      #"2"
+    memory: "256Mi"  #"2Gi"
+  limits:
+    cpu: "500m"      #"4"
+    memory: "512Mi"  #"4Gi"
+
 # L' eip et le sg sont approvisionnées dynamiquement via terraform!
+

@@ -19,3 +19,11 @@ grafana:
   adminCredentials:
     adminUser: "YWRtaW4=" # base64
     adminPassword: "cGFzc3dvcmQ=" # base64
+
+resources:
+  requests:
+    cpu: "2"
+    memory: "2Gi"
+  limits:
+    cpu: "4"
+    memory: "4Gi"

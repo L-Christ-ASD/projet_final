@@ -16,6 +16,13 @@ spec:
       containers:
         - name: sonarqube
           image: {{ .Values.deployment.image }}
+          resources:
+            requests:
+              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.resources.limits.memory }}
           env:
             - name: SONARQUBE_JDBC_URL
               value: jdbc:postgresql://sonar-db:5432/sonar

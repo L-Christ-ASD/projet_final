@@ -10,3 +10,11 @@ deployment:
 
 ingress:
   host: phpmyadmin.christ-devops.duckdns.org
+
+resources:
+  requests:
+    cpu: "2"
+    memory: "2Gi"
+  limits:
+    cpu: "4"
+    memory: "4Gi"

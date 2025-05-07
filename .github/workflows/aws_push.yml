@@ -1,13 +1,13 @@
-name: CI/CD --> preProduction (Deploy to AWS)
+name: CI/CD --> APOTHEOSE (Deploy to AWS)
 
-# on:
-#   push:
-#     branches:
-#       - main
-#   workflow_dispatch:
-# jobs:
-#   deploy:
-#     runs-on: ubuntu-latest
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout du code
@@ -18,7 +18,7 @@ name: CI/CD --> preProduction (Deploy to AWS)
         sudo apt-mark hold firefox snapd
         sudo apt update
         sudo apt upgrade -y
-# sudo apt-mark hold firefox snapd  -->  empêche ces paquets d’être mis à jour (et donc d’appeler Snap).
+
     - name: Installer Terraform
       uses: hashicorp/setup-terraform@v3
       with:
@@ -71,133 +71,10 @@ name: CI/CD --> preProduction (Deploy to AWS)
 
     - name: Lister les groupes de sécurité sur AWS
       run: aws ec2 describe-security-groups --query "SecurityGroups[*].{Name:GroupName, ID:GroupId}"
-##
-  #  #- pour tester rke2, on commente preprod
-  #    
-  #  - name: Initialiser Terraform
-  #    run: terraform init
-  #    working-directory: ./preProd-terraform
-#
-#
-#
-  #  - name: Valider la configuration Terraform
-  #    run: terraform validate
-  #    working-directory: ./preProd-terraform
-#
-  #  - name: Initialiser Terraform
-  #    run: terraform init
-  #    working-directory: ./preProd-terraform
-#
-  #  - name: Plan Terraform
-  #    run: terraform plan -no-color
-  #    working-directory: ./preProd-terraform
-#
-  #  - name: Lancer Terraform apply
-  #    run: terraform apply -auto-approve
-  #    working-directory: ./preProd-terraform
-#
-  #  - name: Sauvegarder la clé SSH
-  #    uses: actions/upload-artifact@v4
-  #    with:
-  #      name: vockey.pem
-  #      path: ./preProd-terraform/vockey.pem
-#
-  #  - name: Contenu du dossier ansible
-  #    run: |
-  #      ls ./ansible/
-#
-  #  - name: Contenu du fichier inventory
-  #    run: |
-  #      cat ./ansible/inventory
-#
-  #  - name: Autoriser SSH depuis n'importe où (temporaire)
-  #    run: |
-  #      aws ec2 authorize-security-group-ingress --group-name admin_ssh_preprod \
-  #        --protocol tcp --port 22 --cidr 0.0.0.0/0 --region us-east-1
-#
-  #  - name: Contenu du dossier terraform et arbo
-  #    run: |
-  #      pwd
-  #      ls
-  #      ls ./preProd-terraform/
-  #      ls -l ./preProd-terraform/vockey.pem
-  #      ls -R
-#
-  #  - name: Chmod 400 sur .pem
-  #    run: |
-  #      chmod 400 ./preProd-terraform/vockey.pem
-  #  
-  #  - name: Contenu du dossier terraform
-  #    run: |
-  #      ls -l ./preProd-terraform/vockey.pem
-#
-  #  - name: Attendre le demarrage complet du server 120s
-  #    run: |
-  #      sleep 120s
-
-      # Vérifier la connexion SSH avec Ansible (ping sur toutes les machines)
-#    - name: Tester la connection SSH  avec Ansible
-#      run: |
-#        ansible -m ping -i ./ansible_production/inventory all
-  #
-  #  - name: Exécuter le playbook Ansible
-  #    run: |
-  #      ls ../preProd-terraform/
-  #      ansible-playbook -i inventory playbook.yml 
-  #    working-directory: ./ansible/
-#
-  #  - name: Désactiver l'accès SSH depuis n'importe où
-  #    run: |
-  #      aws ec2 revoke-security-group-ingress --group-name admin_ssh_preprod \
-  #        --protocol tcp --port 22 --cidr 0.0.0.0/0 --region us-east-1
-
-
-
-
-# Explications
-#    Artefact pour la clé SSH :
-#    
-#    L'étape actions/upload-artifact@v4 permet de sauvegarder la clé privée SSH (vockey.pem) générée par Terraform en tant qu'artefact.
-#    
-#    Cet artefact sera accessible depuis l'interface GitHub dans la section Actions après l'exécution du workflow.
-#    
-#    Téléchargement manuel de l'artefact :
-#    
-#    Une fois le workflow terminé, allez dans l'onglet Actions du repository GitHub.
-#    
-#    Sélectionnez le workflow correspondant.
-#    
-#    Téléchargez l'artefact nommé ssh-key.
-
-# ou utiliser la commande bash sur la machine locale:
-  # gh run download -R L-Christ-ASD/projet_final -n vockey.pem
-
-
-# Étape 14 : Ajouter l'hôte EC2 aux hôtes connus
-# - name: Ajouter l'hôte aux known_hosts
-#   run: ssh-keyscan -H $(terraform output -raw public_ip) >> ~/.ssh/known_hosts
-
-#Configuration des Secrets GitHub
-
-#Ajoute ces secrets dans les paramètres de ton repo GitHub → Settings → Secrets → Actions :
-#AWS_ACCESS_KEY_ID
-#AWS_SECRET_ACCESS_KEY
-
-
-# Explication du Workflow
-
-#Clone le repo
-#Installe Terraform et applique la config
-#Récupère l'IP de l'instance AWS créée
-#Ajoute la clé SSH pour la connexion
-#Installe Ansible et exécute le playbook sur l'instance
-
 
 
 # -===============producttion==========================
-
-    
-
+#================================================================================================
     - name: Initialiser Terraform pour le cluster rke2
       run: terraform init
       working-directory: ./production_tf/cluster_ec2/
@@ -209,12 +86,6 @@ name: CI/CD --> preProduction (Deploy to AWS)
     - name: Plan Terraform
       run: terraform plan
       working-directory: ./production_tf/cluster_ec2/
-
-    # - name: Netoyer avant_apply (role, policy, instanceprofile) 
-    #   run: |
-    #     chmod +x cleanup_before_apply.sh
-    #     ./cleanup_before_apply.sh
-    #  working-directory: ./production_tf/cluster_ec2/
 
     - name: Lancer Terraform apply
       run: terraform apply -auto-approve
@@ -275,17 +146,14 @@ name: CI/CD --> preProduction (Deploy to AWS)
         cp ./production_tf/cluster_ec2/vockeyprod.pem ./ansible_production/
         chmod 600 ./ansible_production/vockeyprod.pem
 
-    #- name: Copier apotheose_rke2_manifests dans ansible_production/
-    #  run: |
-    #    cp -r ./apotheose_rke2_manifests ./ansible_production/
-
     - name: Test SSH connection with Ansible
       run: |
         ansible -m ping -i ./ansible_production/inventory all
 
 
 # ============================= cluster rke2 ================================
-    - name:  Déploiement du cluster rke2 !!
+#================================================================================================
+    - name:  Configuration et éploiement du cluster RKE2 + aws-ccm !!
       run: |
         echo "Configuration et mise en place du (playbook Ansible_prod)"
 
@@ -297,15 +165,18 @@ name: CI/CD --> preProduction (Deploy to AWS)
         sleep 2s
 
     
-#================ Déploiement du projet apotheose (CD)==================================
-
-# ==========Copier le fichier kubeconfig depuis master1=================
+#================ Déploiement du projet apotheose (CD)===========================================
+#================================================================================================
     - name: Extraire l'IP de master1 depuis l'inventaire (copier rke2.yml et changer l'ip)
       run: |
         MASTER1_IP=$(awk '/^master1/ { for(i=1;i<=NF;i++) if($i ~ /ansible_host=/) { split($i,a,"="); print a[2] } }' ./ansible_production/inventory)
         echo "MASTER1_IP=$MASTER1_IP" >> $GITHUB_ENV
         echo "MASTER1_IP=$MASTER1_IP"
 
+
+
+  #========== kubeconfig depuis master1 ========================
+  #=============================================================
     - name: creer le dossier .kube
       run: |
         mkdir -p .kube
@@ -344,21 +215,27 @@ name: CI/CD --> preProduction (Deploy to AWS)
         kubectl config view
 
 
-# ============================= Manifests ================================        
+
+  #======== Aws-config =====================================================
+  #=========================================================================
     - name: Ouvrir le port 6443 (temporaire) pour le deploiement des manifest
       run: |
         aws ec2 authorize-security-group-ingress --group-name admin_ssh_production \
           --protocol tcp --port 6443 --cidr 0.0.0.0/0 --region us-east-1
 
-
-
-    - name: Labeliser les masters et Patcher les nodes avec k8s
+    - name: Labeliser les nodes et les patcher entre aws & k8s
       run: |
         export KUBECONFIG=.kube/config-rke2
+
+        echo "Labeliser les masters"
         kubectl label node master1 node-role.kubernetes.io/control-plane= --overwrite
         kubectl label node master2 node-role.kubernetes.io/control-plane= --overwrite
         kubectl label node master3 node-role.kubernetes.io/control-plane= --overwrite
-        
+
+        echo "Labeliser le node workers --> node-role.kubernetes"
+        kubectl label node worker1 node-role.kubernetes.io/worker=true
+        kubectl label node worker2 node-role.kubernetes.io/worker=true
+
         echo "Patcher les nodes avec k8s"
         chmod +x ./aws_cloud/patch_nodes.sh
         ./aws_cloud/patch_nodes.sh
@@ -368,44 +245,9 @@ name: CI/CD --> preProduction (Deploy to AWS)
         export KUBECONFIG=.kube/config-rke2
         kubectl apply -f ./aws_cloud/aws-cloud-provider-configmap.yaml
 
-    #================================================================
-# Préparer son disque /dev/xvdbf afin qu’il soit détecté correctement par OpenEBS
-
-    # - name: Get NDM pod names
-    #   id: get-ndm
-    #   run: |
-    #     export KUBECONFIG=.kube/config-rke2
-    #     pods=$(kubectl get pods -n openebs -l app=openebs-ndm -o jsonpath='{.items[*].metadata.name}')
-    #     echo "ndm_pods=$pods" >> $GITHUB_ENV
-    #     echo "NDM pods: $pods"
-
-    # - name: Delete each NDM pod to force rescan
-    #   i f: env.ndm_pods != '''
-    #   run: |
-    #     export KUBECONFIG=.kube/config-rke2
-    #     for pod in ${{ env.ndm_pods }; do
-    #       echo "Deleting pod: $pod"
-    #       kubectl delete pod -n openebs "$pod"
-    #     done
-
-    # - name: Wait for NDM pods to restart
-    #   run: |
-    #     export KUBECONFIG=.kube/config-rke2
-    #     echo "Waiting for NDM pods to be Ready..."
-    #     kubectl wait --for=condition=Ready pod -n openebs -l app=openebs-ndm --timeout=90s
-
-    # - name: List blockdevices
-    #   run: |
-    #     export KUBECONFIG=.kube/config-rke2
-    #     echo "Listing blockdevices:"
-    #     kubectl get blockdevices -n openebs -o custom-columns="NAME:.metadata.name,NODE:.spec.nodeAttributes.hostname"
-        
-
-
-# =========================== OpenEBS (cluster) avec cStor ================================================
     
-    # Deploiement avec helm (chaque service) 
-
+  #======== Deploiement avec helm (chaque service)  ========================
+  #=========================================================================
     - name: Installer Helm !!
       run: |
         curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
@@ -417,24 +259,11 @@ name: CI/CD --> preProduction (Deploy to AWS)
         helm version
     
         
-
-    # OpenEBS
-
-
-        
-    # echo "Reclamer les bd (55Gi/60) pour openebs et les activer"
-    # chmod +x ./OpenEBScStorPoolCluster/blockdevice_claims.sh
-    # ./OpenEBScStorPoolCluster/blockdevice_claims.sh
-
-
+  #======== OpenEBS (cStor) =======================================
+  #================================================================
     - name: Installer et configurer OpenEBS (cluster) repo officiel
       run: |
         export KUBECONFIG=.kube/config-rke2
-
-        echo "Labeliser le node workers --> node-role.kubernetes"
-        kubectl label node worker1 node-role.kubernetes.io/worker=true
-        kubectl label node worker2 node-role.kubernetes.io/worker=true
-        
         
         echo "Ajouter le repo openebs (officiel)"
         helm repo add openebs https://openebs.github.io/charts
@@ -515,12 +344,6 @@ name: CI/CD --> preProduction (Deploy to AWS)
         echo "Vérifier si aws-CCM est actif '(aws)-cloud-controller-manager-xxxxx'"
         kubectl get pods -n kube-system
 
-        
-      # echo "Mettre OpenEBS à jour avec cStorPoolCluster (CSPC)"
-      # kubectl apply -f ./OpenEBScStorPoolCluster/
-  # echo "Mettre OpenEBS à jour avec ma custumconf helm"
-  # helm upgrade --install openebs ./OpenEBS_custum -f ./OpenEBS_custum/values.yaml --namespace openebs --create-namespace
-
 
     - name: Vérifier "eipAllocationId" dans /helm_apotheose/traefik/values.yaml
       run: |
@@ -528,14 +351,8 @@ name: CI/CD --> preProduction (Deploy to AWS)
         
 
 
-# ============= Deployer apotheose - Don't Repeat Yourself =======================================
-
-    # Pour [INFO] Chart.yaml: icon is recommended ==> ajouter la ligne ci-dessous dans chaque Chart.yaml
-    # icon: https://raw.githubusercontent.com/helm/chartmuseum/master/logo.pn
-
-    # Pour valider un template localement:
-    # helm template traefik ./helm_apotheose/traefik -f ./helm_apotheose/traefik/values.yaml
-
+  #======== Valider tous les charts) =======================================
+  #================================================================
     - name: Lint de tous les charts Helm du projet apotheose
       run: |
         for chart in ./helm_apotheose/*; do
@@ -546,6 +363,8 @@ name: CI/CD --> preProduction (Deploy to AWS)
         done
 
 
+  #======== Deployer apotheose - Traeffik (Officiel-charts) ===============
+  #========================================================================
     - name: Ajouter le repo Helm Traefik (officiel)
       run: helm repo add traefik https://helm.traefik.io/traefik && helm repo update
 
@@ -568,23 +387,11 @@ name: CI/CD --> preProduction (Deploy to AWS)
         kubectl annotate namespace apotheose meta.helm.sh/release-name=traefik
         kubectl annotate namespace apotheose meta.helm.sh/release-namespace=apotheose
 
-      # echo "Appliquer le volume PVC Traefik letsencrypt (custum-manifests) avant deploiement" 
-      # kubectl apply -f ./k8s-manifests/pv-traefik.yaml
-      #--------------------------------------------------------------------------
-        # echo "Redémarrer le déploiement d'OpenEBS"
-        # kubectl rollout restart deployment openebs-cstor-admission-server -n openebs
 
-        # echo "Attendre 20s"
-        # sleep 20s
-
-        # echo "Vérifier que les pods OPENEBS sont en mode Running"
-        # kubectl get pods -n openebs
-        # echo "Vérifier les svc dans le ns OPENEBS"
-        # kubectl get svc -n openebs
-
-
-
-    # accorder tous les droits sur toutes les ressources dans le namespace apotheose pour dignostique!
+  #======== Deployer apotheose - Traefik (custum-chart) ======================
+  #===========================================================================
+  #======== Accorder tous les droits sur toutes les ressources dans le namespace apotheose pour dignostique!
+  #===========================================================================
     - name: Appliquer et bind les roles k8s ( full acces pour les logs)
       run: |
         export KUBECONFIG=.kube/config-rke2
@@ -646,7 +453,6 @@ name: CI/CD --> preProduction (Deploy to AWS)
           fi
         done
 
-
     - name: pause de 60s
       run: |
         sleep 60s
@@ -698,6 +504,19 @@ name: CI/CD --> preProduction (Deploy to AWS)
         kubectl get svc traefik -n apotheose -o yaml | grep -A 10 annotations
 
 
+    # - name: Scaler automatiquement le nombre de pods dU déploiement TRAEFIK
+    #   run: |
+    #     export KUBECONFIG=.kube/config-rke2
+    #     kubectl autoscale deployment traefik -n apotheose \
+    #       --cpu-percent=50 \
+    #       --min=2 \
+    #       --max=5
+
+#     PS: 
+#        Si la consommation (deployment.resources.requests.cpu) CPU moyenne dépasse 50 % de 200m = 100m, 
+#        Kubernetes va augmenter le nombre de pods jusqu’à 5.
+
+
 
 # ================ OpenVPN BASTION ==================
 
@@ -715,43 +534,6 @@ name: CI/CD --> preProduction (Deploy to AWS)
 #        echo "${{ secrets.SSH_CHRIST }" > ~/.ssh/id_rsa
 #        chmod 600 ~/.ssh/id_rsa
 #
-
-
-
-
-#======================  Attendre l'attribution d'une EXTERNAL-IP =======================
-    # - name: Attendre que le LoadBalancer Traefik ait une EXTERNAL-IP
-    #   run: |
-    #       export KUBECONFIG=.kube/config-rke2
-
-    #       SERVICE_NAME="traefik"
-    #       NAMESPACE="apotheose"
-    #       TIMEOUT=300  # secondes
-    #       SLEEP=5
-    #       ELAPSED=0
-
-    #       echo "Attente de l'EXTERNAL-IP du service $SERVICE_NAME..."
-
-    #       while true; do
-    #         EXTERNAL_IP=$(kubectl get svc $SERVICE_NAME -n $NAMESPACE -o jsonpath="{.status.loadBalancer.ingress[0].hostname}")
-    #         if [[ -n "$EXTERNAL_IP" ]]; then
-    #           echo "EXTERNAL-IP trouvée : $EXTERNAL_IP"
-    #           break
-    #         fi
-
-    #         if [[ $ELAPSED -ge $TIMEOUT ]]; then
-    #           echo "⛔ Temps d'attente dépassé ($TIMEOUT s), EXTERNAL-IP non assignée"
-    #           exit 1
-    #         fi
-
-    #         echo "⏳ En attente... ($ELAPSED / $TIMEOUT)"
-    #         sleep $SLEEP
-    #         ELAPSED=$((ELAPSED + SLEEP))
-    #       done
-
-    #       shell: bash
-
-
 
 
     - name: Fermerl'accès au port 6443!!

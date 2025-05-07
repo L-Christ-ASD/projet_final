@@ -1,13 +1,74 @@
 ---
 #=================================================================
+# - name: Preparer les disks EBS pour OpenEBS et containerd
+#   hosts: all #workers
+#   become: true
+#   vars:
+#     containerd_disk: /dev/nvme1n1
+#     containerd_mount_point: /var/lib/containerd
+#   tasks:
+
+#     - name: Lister tous les disques disponibles sur l’hôte
+#       shell: lsblk -o NAME,KNAME,FSTYPE,SIZE,MOUNTPOINT,LABEL
+#       register: lsblk_output
+
+#     - name: Afficher les disques détectés
+#       debug:
+#         var: lsblk_output.stdout_lines
+
+#     - name: Vérifier si le disque containerd existe
+#       stat:
+#         path: "{{ containerd_disk }}"
+#       register: containerd_disk_stat
+
+#     - name: Formater le disque containerd en ext4
+#       filesystem:
+#         fstype: ext4
+#         dev: "{{ containerd_disk }}"
+#       when: containerd_disk_stat.stat.exists
+
+#     - name: Créer le point de montage de containerd s'il n'existe pas
+#       file:
+#         path: "{{ containerd_mount_point }}"
+#         state: directory
+#         mode: '0755'
+
+#     - name: Monter le disque containerd
+#       mount:
+#         path: "{{ containerd_mount_point }}"
+#         src: "{{ containerd_disk }}"
+#         fstype: ext4
+#         opts: defaults
+#         state: mounted
+
+#     - name: Ajouter à fstab pour montage au démarrage
+#       mount:
+#         path: "{{ containerd_mount_point }}"
+#         src: "{{ containerd_disk }}"
+#         fstype: ext4
+#         opts: defaults
+#         state: present
+
+
 - name: Preparer les disks EBS pour OpenEBS et containerd
   hosts: all #workers
   become: true
   vars:
-    containerd_disk: /dev/nvme1n1
-    containerd_mount_point: 
-      - /var/lib/containerd
+    ebs_disk: /dev/nvme1n1
+    rke2_mount_point: /mnt/rke2_data_disk
+    services_dirs:
+      - containerd
+      - kubelet
+      - openebs
   tasks:
+
+    - name: Vérifier le contenu de /var/lib/
+      shell: ls /var/lib/ 
+      register: var_lib_output
+
+    - name: Afficher le contenu de /var/lib/
+      debug:
+        var: var_lib_output.stdout_lines
 
     - name: Lister tous les disques disponibles sur l’hôte
       shell: lsblk -o NAME,KNAME,FSTYPE,SIZE,MOUNTPOINT,LABEL
@@ -19,36 +80,73 @@
 
     - name: Vérifier si le disque containerd existe
       stat:
-        path: "{{ containerd_disk }}"
-      register: containerd_disk_stat
+        path: "{{ ebs_disk }}"
+      register: ebs_disk_stat
 
     - name: Formater le disque containerd en ext4
       filesystem:
         fstype: ext4
-        dev: "{{ containerd_disk }}"
-      when: containerd_disk_stat.stat.exists
+        dev: "{{ ebs_disk }}"
+      when: ebs_disk_stat.stat.exists
 
-    - name: Créer le point de montage de containerd s'il n'existe pas
+    - name: Créer les points de montage
       file:
-        path: "{{ containerd_mount_point }}"
+        path: "{{ rke2_mount_point }}"
         state: directory
         mode: '0755'
+      
 
-    - name: Monter le disque containerd
+    - name: Monter les points de montage (containerd, kubelet, docker, openebs) sur aws-EBS
       mount:
-        path: "{{ containerd_mount_point }}"
-        src: "{{ containerd_disk }}"
+        path: "{{ rke2_mount_point }}"
+        src: "{{ ebs_disk }}"
         fstype: ext4
         opts: defaults
         state: mounted
+      
 
     - name: Ajouter à fstab pour montage au démarrage
       mount:
-        path: "{{ containerd_mount_point }}"
-        src: "{{ containerd_disk }}"
+        path: "{{ rke2_mount_point }}"
+        src: "{{ ebs_disk }}"
         fstype: ext4
         opts: defaults
         state: present
+      
+    - name: Créer les sous-dossiers pour les services
+      file:
+        path: "{{ rke2_mount_point }}/{{ item }}"
+        state: directory
+        mode: '0755'
+      loop: "{{ services_dirs }}"
+
+    - name: Créer les liens symboliques vers /var/lib
+      file:
+        src: "{{ rke2_mount_point }}/{{ item }}"
+        dest: "/var/lib/{{ item }}"
+        state: link
+      loop: "{{ services_dirs }}"
+
+    - name: Vérifier que les liens symboliques sont bien créés
+      stat:
+        path: "/var/lib/{{ item }}"
+      loop: "{{ services_dirs }}"
+      register: symlink_check
+
+    - name: Afficher les résultats des liens symboliques
+      debug:
+        msg: >
+          {{ item.stat.path }} est un lien symbolique pointant vers {{ item.stat.lnk_source }}
+      loop: "{{ symlink_check.results }}"
+      when: item.stat.islnk is defined and item.stat.islnk
+
+    # - name: Alerte si le lien symbolique est manquant ou incorrect
+    #   debug:
+    #     msg: " --> /var/lib/{{ item.item }} n'est pas un lien symbolique !"
+    #   when: item.stat.islnk is not defined or not item.stat.islnk
+    #   loop: "{{ symlink_check.results }}"
+
+
 
 #=================================================================
 - name: Installation et configuration du cluster RKE2

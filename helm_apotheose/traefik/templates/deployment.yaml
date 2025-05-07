@@ -18,6 +18,13 @@ spec:
       containers:
         - name: traefik
           image: {{ .Values.deployment.image }}
+          resources:
+            requests:
+              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.resources.limits.memory }}
           ports:
             - containerPort: 80
             - containerPort: 443

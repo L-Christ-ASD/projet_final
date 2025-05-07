@@ -1,0 +1,189 @@
+name: CI/CD --> APOTHEOSE-docker-compose (Deploy to AWS)
+
+# on:
+#   push:
+#     branches:
+#       - main
+#   workflow_dispatch:
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout du code
+      uses: actions/checkout@v4
+
+    - name: Mettre à jour les paquets
+      run: |
+        sudo apt-mark hold firefox snapd
+        sudo apt update
+        sudo apt upgrade -y
+#       sudo apt-mark hold firefox snapd  -->  empêche ces paquets d’être mis à jour (et donc d’appeler Snap).
+    - name: Installer Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: latest
+
+    - name: Vérifier l'installation de terraform
+      run: |
+        terraform --version
+
+    - name: installer AWS CLI via pip
+      run: |
+        sudo apt install -y python3-pip
+        pip3 install awscli --upgrade --user
+
+    - name: Installer Ansible via PPA (dernière version stable)
+      run: |
+        sudo apt install -y software-properties-common
+        sudo add-apt-repository --yes --update ppa:ansible/ansible
+        sudo apt install -y ansible
+
+    - name: Vérifier l'installation d'Ansible et aws
+      run: |
+        ansible --version
+        aws --version
+
+    - name: Configurer AWS CLI
+      run: |
+        aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws configure set region ${{ vars.AWS_DEFAULT_REGION }}
+
+    - name: Vérifier l'authentification AWS
+      run: |
+        aws sts get-caller-identity
+
+    - name: Valider le format Terraform
+      run: terraform fmt -check
+      working-directory: ./preProd-terraform
+
+    - name: Lister les clés existantes 
+      run: aws ec2 describe-key-pairs --query 'KeyPairs[*].KeyName'
+
+    - name: Supprimer les clés existantes 
+      run: |
+        aws ec2 delete-key-pair --key-name "vockey" --region us-east-1
+        aws ec2 delete-key-pair --key-name "vockeyprod" --region us-east-1
+
+    - name: Lister les clés existantes 
+      run: aws ec2 describe-key-pairs --query 'KeyPairs[*].KeyName'
+
+    - name: Lister les groupes de sécurité sur AWS
+      run: aws ec2 describe-security-groups --query "SecurityGroups[*].{Name:GroupName, ID:GroupId}"
+  
+    - name: Initialiser Terraform
+      run: terraform init
+      working-directory: ./preProd-terraform
+
+    - name: Valider la configuration Terraform
+      run: terraform validate
+      working-directory: ./preProd-terraform
+
+    - name: Initialiser Terraform
+      run: terraform init
+      working-directory: ./preProd-terraform
+
+    - name: Plan Terraform
+      run: terraform plan -no-color
+      working-directory: ./preProd-terraform
+
+    - name: Lancer Terraform apply
+      run: terraform apply -auto-approve
+      working-directory: ./preProd-terraform
+
+    - name: Sauvegarder la clé SSH
+      uses: actions/upload-artifact@v4
+      with:
+        name: vockey.pem
+        path: ./preProd-terraform/vockey.pem
+
+    - name: Contenu du dossier ansible
+      run: |
+        ls ./ansible/
+
+    - name: Contenu du fichier inventory
+      run: |
+        cat ./ansible/inventory
+
+    - name: Autoriser SSH depuis n'importe où (temporaire)
+      run: |
+        aws ec2 authorize-security-group-ingress --group-name admin_ssh_preprod \
+          --protocol tcp --port 22 --cidr 0.0.0.0/0 --region us-east-1
+
+    - name: Contenu du dossier terraform et arbo
+      run: |
+        pwd
+        ls
+        ls ./preProd-terraform/
+        ls -l ./preProd-terraform/vockey.pem
+        ls -R
+
+    - name: Chmod 400 sur .pem
+      run: |
+        chmod 400 ./preProd-terraform/vockey.pem
+   
+    - name: Contenu du dossier terraform
+      run: |
+        ls -l ./preProd-terraform/vockey.pem
+
+    - name: Attendre le demarrage complet du server 120s
+      run: |
+        sleep 120s
+
+    # Vérifier la connexion SSH avec Ansible (ping sur toutes les machines)
+    - name: Tester la connection SSH  avec Ansible
+      run: |
+        ansible -m ping -i ./ansible_production/inventory all
+  
+    - name: Exécuter le playbook Ansible
+      run: |
+        ls ../preProd-terraform/
+        ansible-playbook -i inventory playbook.yml 
+      working-directory: ./ansible/
+
+    - name: Désactiver l'accès SSH depuis n'importe où
+      run: |
+        aws ec2 revoke-security-group-ingress --group-name admin_ssh_preprod \
+          --protocol tcp --port 22 --cidr 0.0.0.0/0 --region us-east-1
+
+
+
+
+# Explications
+#    Artefact pour la clé SSH :
+#    
+#    L'étape actions/upload-artifact@v4 permet de sauvegarder la clé privée SSH (vockey.pem) générée par Terraform en tant qu'artefact.
+#    
+#    Cet artefact sera accessible depuis l'interface GitHub dans la section Actions après l'exécution du workflow.
+#    
+#    Téléchargement manuel de l'artefact :
+#    
+#    Une fois le workflow terminé, allez dans l'onglet Actions du repository GitHub.
+#    
+#    Sélectionnez le workflow correspondant.
+#    
+#    Téléchargez l'artefact nommé ssh-key.
+
+# ou utiliser la commande bash sur la machine locale:
+  # gh run download -R L-Christ-ASD/projet_final -n vockey.pem
+
+
+# Étape 14 : Ajouter l'hôte EC2 aux hôtes connus
+# - name: Ajouter l'hôte aux known_hosts
+#   run: ssh-keyscan -H $(terraform output -raw public_ip) >> ~/.ssh/known_hosts
+
+#Configuration des Secrets GitHub
+
+#Ajoute ces secrets dans les paramètres de ton repo GitHub → Settings → Secrets → Actions :
+#AWS_ACCESS_KEY_ID
+#AWS_SECRET_ACCESS_KEY
+
+
+# Explication du Workflow
+
+#Clone le repo
+#Installe Terraform et applique la config
+#Récupère l'IP de l'instance AWS créée
+#Ajoute la clé SSH pour la connexion
+#Installe Ansible et exécute le playbook sur l'instance
