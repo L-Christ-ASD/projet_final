@@ -5,7 +5,8 @@
   become: true
   vars:
     containerd_disk: /dev/nvme1n1
-    containerd_mount_point: /var/lib/containerd
+    containerd_mount_point: 
+      - /var/lib/containerd
   tasks:
 
     - name: Lister tous les disques disponibles sur l’hôte

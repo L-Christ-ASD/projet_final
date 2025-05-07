@@ -22,4 +22,4 @@ service:
   annotations: {}
   type: LoadBalancer
 
-
+# L' eip et le sg sont approvisionnées dynamiquement via terraform!

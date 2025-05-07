@@ -436,6 +436,7 @@ resource "aws_volume_attachment" "apotheose_volume_attachment" {
 locals {
   all_instances_workers = concat(aws_instance.workers[*])
   #all_instances = concat(aws_instance.masters[*], aws_instance.workers[*])
+  device_letters = ["g", "h"]  # "i", "j", "k", "l", "m", "n"]
 }
 
 resource "aws_ebs_volume" "apotheose_volume_cstor" {
@@ -447,7 +448,7 @@ resource "aws_ebs_volume" "apotheose_volume_cstor" {
 
 resource "aws_volume_attachment" "apotheose_volume_cstor_attachment" {
   count       = length(local.all_instances_workers)
-  device_name = "/dev/sdf"
+  device_name = "/dev/sd${local.device_letters[count.index]}"
   instance_id = local.all_instances_workers[count.index].id
   volume_id   = aws_ebs_volume.apotheose_volume_cstor[count.index].id
 }

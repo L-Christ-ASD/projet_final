@@ -1,13 +1,13 @@
 name: CI/CD --> preProduction (Deploy to AWS)
 
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+# on:
+#   push:
+#     branches:
+#       - main
+#   workflow_dispatch:
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout du code

@@ -1,8 +1,0 @@
-name: Debug Workflow
-on: push
-jobs:
-  debug:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Afficher un message
-        run: echo "GitHub Actions fonctionne !"
