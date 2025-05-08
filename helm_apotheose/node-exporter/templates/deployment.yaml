@@ -15,8 +15,8 @@ spec:
       labels:
         app: node-exporter
     spec:
-      nodeSelector:
-        kubernetes.io/worker: "true"
+      # nodeSelector:
+      #   kubernetes.io/worker: "true"
       containers:
         - name: node-exporter
           image: {{ .Values.deployment.image }}

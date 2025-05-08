@@ -13,8 +13,8 @@ spec:
       labels:
         app: wordpress
     spec:
-      nodeSelector:
-        kubernetes.io/worker: "true"
+      # nodeSelector:
+      #   kubernetes.io/worker: "true"
       containers:
         - name: wordpress
           image: {{ .Values.deployment.image }}

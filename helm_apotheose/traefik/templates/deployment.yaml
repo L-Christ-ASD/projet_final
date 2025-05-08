@@ -13,8 +13,8 @@ spec:
       labels:
         app: traefik
     spec:
-      nodeSelector:
-        kubernetes.io/worker: "true"
+      # nodeSelector:
+      #   kubernetes.io/worker: "true"
       containers:
         - name: traefik
           image: {{ .Values.deployment.image }}
