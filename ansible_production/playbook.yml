@@ -198,6 +198,14 @@
   become: true
   tasks:
 
+    - name: Créer les dossiers nécessaires
+      file:
+        path: "{{ item }}"
+        state: directory
+      loop:
+        - /etc/rancher/rke2
+        - /var/lib/rancher/rke2/server/manifests
+
     #============== Installation et configuration de Kube-VIP =========
     - name: Télécharger le fichier RBAC de Kube-VIP
       get_url:
@@ -241,13 +249,13 @@
 
     #-------------------------------------------------------------------
 
-    - name: Créer les dossiers nécessaires
-      file:
-        path: "{{ item }}"
-        state: directory
-      loop:
-        - /etc/rancher/rke2
-        - /var/lib/rancher/rke2/server/manifests
+    # - name: Créer les dossiers nécessaires
+    #   file:
+    #     path: "{{ item }}"
+    #     state: directory
+    #   loop:
+    #     - /etc/rancher/rke2
+    #     - /var/lib/rancher/rke2/server/manifests
 
     - name: Ajouter la configuration RKE2
       copy:
