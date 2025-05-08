@@ -189,6 +189,10 @@ jobs:
       run: |
         sed -i "s/127.0.0.1/$MASTER1_IP/g" .kube/config-rke2
 
+    # - name: Remplacer 127.0.0.1 par l'IP virtuelle duc cluster dans kubeconfig.yaml
+    #   run: |
+    #     sed -i "s/127.0.0.1/$172.31.64.101/g" .kube/config-rke2
+
     - name: Vérifier .kube/ et le changement d'ip dans kubeconfig.yaml
       run: |
         ls -l .kube/
@@ -453,36 +457,36 @@ jobs:
           fi
         done
 
-    - name: pause de 60s
+    - name: pause de 180s
       run: |
-        sleep 60s
+        sleep 180s
     
-    - name: Vérifier l'état du cluster
-      run: |
-        export KUBECONFIG=.kube/config-rke2
-        kubectl get nodes
-        kubectl get pods -n apotheose
+    # - name: Vérifier l'état du cluster
+    #   run: |
+    #     export KUBECONFIG=.kube/config-rke2
+    #     kubectl get nodes
+    #     kubectl get pods -n apotheose
         
 
-    - name: Lister tous les pods dans le namespace apotheose
-      run: |
-        export KUBECONFIG=.kube/config-rke2
-        kubectl get pods -n apotheose -o wide
+    # - name: Lister tous les pods dans le namespace apotheose
+    #   run: |
+    #     export KUBECONFIG=.kube/config-rke2
+    #     kubectl get pods -n apotheose -o wide
 
-    - name: Lister services_apotheose
-      run: |
-        export KUBECONFIG=.kube/config-rke2
-        kubectl get svc -n apotheose
+    # - name: Lister services_apotheose
+    #   run: |
+    #     export KUBECONFIG=.kube/config-rke2
+    #     kubectl get svc -n apotheose
 
-    - name: Lister Ingress déployés_apotheose
-      run: |
-        export KUBECONFIG=.kube/config-rke2
-        kubectl get ing -n apotheose
+    # - name: Lister Ingress déployés_apotheose
+    #   run: |
+    #     export KUBECONFIG=.kube/config-rke2
+    #     kubectl get ing -n apotheose
 
-    - name: Lister  les statuts des PVC et pods déployés_apotheose
-      run: |
-        export KUBECONFIG=.kube/config-rke2
-        kubectl get pvc -n apotheose
+    # - name: Lister  les statuts des PVC et pods déployés_apotheose
+    #   run: |
+    #     export KUBECONFIG=.kube/config-rke2
+    #     kubectl get pvc -n apotheose
         
 
     - name: Apothéos déployé avec succès!! Bravo Christ !!

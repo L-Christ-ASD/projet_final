@@ -1,7 +1,7 @@
 namespace: apotheose
 
 pvc:
-  storage: 1Gi
+  storage: 2Gi
 
 
 deployment:

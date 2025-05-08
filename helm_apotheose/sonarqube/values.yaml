@@ -2,8 +2,8 @@ namespace: apotheose
 
 pvc:
   dataStorage: 5Gi
-  extensionsStorage: 2Gi
-  logsStorage: 4Gi
+  extensionsStorage: 5Gi
+  logsStorage: 10Gi
 
 secrets:
   jdbcUsername: "c29uYXJ1"
