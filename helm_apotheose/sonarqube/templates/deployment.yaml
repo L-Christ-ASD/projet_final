@@ -13,6 +13,8 @@ spec:
       labels:
         app: sonarqube
     spec:
+      nodeSelector:
+        kubernetes.io/worker: "true"
       containers:
         - name: sonarqube
           image: {{ .Values.deployment.image }}

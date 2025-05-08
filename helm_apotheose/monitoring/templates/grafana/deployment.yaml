@@ -13,6 +13,8 @@ spec:
       labels:
         app: grafana
     spec:
+      nodeSelector:
+        kubernetes.io/worker: "true"
       containers:
         - name: grafana
           image: {{ .Values.grafana.image }}

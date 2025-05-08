@@ -435,8 +435,9 @@ resource "aws_volume_attachment" "apotheose_volume_attachment" {
 # EBS pour Cstor
 locals {
   all_instances_workers = concat(aws_instance.workers[*])
+  device_letters = ["g", "h"]
   #all_instances = concat(aws_instance.masters[*], aws_instance.workers[*])
-  device_letters = ["g", "h"]  # "i", "j", "k", "l", "m", "n"]
+  #device_letters = ["g", "h", "i", "j", "k"] # "l", "m", "n"]
 }
 
 resource "aws_ebs_volume" "apotheose_volume_cstor" {
