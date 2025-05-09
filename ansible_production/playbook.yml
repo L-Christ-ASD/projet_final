@@ -411,19 +411,35 @@
       debug:
         var: kube_vip_pull.stdout_lines
 
-    - name: Générer le manifeste Kube-VIP
+    - name: Générer et sauvegarder le manifeste Kube-VIP directement + demmaragge de kube-vip
       command: >
-        /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock 
-        --namespace k8s.io run --rm --net-host docker.io/plndr/kube-vip:latest vip /kube-vip 
-        manifest daemonset --arp --interface ens5 --address 172.31.64.101 
+        /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock
+        --namespace k8s.io run --rm --net-host docker.io/plndr/kube-vip:latest vip /kube-vip
+        manifest daemonset --arp --interface ens5 --address 172.31.64.101
         --controlplane --leaderElection --taint --services --inCluster
-      register: kube_vip_manifest
+        | tee /var/lib/rancher/rke2/server/manifests/kube-vip.yaml
+      args:
+        creates: /var/lib/rancher/rke2/server/manifests/kube-vip.yaml
 
-    - name: Sauvegarder le manifeste Kube-VIP
-      copy:
-        content: "{{ kube_vip_manifest.stdout }}"
-        dest: /var/lib/rancher/rke2/server/manifests/kube-vip.yaml
-        mode: '0644'
+
+    # - name: Générer le manifeste Kube-VIP
+    #   command: >
+    #     /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock 
+    #     --namespace k8s.io run --rm --net-host docker.io/plndr/kube-vip:latest vip /kube-vip 
+    #     manifest daemonset --arp --interface ens5 --address 172.31.64.101 
+    #     --controlplane --leaderElection --taint --services --inCluster
+    #   register: kube_vip_manifest
+
+    # - name: Sauvegarder le manifeste Kube-VIP
+    #   copy:
+    #     content: "{{ kube_vip_manifest.stdout }}"
+    #     dest: /var/lib/rancher/rke2/server/manifests/kube-vip.yaml
+    #     mode: '0644'
+
+    - name: Pause de 30 secondes pour laisser respirer
+      ansible.builtin.pause:
+        seconds: 30
+    
 
     # ==================Vérifs======================
     - name: Vérifier le fichier de configuration RKE2
@@ -601,6 +617,26 @@
     - name: Stocker l'IP privée dans hostvars de  master 2 et 3
       set_fact:
         my_private_ip: "{{ ansible_facts['default_ipv4']['address'] }}"
+
+    - name: Ping master1 via son ip privée
+      command: ping 172.31.64.101
+      register: ping_private_ip_status
+      changed_when: false
+      ignore_errors: true
+
+    - name: Afficher le ping_private_ip
+      debug:
+        var: ping_private_ip_status.stdout_lines
+
+    - name: Ping master1 via kube-vip
+      command: ping 172.31.64.101
+      register: ping_status
+      changed_when: false
+      ignore_errors: true
+
+    - name: Afficher le ping_status de l'ip virtuelle
+      debug:
+        var: ping_status.stdout_lines
     #-------------------------------------------------------------------
 
     - name: Créer les dossiers nécessaires
