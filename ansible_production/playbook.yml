@@ -48,7 +48,25 @@
 #         fstype: ext4
 #         opts: defaults
 #         state: present
+- name: Vérification des dossier var/lib/* et var/log/*
+  hosts: master1 
+  become: true
+  tasks:
+    - name: Vérifier le contenu de /var/lib/
+      shell: ls /var/lib/ 
+      register: var_lib_output
 
+    - name: Afficher le contenu de /var/lib/
+      debug:
+        var: var_lib_output.stdout_lines
+
+    - name: Vérifier le contenu de /var/log/
+      shell: ls /var/log/ 
+      register: var_log_output
+
+    - name: Afficher le contenu de /var/log/
+      debug:
+        var: var_log_output.stdout_lines
 
 - name: Preparer les disks EBS pour OpenEBS et containerd
   hosts: all #workers
@@ -60,17 +78,12 @@
       - containerd
       - kubelet
       - openebs
-      - docker
       - rancher
+    var_log_dirs:
+      - containers
+      - pods
+      - kubelet
   tasks:
-
-    - name: Vérifier le contenu de /var/lib/
-      shell: ls /var/lib/ 
-      register: var_lib_output
-
-    - name: Afficher le contenu de /var/lib/
-      debug:
-        var: var_lib_output.stdout_lines
 
     - name: Lister tous les disques disponibles sur l’hôte
       shell: lsblk -o NAME,KNAME,FSTYPE,SIZE,MOUNTPOINT,LABEL
@@ -98,7 +111,7 @@
         mode: '0755'
       
 
-    - name: Monter les points de montage (containerd, kubelet, docker, openebs) sur aws-EBS
+    - name: Monter les points de montage sur aws-EBS (disk)
       mount:
         path: "{{ rke2_mount_point }}"
         src: "{{ ebs_disk }}"
@@ -115,13 +128,13 @@
         opts: defaults
         state: present
       
-    - name: Créer les sous-dossiers pour les services
+    - name: Créer les sous-dossiers pour la redirection des services (var/lib/*)
       file:
         path: "{{ rke2_mount_point }}/{{ item }}"
         state: directory
         mode: '0755'
       loop: "{{ services_dirs }}"
-
+    
     - name: Créer les liens symboliques vers /var/lib
       file:
         src: "{{ rke2_mount_point }}/{{ item }}"
@@ -129,14 +142,7 @@
         state: link
       loop: "{{ services_dirs }}"
 
-    - name: Créer les liens symboliques vers /var/log/*
-      file:
-        src: "{{ rke2_mount_point }}/logs"
-        dest: "/var/log/"
-        state: link
-    
-
-    - name: Vérifier que les liens symboliques sont bien créés
+    - name: Vérifier que les liens symboliques vers /var/lib/ sont bien créés
       stat:
         path: "/var/lib/{{ item }}"
       loop: "{{ services_dirs }}"
@@ -148,12 +154,35 @@
           {{ item.stat.path }} est un lien symbolique pointant vers {{ item.stat.lnk_source }}
       loop: "{{ symlink_check.results }}"
       when: item.stat.islnk is defined and item.stat.islnk
+      
 
     # - name: Alerte si le lien symbolique est manquant ou incorrect
     #   debug:
     #     msg: " --> /var/lib/{{ item.item }} n'est pas un lien symbolique !"
     #   when: item.stat.islnk is not defined or not item.stat.islnk
     #   loop: "{{ symlink_check.results }}"
+    #-------------------------------------------------------------------
+    - name: Créer le répertoire /mnt/rke2_data_disk/logs
+      file:
+        path: "{{ rke2_mount_point }}/logs"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Créer les sous-répertoires dans /mnt/rke2_data_disk/logs
+      file:
+        path: "{{ rke2_mount_point }}/logs/{{ item }}"
+        state: directory
+        mode: '0755'
+      loop: "{{ var_log_dirs }}"
+
+    - name: Créer les liens symboliques vers /var/log/*
+      file:
+        src: "{{ rke2_mount_point }}/logs/{{ item }}"
+        dest: "/var/log/{{ item }}"
+        state: link
+        loop: "{{ var_log_dirs }}"
 
 
 
