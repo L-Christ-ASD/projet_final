@@ -464,6 +464,7 @@ jobs:
     - name: pause de 180s
       run: |
         sleep 180s
+        aws ec2 describe-addresses --query "Addresses[*].{PublicIp:PublicIp, AllocationId:AllocationId, Associated:AssociationId != null}" --output table
     
     # - name: Vérifier l'état du cluster
     #   run: |

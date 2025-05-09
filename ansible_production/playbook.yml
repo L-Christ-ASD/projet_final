@@ -455,7 +455,7 @@
 
 
 
-# =============== kubectl sur master1 =====================
+#================ kubectl sur master1 ============================
 #=================================================================
 - name: Configurer kubectl sur master-1
   hosts: master1
@@ -614,9 +614,13 @@
     - name: Copier la configuration RKE2 sur les 2 masters
       copy:
         dest: /etc/rancher/rke2/config.yaml
+        # content: |
+        #   token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
+        #   server: "https://{{ hostvars['master1']['master1_private_ip'] }}:9345"
+        #   tls-san:
         content: |
           token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
-          server: "https://{{ hostvars['master1']['master1_private_ip'] }}:9345"
+          server: "https://172.31.64.101:9345"
           tls-san:
             - {{ inventory_hostname }}.christ.lan
             - master1
@@ -642,7 +646,6 @@
             - "cloud-provider=external"
 
           disable-cloud-controller: true
-
 
     - name: Télécharger et installer RKE2 sur les 2 M
       get_url:
@@ -759,6 +762,7 @@
       file:
         path: "{{ item }}"
         state: directory
+        mode: '0755'
       loop:
         - /etc/rancher/rke2
         - /mnt/data/grafana
@@ -769,29 +773,28 @@
         - /mnt/data/sonarqube/logs
 
 
-    - name: Copier la configuration RKE2
-      copy:
-        dest: /etc/rancher/rke2/config.yaml
-        content: |    
-          token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
-          server: "https://{{ hostvars['master1']['master1_private_ip'] }}:9345"
-          cloud-provider-name: external
-          kubelet-arg:
-            - "cloud-provider=external"
-          disable-cloud-controller: true
-
     # - name: Copier la configuration RKE2
     #   copy:
     #     dest: /etc/rancher/rke2/config.yaml
     #     content: |    
     #       token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
-    #       server: "https://172.31.64.101:9345"
+    #       server: "https://{{ hostvars['master1']['master1_private_ip'] }}:9345"
     #       cloud-provider-name: external
     #       kubelet-arg:
     #         - "cloud-provider=external"
     #       disable-cloud-controller: true
-          
 
+    - name: Copier la configuration RKE2
+      copy:
+        dest: /etc/rancher/rke2/config.yaml
+        content: |    
+          token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
+          server: "https://172.31.64.101:9345"
+          cloud-provider-name: external
+          kubelet-arg:
+            - "cloud-provider=external"
+          disable-cloud-controller: true
+          
     - name: Télécharger et installer RKE2
       get_url:
         url: "https://get.rke2.io"
@@ -937,29 +940,8 @@
     - name: Mettre à jour les charts Helm
       ansible.builtin.shell: helm repo update
 
-    # - name: Appliquer la ConfigMap aws-cloud-provider
-    #   ansible.builtin.command: >
-    #     /var/lib/rancher/rke2/bin/kubectl apply -f ./aws_cloud/aws-cloud-provider-configmap.yaml
-    #   environment:
-    #     KUBECONFIG: /etc/rancher/rke2/rke2.yaml
-    #   register: aws_cloud_configmap
-    #   changed_when: "'configured' in aws_cloud_configmap.stdout or 'created' in aws_cloud_configmap.stdout"
-    #   failed_when: aws_cloud_configmap.rc != 0
-
-    # - name: Vérifier si le ConfigMap aws-cloud-provider existe
-    #   ansible.builtin.command: >
-    #     /var/lib/rancher/rke2/bin/kubectl get configmap aws-cloud-provider -n kube-system
-    #   environment:
-    #     KUBECONFIG: /etc/rancher/rke2/rke2.yaml
-    #   register: aws_cloud_configmap_check
-    #   failed_when: false
-    #   changed_when: false
-
-
-
     - name: Installer AWS Cloud Controller Manager via Helm
-      ansible.builtin.shell: |
-        
+      ansible.builtin.shell: |      
         helm upgrade --install aws-ccm aws-ccm/aws-cloud-controller-manager \
           --namespace kube-system \
           --set cloudProvider.name=aws \
@@ -980,7 +962,6 @@
 
     # ====================== Debug CCM ==================
     # ====================== Debug CCM ==================
-
     - name: Debug - Vérifier que CCM tourne bien
       ansible.builtin.command: >
         /var/lib/rancher/rke2/bin/kubectl -n kube-system get pods -l app.kubernetes.io/name=aws-cloud-controller-manager
@@ -1032,17 +1013,7 @@
       debug:
         var: kube_system_cloud_pods.stdout_lines
 
-    # - name: Vérifier que le DaemonSet aws-cloud-controller-manager est bien lancé
-    #   command: >
-    #     /var/lib/rancher/rke2/bin/kubectl -n kube-system get daemonset aws-cloud-controller-manager -o jsonpath='{.status.numberReady}'
-    #   register: ccm_ready
-    #   until: ccm_ready.stdout|int >= 1
-    #   retries: 10
-    #   delay: 15
-
-
-
-#=======================================================================================================================
+#=================================================================================
 
 # Préparer son disque /dev/xvdbf afin qu’il soit détecté correctement par OpenEBS
 

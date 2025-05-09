@@ -504,6 +504,10 @@ resource "null_resource" "update_values_yaml" {
 
 #______COMMANDE AWS
 #======================
+#lister toutes les EIPs (et leurs AllocationId):
+# aws ec2 describe-addresses --query "Addresses[*].{PublicIp:PublicIp, AllocationId:AllocationId, Associated:AssociationId != null}" --output table
+#ou:
+# aws ec2 describe-addresses
 
 # DELETE:
 # Étape 1 : Détacher le rôle du profil

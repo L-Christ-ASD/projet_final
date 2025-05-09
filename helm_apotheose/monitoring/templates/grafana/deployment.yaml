@@ -41,6 +41,9 @@ spec:
           volumeMounts:
             - name: grafana-storage
               mountPath: /var/lib/grafana
+          securityContext:
+            runAsUser: 1000
+            fsGroup: 2000
       volumes:
         - name: grafana-storage
           persistentVolumeClaim: 

@@ -15,11 +15,13 @@ spec:
       labels:
         app: cadvisor
     spec:
-      # nodeSelector:
-      #   kubernetes.io/worker: "true"
+      nodeSelector:
+        kubernetes.io/worker: "true"
       containers:
         - name: cadvisor
           image: {{ .Values.deployment.image }}
+          securityContext:
+            privileged: true
           ports:
             - containerPort: {{ .Values.service.port }}
           volumeMounts:
