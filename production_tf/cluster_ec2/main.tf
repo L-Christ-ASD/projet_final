@@ -512,8 +512,7 @@ resource "null_resource" "update_values_yaml" {
 #   --role-name ec2-load-balancer-role
 
 # # Étape 2 : Supprimer le profil IAM
-# aws iam delete-instance-profile \
-#   --instance-profile-name EC2LoadBalancerInstanceProfile
+# aws iam delete-instance-profile --instance-profile-name EC2LoadBalancerInstanceProfile
 
 
 # aws ec2 describe-internet-gateways \

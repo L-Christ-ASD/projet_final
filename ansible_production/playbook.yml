@@ -60,6 +60,8 @@
       - containerd
       - kubelet
       - openebs
+      - docker
+      - rancher
   tasks:
 
     - name: Vérifier le contenu de /var/lib/
@@ -126,6 +128,13 @@
         dest: "/var/lib/{{ item }}"
         state: link
       loop: "{{ services_dirs }}"
+
+    - name: Créer les liens symboliques vers /var/log/*
+      file:
+        src: "{{ rke2_mount_point }}/logs"
+        dest: "/var/log/"
+        state: link
+    
 
     - name: Vérifier que les liens symboliques sont bien créés
       stat:
@@ -377,7 +386,7 @@
       command: >
         /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock 
         --namespace k8s.io run --rm --net-host docker.io/plndr/kube-vip:latest vip /kube-vip 
-        manifest daemonset --arp --interface enX0 --address 172.31.64.101 
+        manifest daemonset --arp --interface ens5 --address 172.31.64.101 
         --controlplane --leaderElection --taint --services --inCluster
       register: kube_vip_manifest
 
