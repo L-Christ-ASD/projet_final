@@ -182,7 +182,7 @@
         src: "{{ rke2_mount_point }}/logs/{{ item }}"
         dest: "/var/log/{{ item }}"
         state: link
-        loop: "{{ var_log_dirs }}"
+      loop: "{{ var_log_dirs }}"
 
 
 
@@ -560,6 +560,35 @@
         master1_private_ip: "{{ ansible_facts['default_ipv4']['address'] }}"
 
 
+
+- name: Vérification des dossier var/lib/* et var/log/* après la conf RKE2
+  hosts: master1 
+  become: true
+  tasks:
+    - name: Vérifier le contenu de /var/lib/
+      shell: ls /var/lib/ 
+      register: var_lib_output
+
+    - name: Afficher le contenu de /var/lib/
+      debug:
+        var: var_lib_output.stdout_lines
+
+    - name: Vérifier le contenu de /var/log/
+      shell: ls /var/log/ 
+      register: var_log_output
+
+    - name: Afficher le contenu de /var/log/
+      debug:
+        var: var_log_output.stdout_lines
+
+    - name: Vérifier ENCORE l'ip virtuelle
+      command: ip a
+      register: ip_status
+      changed_when: false
+
+    - name: Afficher l'ip virtuelle
+      debug:
+        var: ip_status.stdout_lines
 
 #==================================================================
 #============== Configurer les 2 autres masters ===================
