@@ -221,6 +221,10 @@ jobs:
 
 
   #======== Aws-config =====================================================
+  # echo "Tainter les masters"
+  #       kubectl taint node master1 node-role.kubernetes.io/master=:NoSchedule --overwrite
+  #       kubectl taint node master2 node-role.kubernetes.io/master=:NoSchedule --overwrite
+  #       kubectl taint node master3 node-role.kubernetes.io/master=:NoSchedule --overwrite
   #=========================================================================
     - name: Ouvrir le port 6443 (temporaire) pour le deploiement des manifest
       run: |
@@ -538,6 +542,7 @@ jobs:
 #        echo "${{ secrets.SSH_CHRIST }" > ~/.ssh/id_rsa
 #        chmod 600 ~/.ssh/id_rsa
 #
+
 
 
     - name: Fermerl'accès au port 6443!!

@@ -13,8 +13,8 @@ spec:
       labels:
         app: prometheus
     spec:
-      # nodeSelector:
-      #   kubernetes.io/worker: "true"
+      nodeSelector:
+        node-role.kubernetes.io/worker: "true"
       containers:
         - name: prometheus
           image: {{ .Values.prometheus.deployment.image }}

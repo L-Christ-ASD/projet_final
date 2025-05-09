@@ -13,8 +13,8 @@ spec:
       labels:
         app: phpmyadmin
     spec:
-      # nodeSelector:
-      #   kubernetes.io/worker: "true"
+      nodeSelector:
+        node-role.kubernetes.io/worker: "true"
       containers:
         - name: phpmyadmin
           image: {{ .Values.deployment.image }}
