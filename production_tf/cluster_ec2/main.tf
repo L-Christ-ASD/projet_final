@@ -306,7 +306,37 @@ resource "aws_security_group_rule" "allow_tcp_2380" {
   source_security_group_id = aws_security_group.admin_ssh_production.id # Groupe de sécurité source
 }
 
+# TEST KUBE-VIP
+#==============
 
+# temporairement pour KUBE-VIP
+resource "aws_vpc_security_group_ingress_rule" "tcp_kube_vip" {
+  security_group_id = aws_security_group.admin_ssh_production.id
+  cidr_ipv4         = "172.31.75.164/32"
+  from_port         = 9345
+  ip_protocol       = "tcp"
+  to_port           = 9345
+}
+
+# ping KUBE-VIP
+resource "aws_vpc_security_group_ingress_rule" "allow_port_ping_kube_vip" {
+  security_group_id = aws_security_group.admin_ssh_production.id
+  cidr_ipv4         = "172.31.75.164/32"
+  from_port         = 8
+  ip_protocol       = "icmp"
+  to_port           = -1
+}
+
+# ping ALL
+resource "aws_vpc_security_group_ingress_rule" "allow_all_ping" {
+  security_group_id = aws_security_group.admin_ssh_production.id
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 8
+  ip_protocol       = "icmp"
+  to_port           = -1
+}
+# FIN DE TEST KUBE-VIP
+#=====================
 
 
 #=============================================================================================
@@ -328,7 +358,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_port_1194" {
   to_port           = 1194
 }
 
-# ping ALL
+# ping
 resource "aws_vpc_security_group_ingress_rule" "allow_port_ping" {
   security_group_id = aws_security_group.admin_ssh_production.id
   cidr_ipv4         = "0.0.0.0/0"
@@ -337,23 +367,8 @@ resource "aws_vpc_security_group_ingress_rule" "allow_port_ping" {
   to_port           = -1
 }
 
-# temporairement pour KUBE-VIP
-resource "aws_vpc_security_group_ingress_rule" "allow_port_kube_vip {
-  security_group_id = aws_security_group.admin_ssh_production.id
-  cidr_ipv4         = "172.31.75.164/32"
-  from_port         = 9345
-  ip_protocol       = "tcp"
-  to_port           = 9345
-}
 
-# ping KUBE-VIP
-resource "aws_vpc_security_group_ingress_rule" "allow_port_ping_kube_vip" {
-  security_group_id = aws_security_group.admin_ssh_production.id
-  cidr_ipv4         = "172.31.75.164/32"
-  from_port         = 8
-  ip_protocol       = "icmp"
-  to_port           = -1
-}
+
 
 #========================== rôle IAM ==================
 resource "aws_iam_role" "ec2_load_balancer_role" {
