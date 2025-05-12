@@ -214,7 +214,7 @@
           ff02::1 ip6-allnodes
           ff02::2 ip6-allrouters
           
-          172.31.64.101 rke2cluster.christ.lan
+          172.31.75.164 rke2cluster.christ.lan
 
 #         {{ ansible_facts['default_ipv4']['address'] }} {{ inventory_hostname }}
     - name: Configuration de l'environnement pour le service-proxy
@@ -256,7 +256,7 @@
             - {{ inventory_hostname }}.christ.lan
             - {{ inventory_hostname }}
             - {{ ansible_facts['default_ipv4']['address'] }}
-            - 172.31.64.101
+            - 172.31.75.164
             - {{ ansible_host }}
             - rke2cluster.christ.lan
             - rke2cluster
@@ -432,7 +432,7 @@
           manifest daemonset \
           --arp \
           --interface ens5 \
-          --address 172.31.64.101 \
+          --address 172.31.75.164 \
           --controlplane \
           --leaderElection \
           --taint \
@@ -458,12 +458,12 @@
       debug:
         var: rke2_config.stdout_lines
         
-    - name: Lister les conteneurs dans containerd Après l'installation de Kube-VIP
+    - name: Lister les conteneurs dans containerd, Après l'installation de Kube-VIP
       command: /var/lib/rancher/rke2/bin/ctr --address /run/k3s/containerd/containerd.sock --namespace k8s.io container ls
       register: container_list
       changed_when: false
 
-    - name: Afficher les conteneurs Kube-VIP en cours d'exécution
+    - name: Afficher les conteneurs Kube-VIP en cours d'exécution (Vérifer la présence du conteneur kube-vip:latest)
       debug:
         var: container_list.stdout_lines
 
@@ -625,6 +625,16 @@
       set_fact:
         my_private_ip: "{{ ansible_facts['default_ipv4']['address'] }}"
 
+    - name: Tester la connectivité réseau avec master1 KUBE-VIP
+      command: ping -c 4 "{{ hostvars['master1']['master1_private_ip'] }}"
+      ignore_errors: yes
+      register: ping_result
+
+    - name: Afficher le résultat du ping master 1 via la VIP
+      debug:
+        var: ping_result.stdout
+
+
     # - name: Ping master1 via son ip privée
     #   command: ping {{master1_private_ip}}
     #   register: ping_private_ip_status
@@ -662,7 +672,7 @@
         #   server: "https://{{ hostvars['master1']['master1_private_ip'] }}:9345"
         content: |
           token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
-          server: "https://172.31.64.101:9345"
+          server: "https://172.31.75.164:9345"
           tls-san:        
             - {{ inventory_hostname }}.christ.lan
             - master1
@@ -672,7 +682,7 @@
             - {{ hostvars['master2']['my_private_ip'] }}
             - {{ hostvars['master3']['my_private_ip'] }}
 
-            - 172.31.64.101
+            - 172.31.75.164
             - {{ hostvars[groups['masters'][0]]["ansible_host"] }}
             - {{ hostvars[groups["masters"][1]]["ansible_host"] }}
             - {{ hostvars[groups["masters"][2]]["ansible_host"] }}
@@ -831,7 +841,7 @@
         dest: /etc/rancher/rke2/config.yaml
         content: |    
           token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
-          server: "https://172.31.64.101:9345"
+          server: "https://172.31.75.164:9345"
           cloud-provider-name: external
           kubelet-arg:
             - "cloud-provider=external"
