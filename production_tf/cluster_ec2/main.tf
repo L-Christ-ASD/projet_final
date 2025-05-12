@@ -358,18 +358,8 @@ resource "aws_vpc_security_group_ingress_rule" "allow_port_1194" {
   to_port           = 1194
 }
 
-# ping
-resource "aws_vpc_security_group_ingress_rule" "allow_port_ping" {
-  security_group_id = aws_security_group.admin_ssh_production.id
-  cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 8
-  ip_protocol       = "icmp"
-  to_port           = -1
-}
 
-
-
-
+#=============================================================================================
 #========================== rôle IAM ==================
 resource "aws_iam_role" "ec2_load_balancer_role" {
   name = "EC2LoadBalancerRole"
