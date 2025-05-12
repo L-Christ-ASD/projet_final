@@ -515,6 +515,8 @@ resource "null_resource" "update_values_yaml" {
 # aws ec2 describe-addresses --query "Addresses[*].{PublicIp:PublicIp, AllocationId:AllocationId, Associated:AssociationId != null}" --output table
 #ou:
 # aws ec2 describe-addresses
+#ou:
+# aws ec2 describe-addresses --allocation-ids eipalloc-xxxxxxxxxxxxxxxxx
 
 # DELETE:
 # Étape 1 : Détacher le rôle du profil
