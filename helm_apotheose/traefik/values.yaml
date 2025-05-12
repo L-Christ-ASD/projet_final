@@ -14,7 +14,7 @@ ingress:
 domain: christ-devops.duckdns.org
 
 
-dashboardAuth: christ:monmotdepass
+dashboardAuth: christ:monmotdepasswp
 
 subnet: subnet-07ef8d731542349d5
 

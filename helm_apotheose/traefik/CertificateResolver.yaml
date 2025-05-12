@@ -1,0 +1,11 @@
+apiVersion: traefik.io/v1alpha1
+kind: CertificateResolver
+metadata:
+  name: myresolver
+  namespace: apotheose
+spec:
+  acme:
+    email: christ.lumu@oclock.school
+    storage: /data/acme.json
+    httpChallenge:
+      entryPoint: web

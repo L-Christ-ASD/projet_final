@@ -57,8 +57,7 @@ spec:
             
 #            - "--certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53"
 #            - "--certificatesresolvers.letsencrypt.acme.domains=*.christ-devops.duckdns.org"
-#            - "--certificatesresolvers.letsencrypt.acme.domains=christ-devops.duckdns.org"
-            
+#            - "--certificatesresolvers.letsencrypt.acme.domains=christ-devops.duckdns.org"            
             - "--log.level=DEBUG"
 
       volumes:

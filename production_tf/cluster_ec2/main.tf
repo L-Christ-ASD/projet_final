@@ -312,7 +312,7 @@ resource "aws_security_group_rule" "allow_tcp_2380" {
 # temporairement pour KUBE-VIP
 resource "aws_vpc_security_group_ingress_rule" "tcp_kube_vip" {
   security_group_id = aws_security_group.admin_ssh_production.id
-  cidr_ipv4         = "172.31.75.164/32"
+  cidr_ipv4         = "172.31.0.0/20"
   from_port         = 9345
   ip_protocol       = "tcp"
   to_port           = 9345
