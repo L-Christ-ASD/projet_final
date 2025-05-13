@@ -152,10 +152,28 @@ jobs:
 
 # ============================= kUBE-Vip ================================
 #============================================================================
+
+    - name: Vérifier l'existence de l'ID de master1
+      run: |
+        echo "Vérification du fichier instance-id"
+        if [ ! -f ./instance-id ]; then
+          echo "Erreur : Le fichier instance-id est introuvable."
+          exit 1
+        fi
+        echo "Contenu du fichier instance-id :"
+        cat ./instance-id
+        
+    - name: Récupérer l’id de master1 pour kube-vip
+      run: |
+        echo "Socker l'id"
+        id-master1=$(cat ./instance-id)
+        echo "id-master1=$id-master1" >> $GITHUB_ENV
+        echo "eni=$eni"
+
     - name: Récupérer l’interface principale (eni-xxxx) de master1 pour kube-vip
       run: |       
         eni=$(aws ec2 describe-instances \
-        --instance-ids i-0454cc1cd46b3344c \
+        --instance-ids $id-master1 \
         --query 'Reservations[0].Instances[0].NetworkInterfaces[0].NetworkInterfaceId' \
         --output text)
         echo "eni=$eni" >> $GITHUB_ENV
@@ -376,6 +394,10 @@ jobs:
       run: |
         cat ./helm_apotheose/traefik/values.yaml
         
+  #======== monitoring - GrafanA & PROMETHEUS =======================================
+  #================================================================
+    - name: Ajouter le repo
+      run: |
 
 
   #======== Valider tous les charts) =======================================

@@ -191,6 +191,20 @@ resource "null_resource" "generate_ansible_inventory-workers" {
     EOT
   }
 }
+#-----------------------------------------
+#exportation de l'id de master1 vers /nstance-id pour kube-vip
+resource "null_resource" "generate-instance-id-master1" {
+  depends_on = [aws_instance.masters]
+
+  provisioner "local-exec" {
+    command = <<EOT
+      mkdir -p ../../instance-id    
+      echo "${aws_instance.masters[0].id}" > ../../instance-id
+
+    EOT
+  }
+}
+
 
 
 #_____________Creation de security group___________
