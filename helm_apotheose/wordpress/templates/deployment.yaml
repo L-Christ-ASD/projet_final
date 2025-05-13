@@ -56,7 +56,8 @@ spec:
           command: ["/bin/bash", "-c"]
           args:
             - |
-              cp /apache-config.conf /etc/apache2/sites-available/000-default.conf
+              cp /apache-config.conf /etc/apache2/sites-available/000-default.conf && \
+              apache2-foreground
       volumes:
         - name: wordpress-storage
           persistentVolumeClaim:
@@ -70,5 +71,61 @@ spec:
 # Il remplace la conf Apache par défaut avant de démarrer Apache,
 # pour repondre au dns selon la conf!
 # Résoud: Erreur 500 lors de l'accès à WordPress via le dns
-#&& \
-#              apache2-foreground
+
+
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: wordpress
+#   namespace: {{ .Values.namespace }}
+# spec:
+#   replicas: {{ .Values.deployment.replicas }}
+#   selector:
+#     matchLabels:
+#       app: wordpress
+#   template:
+#     metadata:
+#       labels:
+#         app: wordpress
+#     spec:
+#       nodeSelector:
+#         node-role.kubernetes.io/worker: "true"
+#       containers:
+#         - name: wordpress
+#           image: {{ .Values.deployment.image }}
+#           resources:
+#             requests:
+#               cpu: {{ .Values.resources.requests.cpu }}
+#               memory: {{ .Values.resources.requests.memory }}
+#             limits:
+#               cpu: {{ .Values.resources.limits.cpu }}
+#               memory: {{ .Values.resources.limits.memory }}
+#           env:
+#             - name: WORDPRESS_DB_HOST
+#               valueFrom:
+#                 secretKeyRef:
+#                   name: wordpress-secret
+#                   key: db-host
+#             - name: WORDPRESS_DB_USER
+#               valueFrom:
+#                 secretKeyRef:
+#                   name: wordpress-secret
+#                   key: db-user
+#             - name: WORDPRESS_DB_PASSWORD
+#               valueFrom:
+#                 secretKeyRef:
+#                   name: wordpress-secret
+#                   key: db-password
+#             - name: WORDPRESS_DB_NAME
+#               valueFrom:
+#                 secretKeyRef:
+#                   name: wordpress-secret
+#                   key: db-name
+#           volumeMounts:
+#             - mountPath: /var/www/html
+#               name: wordpress-storage
+#           #command: ["/apache-config.conf"]
+#       volumes:
+#         - name: wordpress-storage
+#           persistentVolumeClaim:
+#             claimName: wordpress-pvc
