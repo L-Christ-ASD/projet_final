@@ -162,18 +162,18 @@ jobs:
         fi
         echo "Contenu du fichier instance-id :"
         cat ./instance-id
-        
+
     - name: Récupérer l’id de master1 pour kube-vip
       run: |
-        echo "Socker l'id"
-        id-master1=$(cat ./instance-id)
-        echo "id-master1=$id-master1" >> $GITHUB_ENV
-        echo "eni=$eni"
+        echo "Stocker l'id"
+        id_master1=$(cat ./instance-id)
+        echo "id_master1=$id_master1" >> $GITHUB_ENV
+        echo "id_master1=$id_master1"
 
     - name: Récupérer l’interface principale (eni-xxxx) de master1 pour kube-vip
       run: |       
         eni=$(aws ec2 describe-instances \
-        --instance-ids $id-master1 \
+        --instance-ids $id_master1 \
         --query 'Reservations[0].Instances[0].NetworkInterfaces[0].NetworkInterfaceId' \
         --output text)
         echo "eni=$eni" >> $GITHUB_ENV
