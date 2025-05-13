@@ -179,7 +179,7 @@ jobs:
         echo "eni=$eni" >> $GITHUB_ENV
         echo "eni=$eni"
 
-    - name: Attacher l’IP VIP au master1 pour kube-vip
+    - name: Attacher la VIP au master1 pour kube-vip
       run: | 
         aws ec2 assign-private-ip-addresses \
         --network-interface-id $eni \
