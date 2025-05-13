@@ -335,12 +335,12 @@ resource "aws_security_group_rule" "allow_tcp_2380" {
 #               temporairement pour KUBE-VIP
 #               =============================
 # Réservé la VIP dans le subnet (pour le routage aws)
-resource "aws_network_interface" "vip_on_master1" {
-  private_ips     = ["172.31.75.164"]
-  subnet_id       = "subnet-07ef8d731542349d5"
-  description     = "Reserved VIP for Kube-VIP"
-  security_groups = [aws_security_group.admin_ssh_production.id]
-}
+# resource "aws_network_interface" "vip_on_master1" {
+#   private_ips     = ["172.31.75.164"]
+#   subnet_id       = "subnet-07ef8d731542349d5"
+#   description     = "Reserved VIP for Kube-VIP"
+#   security_groups = [aws_security_group.admin_ssh_production.id]
+# }
 
 # L'IP est déclarée à AWS, mais non fixée à un seul master 
 # → kube-vip GERE dynamiquement 
