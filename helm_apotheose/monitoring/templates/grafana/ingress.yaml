@@ -8,6 +8,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.tls.certresolver: myresolver
     traefik.ingress.kubernetes.io/router.middlewares: apotheose-default-redirectscheme@kubernetescrd
 spec:
+  ingressClassName: traefik
   rules:
     - host: {{ .Values.grafana.ingress.host }}
       http:

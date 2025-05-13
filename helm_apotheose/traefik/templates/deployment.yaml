@@ -54,10 +54,11 @@ spec:
             - "--certificatesresolvers.myresolver.acme.dnschallenge.propagation.delayBeforeChecks=2s"
             - "--certificatesresolvers.myresolver.acme.email={{ .Values.ingress.email }}"
             - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-            
-#            - "--certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53"
-#            - "--certificatesresolvers.letsencrypt.acme.domains=*.christ-devops.duckdns.org"
-#            - "--certificatesresolvers.letsencrypt.acme.domains=christ-devops.duckdns.org"            
+# à commenter si besoin            
+            - "--certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53"
+            - "--certificatesresolvers.letsencrypt.acme.domains=*.christ-devops.duckdns.org"
+            - "--certificatesresolvers.letsencrypt.acme.domains=christ-devops.duckdns.org" 
+#---           
             - "--log.level=DEBUG"
 
       volumes:

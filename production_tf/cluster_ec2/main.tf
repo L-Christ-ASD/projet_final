@@ -361,13 +361,13 @@ resource "aws_security_group_rule" "allow_tcp_2380" {
 # }
 
 # # ping KUBE-VIP
-# resource "aws_vpc_security_group_ingress_rule" "allow_port_ping_kube_vip" {
-#   security_group_id = aws_security_group.admin_ssh_production.id
-#   cidr_ipv4         = "172.31.0.0/20"
-#   from_port         = -1
-#   ip_protocol       = "icmp"
-#   to_port           = -1
-# }
+resource "aws_vpc_security_group_ingress_rule" "allow_port_ping_kube_vip" {
+  security_group_id = aws_security_group.admin_ssh_production.id
+  cidr_ipv4         = "172.31.0.0/16"
+  from_port         = -1
+  ip_protocol       = "icmp"
+  to_port           = -1
+}
 
 # # ping ALL
 # resource "aws_vpc_security_group_ingress_rule" "allow_all_ping" {

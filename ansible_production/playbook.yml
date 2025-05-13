@@ -630,9 +630,13 @@
     - name: Copier la configuration RKE2 sur les 2 masters
       copy:
         dest: /etc/rancher/rke2/config.yaml
-        content: |
+        
+        # content: |
+        #   token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
+        #   server: "https://{{ hostvars['master1']['master1_private_ip'] }}:9345"        
+        content: |    
           token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
-          server: "https://{{ hostvars['master1']['master1_private_ip'] }}:9345"        
+          server: "https://172.31.75.164:9345"
           tls-san:        
             - {{ inventory_hostname }}.christ.lan
             - master1
@@ -796,16 +800,16 @@
             - "cloud-provider=external"
           disable-cloud-controller: true
 
-    # - name: Copier la configuration RKE2 VIP
-    #   copy:
-    #     dest: /etc/rancher/rke2/config.yaml
-    #     content: |    
-    #       token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
-    #       server: "https://172.31.75.164:9345"
-    #       cloud-provider-name: external
-    #       kubelet-arg:
-    #         - "cloud-provider=external"
-    #       disable-cloud-controller: true
+    - name: Copier la configuration RKE2 VIP
+      copy:
+        dest: /etc/rancher/rke2/config.yaml
+        content: |    
+          token: "{{ hostvars['master1']['node_token']['content'] | b64decode | trim }}"
+          server: "https://172.31.75.164:9345"
+          cloud-provider-name: external
+          kubelet-arg:
+            - "cloud-provider=external"
+          disable-cloud-controller: true
     
     - name: Télécharger et installer RKE2
       get_url:

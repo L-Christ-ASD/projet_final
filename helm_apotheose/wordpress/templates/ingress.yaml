@@ -7,7 +7,9 @@ metadata:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls.certresolver: myresolver
     traefik.ingress.kubernetes.io/router.middlewares: default-redirectscheme@kubernetescrd
+    #kubernetes.io/ingress.class: traefik  # <- optionnel si déjà spec.ingressClassName
 spec:
+  ingressClassName: traefik
   rules:
     - host: {{ .Values.ingress.host }}
       http:
@@ -22,7 +24,8 @@ spec:
   tls:
     - hosts:
         - {{ .Values.ingress.host }}
-      secretName: {{ .Values.ingress.tlsSecret }}
+      #secretName: {{ .Values.ingress.tlsSecret }}
+  
 
 
 
