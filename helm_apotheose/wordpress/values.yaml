@@ -25,3 +25,17 @@ resources:
   limits:
     cpu: "4"
     memory: "4Gi"
+
+storageClass: openebs-cstor-repl2
+
+mysql:
+  pvc: mysql-pvc
+
+# Variables pour le secret
+wordpress:
+  db:
+    name: wordpress
+    user: wpuser
+    password: wppass
+    rootPassword: rootpass
+  storage: 5Gi

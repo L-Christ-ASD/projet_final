@@ -23,3 +23,12 @@ resources:
   limits:
     cpu: "4"
     memory: "4Gi"
+storageClass: openebs-cstor-repl2
+
+postgres:
+  db: sonar
+  pvc: postgres-pvc
+  secretName: sonarqube-secret
+  storage: 2Gi
+
+

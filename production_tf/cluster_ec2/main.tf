@@ -48,6 +48,8 @@ resource "aws_instance" "masters" {
   subnet_id              = "subnet-07ef8d731542349d5" #  sous-réseau appartenant au vpc-09c4b38653df63f28
   vpc_security_group_ids = [aws_security_group.admin_ssh_production.id]
 
+  source_dest_check = false
+
   iam_instance_profile = aws_iam_instance_profile.ec2_lb_instance_profile.name
 
   lifecycle {
@@ -129,6 +131,13 @@ output "instance_info_prod_master" {
     master_prod_public_ip = aws_instance.masters[*].public_ip
   }
 }
+
+# output "network_interface_master1_eni" {
+#   value = {
+#     master_prod_public_ip = aws_instance.masters[0].interface
+#   }
+# }
+
 output "instance_info_prod_worker" {
   value = {
     worker_prod_public_ip = aws_instance.workers[*].public_ip
@@ -306,36 +315,55 @@ resource "aws_security_group_rule" "allow_tcp_2380" {
   source_security_group_id = aws_security_group.admin_ssh_production.id # Groupe de sécurité source
 }
 
-# TEST KUBE-VIP
-#==============
-
-# temporairement pour KUBE-VIP
-resource "aws_vpc_security_group_ingress_rule" "tcp_kube_vip" {
-  security_group_id = aws_security_group.admin_ssh_production.id
-  cidr_ipv4         = "172.31.0.0/20"
-  from_port         = 9345
-  ip_protocol       = "tcp"
-  to_port           = 9345
+#==============================================================
+#                       KUBE-VIP
+#==============================================================
+#               temporairement pour KUBE-VIP
+#               =============================
+# Réservé la VIP dans le subnet (pour le routage aws)
+resource "aws_network_interface" "vip_on_master1" {
+  private_ips     = ["172.31.75.164"]
+  subnet_id       = "subnet-07ef8d731542349d5"
+  description     = "Reserved VIP for Kube-VIP"
+  security_groups = [aws_security_group.admin_ssh_production.id]
 }
 
-# ping KUBE-VIP
-resource "aws_vpc_security_group_ingress_rule" "allow_port_ping_kube_vip" {
-  security_group_id = aws_security_group.admin_ssh_production.id
-  cidr_ipv4         = "172.31.75.164/32"
-  from_port         = 8
-  ip_protocol       = "icmp"
-  to_port           = -1
-}
+# L'IP est déclarée à AWS, mais non fixée à un seul master 
+# → kube-vip GERE dynamiquement 
+# (failover entre masters).
 
-# ping ALL
-resource "aws_vpc_security_group_ingress_rule" "allow_all_ping" {
-  security_group_id = aws_security_group.admin_ssh_production.id
-  cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 8
-  ip_protocol       = "icmp"
-  to_port           = -1
-}
-# FIN DE TEST KUBE-VIP
+
+# Configurer sourceDestCheck = false sur tous les masters
+# Permettre la prise de l’IP secondaire sur un autre nœud 
+# (failover via ARP spoofing local)
+
+#-------------------------------------------------------
+# resource "aws_vpc_security_group_ingress_rule" "tcp_kube_vip" {
+#   security_group_id = aws_security_group.admin_ssh_production.id
+#   cidr_ipv4         = "172.31.0.0/20"
+#   from_port         = 9345
+#   ip_protocol       = "tcp"
+#   to_port           = 9345
+# }
+
+# # ping KUBE-VIP
+# resource "aws_vpc_security_group_ingress_rule" "allow_port_ping_kube_vip" {
+#   security_group_id = aws_security_group.admin_ssh_production.id
+#   cidr_ipv4         = "172.31.0.0/20"
+#   from_port         = -1
+#   ip_protocol       = "icmp"
+#   to_port           = -1
+# }
+
+# # ping ALL
+# resource "aws_vpc_security_group_ingress_rule" "allow_all_ping" {
+#   security_group_id = aws_security_group.admin_ssh_production.id
+#   cidr_ipv4         = "0.0.0.0/0"
+#   from_port         = 8
+#   ip_protocol       = "icmp"
+#   to_port           = -1
+# }
+# FIN DE KUBE-VIP
 #=====================
 
 
@@ -360,7 +388,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_port_1194" {
 
 
 #=============================================================================================
-#========================== rôle IAM ==================
+#========================== rôle IAM pour elb==================
 resource "aws_iam_role" "ec2_load_balancer_role" {
   name = "EC2LoadBalancerRole"
 
@@ -439,7 +467,8 @@ resource "aws_ec2_tag" "subnet_tag_cluster" {
 #===================================================
 
 # Créer un volume EBS pour chaque instance EC2 (workers), 
-#comme disque de stockage pour /var/lib/containerd (rke2, pour eviter le evicted)
+#comme disque de stockage pour /var/lib/containerd (rke2, pour eviter les pods evicted)
+
 locals {
   #all_instances = concat(aws_instance.workers[*])
   all_instances = concat(aws_instance.masters[*], aws_instance.workers[*])
@@ -463,7 +492,7 @@ resource "aws_volume_attachment" "apotheose_volume_attachment" {
 # EBS pour Cstor
 locals {
   all_instances_workers = concat(aws_instance.workers[*])
-  device_letters = ["g", "h"]
+  device_letters        = ["g", "h"]
   #all_instances = concat(aws_instance.masters[*], aws_instance.workers[*])
   #device_letters = ["g", "h", "i", "j", "k"] # "l", "m", "n"]
 }
@@ -532,6 +561,11 @@ resource "null_resource" "update_values_yaml" {
 
 #______COMMANDE AWS
 #======================
+#SIGNATURE EXPIRED:
+#cmd:
+# sudo timedatectl set-ntp true
+# sudo timedatectl
+
 #lister toutes les EIPs (et leurs AllocationId):
 # aws ec2 describe-addresses --query "Addresses[*].{PublicIp:PublicIp, AllocationId:AllocationId, Associated:AssociationId != null}" --output table
 #ou:
@@ -564,6 +598,10 @@ resource "null_resource" "update_values_yaml" {
 #   --filters "Name=association.subnet-id,Values=subnet-07ef8d731542349d5" \
 #   --query "RouteTables[].RouteTableId" \
 #   --output text
+
+
+
+
 
 #========================================================
 #========================== temporairement pour NodePort ==================
