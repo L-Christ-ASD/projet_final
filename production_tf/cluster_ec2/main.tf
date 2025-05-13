@@ -197,8 +197,7 @@ resource "null_resource" "generate-instance-id-master1" {
   depends_on = [aws_instance.masters]
 
   provisioner "local-exec" {
-    command = <<EOT
-      mkdir -p ../../instance-id    
+    command = <<EOT  
       echo "${aws_instance.masters[0].id}" > ../../instance-id
 
     EOT
