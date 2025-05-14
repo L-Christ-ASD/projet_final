@@ -28,7 +28,15 @@ resources:
     memory: "256Mi"  
   limits:
     cpu: "500m"      
-    memory: "512Mi"  
+    memory: "512Mi"
+
+envFrom:
+  - secretRef:
+      name: traefik-env-secrets
+
+certificatesResolvers: myresolver
 
 # L' eip et le sg sont approvisionnées dynamiquement via terraform!
 
+eipAllocationId: eipalloc-065a9570833958c2e
+sg: sg-0845928ea21c4b1ba

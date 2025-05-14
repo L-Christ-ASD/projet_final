@@ -6,14 +6,17 @@ metadata:
 
 spec:
   entryPoints:
+    - web
     - websecure  # Définit l'entrypoint sécurisé (HTTPS)
     
   routes:
-    - match: Host(`traefik.{{ .Values.domain }}`) && PathPrefix(`/dashboard`) # Le domaine et le chemin pour accéder au tableau de bord
+    - match: Host(`traefik.{{ .Values.domain }}`) # && PathPrefix(`/dashboard`) # Le domaine et le chemin pour accéder au tableau de bord
       kind: Rule
       services:
-        - name: traefik
-          port: 8080 # Le port du service Traefik
+        - name: api@internal
+          kind: TraefikService
+        # - name: traefik
+          # port: 8080 # Le port du service Traefik
       middlewares:
         - name: dashboard-auth
           namespace: {{ .Values.namespace }}  # Le middleware d'authentification
@@ -24,36 +27,151 @@ spec:
 
 
 
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: wordpress-ingressroute
+  namespace: {{ .Values.namespace }}
+
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`wordpress.christ-devops.duckdns.org`)
+      kind: Rule
+      services:
+        - name: wordpress
+          port: 80
+  tls:
+    certResolver: myresolver
+
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: phpmyadmin-ingressroute
+  namespace: {{ .Values.namespace }}
+
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`phpmyadmin.christ-devops.duckdns.org`)
+      kind: Rule
+      services:
+        - name: phpmyadmin
+          port: 80
+  tls:
+    certResolver: myresolver
+
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: sonarqube-ingressroute
+  namespace: {{ .Values.namespace }}
+
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`sonarqube.christ-devops.duckdns.org`)
+      kind: Rule
+      services:
+        - name: sonarqube
+          port: 9000
+  tls:
+    certResolver: myresolver
+
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: prometheus-ingressroute
+  namespace: {{ .Values.namespace }}
+
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`prometheus.christ-devops.duckdns.org`)
+      kind: Rule
+      services:
+        - name: prometheus
+          port: 9090
+  tls:
+    certResolver: myresolver
+
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: grafana-ingressroute
+  namespace: {{ .Values.namespace }}
+
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`grafana.christ-devops.duckdns.org`)
+      kind: Rule
+      services:
+        - name: grafana
+          port: 3000
+  tls:
+    certResolver: myresolver
 
 
 
+# Basic auth
+# kubectl -n apotheose delete secret dashboard-auth-secret
+# kubectl -n apotheose create secret generic dashboard-auth-secret \
+#   --from-literal=users='christ:$2y$05$bGGQIoxw.yuA.7ZEuGmh1eFabKFKQ9/gWr.9pp24AIUMTRKwF2CfK'
+# kubectl -n apotheose rollout restart deployment traefik
+# ---
+# apiVersion: traefik.io/v1alpha1
+# kind: IngressRoute
+# metadata:
+#   name: traefik-dashboard
+#   namespace: {{ .Values.namespace }}
+
+# spec:
+#   entryPoints:
+#     - web
+#     - websecure  # Définit l'entrypoint sécurisé (HTTPS)
+    
+#   routes:
+#     - match: Host(`traefik.{{ .Values.domain }}`) # && PathPrefix(`/dashboard`) # Le domaine et le chemin pour accéder au tableau de bord
+#       kind: Rule
+#       services:
+#         - name: api@internal
+#           kind: TraefikService
+#         # - name: traefik
+#           # port: 8080 # Le port du service Traefik
+#       middlewares:
+#         - name: dashboard-auth
+#           namespace: {{ .Values.namespace }}  # Le middleware d'authentification
+#         - name: default-redirectscheme
+#           namespace: {{ .Values.namespace }} # Si tu veux rediriger les requêtes HTTP vers HTTPS
+    
+    
+#   tls:
+#     certResolver: myresolver
+#     hosts:
+#       - "traefik.{{ .Values.domain }}"
+#       - "wordpress.{{ .Values.domain }}"
+#       - "sonarqube.{{ .Values.domain }}"
+#       - "phpmyadmin.{{ .Values.domain }}"
+#       - "sonarqube.{{ .Values.domain }}"
+#       - "phpmyadmin.{{ .Values.domain }}"
 
 
-
-
-#apiVersion: networking.k8s.io/v1
-#kind: Ingress
-#metadata:
-#  name: traefik-dashboard
-#  namespace: {{ .Values.namespace }}
-#  annotations:
-#    traefik.ingress.kubernetes.io/router.entrypoints: websecure
-#    traefik.ingress.kubernetes.io/router.middlewares: "{{ .Values.namespace }}-dashboard-auth@kubernetescrd,{{ .Values.namespace }}-redirectscheme@kubernetescrd"
-#    traefik.ingress.kubernetes.io/router.tls: "true"
-#    traefik.ingress.kubernetes.io/router.tls.certresolver: myresolver
-#spec:
-#  rules:
-#    - host: traefik.{{ .Values.domain }}
-#      http:
-#        paths:
-#          - path: /dashboard
-#            pathType: Prefix
-#            backend:
-#              service:
-#                name: traefik
-#                port:
-#                  number: 8080
-#  tls:
-#    - hosts:
-#        - traefik.{{ .Values.domain }}
-#
+# - match: Host(`wordpress.{{ .Values.domain }}`) # && PathPrefix(`/dashboard`) # Le domaine et le chemin pour accéder au tableau de bord
+#       kind: Rule
+#       services:
+#         - name: wordpresse
+#           kind: service
+#       middlewares:
+#         - name: default-redirectscheme
+#           namespace: {{ .Values.namespace }} 

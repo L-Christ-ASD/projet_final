@@ -11,7 +11,7 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: (wordpress.{{ .Values.ingress.host }})
+    - host: {{ .Values.ingress.host }}
       http:
         paths:
           - path: /
@@ -29,20 +29,3 @@ spec:
 
 
 
-
-# apiVersion: traefik.containo.us/v1alpha1
-# kind: IngressRoute
-# metadata:
-#   name: wordpress
-#   namespace: apotheose
-# spec:
-#   entryPoints:
-#     - websecure
-#   routes:
-#     - match: Host(`wordpress.christ-devops.duckdns.org`)
-#       kind: Rule
-#       services:
-#         - name: wordpress
-#           port: 80
-#   tls:
-#     certResolver: letsencrypt

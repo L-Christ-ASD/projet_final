@@ -12,10 +12,7 @@ data:
     if [ ! -f "/letsencrypt/acme.json" ]; then
         touch /letsencrypt/acme.json
     fi
-    
-    if [ -s /letsencrypt/acme.json ]; then
     chmod 600 /letsencrypt/acme.json
-    fi
     exec traefik "$@"
 
 ---
@@ -29,28 +26,3 @@ data:
     {
       "duckdns.org": ["8.8.8.8", "1.1.1.1"]
     }
-
-# ---
-# apiVersion: v1
-# kind: ConfigMap
-# metadata:
-#   name: traefik-dynamic-conf
-#   namespace: apotheose
-# data:
-#   traefik-dynamic.yaml: |
-#     tls:
-#       certificatesResolvers:
-#         myresolver:
-#           acme:
-#             email: christ.lumu@oclock.school
-#             storage: /letsencrypt/acme.json
-#             dnsChallenge:
-#               provider: duckdns
-#               delayBeforeCheck: 2
-#               resolvers:
-#                 - "1.1.1.1:53"
-#                 - "8.8.8.8:53"
-#             domains:
-#               - main: "*.christ-devops.duckdns.org"
-#                 sans:
-#                   - "christ-devops.duckdns.org"

@@ -15,6 +15,15 @@ spec:
     spec:
       nodeSelector:
         node-role.kubernetes.io/worker: "true"
+      # pour eviter: You don't have permission to access this resource (appache).
+      initContainers:
+        - name: fix-permissions
+          image: wordpress:latest
+          command: ["chown", "-R", "www-data:www-data", "/var/www/html"]
+          volumeMounts:
+            - name: wordpress-storage
+              mountPath: /var/www/html
+
       containers:
         - name: wordpress
           image: {{ .Values.deployment.image }}
@@ -51,8 +60,7 @@ spec:
               mountPath: /var/www/html
             - name: apache-config
               mountPath: /apache-config.conf
-              subPath: apache-config.conf
-              
+              subPath: apache-config.conf              
           command: ["/bin/bash", "-c"]
           args:
             - |
