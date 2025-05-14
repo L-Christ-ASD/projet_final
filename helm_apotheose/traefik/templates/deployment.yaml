@@ -42,6 +42,11 @@ spec:
               mountPath: /traefik_entrypoint.sh
               subPath: traefik_entrypoint.sh
               readOnly: true
+
+            # - name: dynamic-conf
+            #   mountPath: /etc/traefik/traefik-dynamic.yaml
+            #   subPath: traefik-dynamic.yaml
+              
           command: ["/traefik_entrypoint.sh"]
           args:
             - "--api.insecure=true"
@@ -54,11 +59,12 @@ spec:
             - "--certificatesresolvers.myresolver.acme.dnschallenge.propagation.delayBeforeChecks=2s"
             - "--certificatesresolvers.myresolver.acme.email={{ .Values.ingress.email }}"
             - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-# à commenter si besoin            
-            - "--certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53"
-            - "--certificatesresolvers.letsencrypt.acme.domains=*.christ-devops.duckdns.org"
-            - "--certificatesresolvers.letsencrypt.acme.domains=christ-devops.duckdns.org" 
-#---           
+           
+            - "--certificatesresolvers.myresolver.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53"
+#            - "--certificatesresolvers.myresolver.acme.domains=*.christ-devops.duckdns.org"
+#            - "--certificatesresolvers.myresolver.acme.domains=christ-devops.duckdns.org" 
+#            - "--providers.file.filename=/etc/traefik/traefik-dynamic.yaml"   
+      
             - "--log.level=DEBUG"
 
       volumes:
@@ -75,4 +81,8 @@ spec:
             items:
               - key: traefik_entrypoint.sh
                 path: traefik_entrypoint.sh
+
+        # - name: dynamic-conf
+        #   configMap:
+        #     name: traefik-dynamic-con
 

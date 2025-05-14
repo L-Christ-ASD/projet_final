@@ -11,7 +11,7 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: {{ .Values.ingress.host }}
+    - host: (wordpress.{{ .Values.ingress.host }})
       http:
         paths:
           - path: /

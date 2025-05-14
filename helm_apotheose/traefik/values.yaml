@@ -14,7 +14,7 @@ ingress:
 domain: christ-devops.duckdns.org
 
 
-dashboardAuth: christ:monmotdepasswp
+dashboardAuth: christ:monmotdepasstraefik
 
 subnet: subnet-07ef8d731542349d5
 
@@ -24,11 +24,11 @@ service:
 
 resources:
   requests:
-    cpu: "200m"      #"2"
-    memory: "256Mi"  #"2Gi"
+    cpu: "200m"      
+    memory: "256Mi"  
   limits:
-    cpu: "500m"      #"4"
-    memory: "512Mi"  #"4Gi"
+    cpu: "500m"      
+    memory: "512Mi"  
 
 # L' eip et le sg sont approvisionnées dynamiquement via terraform!
 

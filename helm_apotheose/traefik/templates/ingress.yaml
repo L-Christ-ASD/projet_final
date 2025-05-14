@@ -6,21 +6,21 @@ metadata:
 
 spec:
   entryPoints:
-    - websecure
+    - websecure  # Définit l'entrypoint sécurisé (HTTPS)
     
   routes:
-    - match: Host(`traefik.{{ .Values.domain }}`) && PathPrefix(`/dashboard`)
+    - match: Host(`traefik.{{ .Values.domain }}`) && PathPrefix(`/dashboard`) # Le domaine et le chemin pour accéder au tableau de bord
       kind: Rule
       services:
         - name: traefik
-          port: 8080
+          port: 8080 # Le port du service Traefik
       middlewares:
         - name: dashboard-auth
-          namespace: {{ .Values.namespace }}
+          namespace: {{ .Values.namespace }}  # Le middleware d'authentification
         - name: default-redirectscheme
-          namespace: {{ .Values.namespace }}
+          namespace: {{ .Values.namespace }} # Si tu veux rediriger les requêtes HTTP vers HTTPS
   tls:
-    certResolver: myresolver
+    certResolver: myresolver # Utiliser le certResolver pour générer un certificat SSL (Let's Encrypt)
 
 
 

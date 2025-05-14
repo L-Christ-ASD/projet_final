@@ -1,3 +1,16 @@
+# apiVersion: traefik.io/v1alpha1
+# kind: CertificateResolver
+# metadata:
+#   name: myresolver
+#   namespace: apotheose
+# spec:
+#   acme:
+#     email: christ.lumu@oclock.school
+#     storage: /data/acme.json
+#     httpChallenge:
+#       entryPoint: web
+
+
 apiVersion: traefik.io/v1alpha1
 kind: CertificateResolver
 metadata:
@@ -6,6 +19,7 @@ metadata:
 spec:
   acme:
     email: christ.lumu@oclock.school
-    storage: /data/acme.json
-    httpChallenge:
-      entryPoint: web
+    storage: /letsencrypt/acme.json
+    dnsChallenge:
+      provider: duckdns
+      delayBeforeCheck: 0

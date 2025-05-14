@@ -5,5 +5,9 @@ metadata:
   namespace: {{ .Values.namespace }}
 spec:
   basicAuth:
-    secret: dashboard-auth-secret  # Utilise le secret tel quel
+    secret: dashboard-auth-secret  # Utilise le secret 
+
+  # ingressRoute:
+  #   dashboard:
+  #     enable: true
 
