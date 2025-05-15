@@ -27,100 +27,100 @@ spec:
 
 
 
----
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: wordpress-ingressroute
-  namespace: {{ .Values.namespace }}
+# ---
+# apiVersion: traefik.io/v1alpha1
+# kind: IngressRoute
+# metadata:
+#   name: wordpress-ingressroute
+#   namespace: {{ .Values.namespace }}
 
-spec:
-  entryPoints:
-    - websecure
-  routes:
-    - match: Host(`wordpress.christ-devops.duckdns.org`)
-      kind: Rule
-      services:
-        - name: wordpress
-          port: 80
-  tls:
-    certResolver: myresolver
+# spec:
+#   entryPoints:
+#     - websecure
+#   routes:
+#     - match: Host(`wordpress.christ-devops.duckdns.org`)
+#       kind: Rule
+#       services:
+#         - name: wordpress
+#           port: 80
+#   tls:
+#     certResolver: myresolver
 
----
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: phpmyadmin-ingressroute
-  namespace: {{ .Values.namespace }}
+# ---
+# apiVersion: traefik.io/v1alpha1
+# kind: IngressRoute
+# metadata:
+#   name: phpmyadmin-ingressroute
+#   namespace: {{ .Values.namespace }}
 
-spec:
-  entryPoints:
-    - websecure
-  routes:
-    - match: Host(`phpmyadmin.christ-devops.duckdns.org`)
-      kind: Rule
-      services:
-        - name: phpmyadmin
-          port: 80
-  tls:
-    certResolver: myresolver
+# spec:
+#   entryPoints:
+#     - websecure
+#   routes:
+#     - match: Host(`phpmyadmin.christ-devops.duckdns.org`)
+#       kind: Rule
+#       services:
+#         - name: phpmyadmin
+#           port: 80
+#   tls:
+#     certResolver: myresolver
 
----
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: sonarqube-ingressroute
-  namespace: {{ .Values.namespace }}
+# ---
+# apiVersion: traefik.io/v1alpha1
+# kind: IngressRoute
+# metadata:
+#   name: sonarqube-ingressroute
+#   namespace: {{ .Values.namespace }}
 
-spec:
-  entryPoints:
-    - websecure
-  routes:
-    - match: Host(`sonarqube.christ-devops.duckdns.org`)
-      kind: Rule
-      services:
-        - name: sonarqube
-          port: 9000
-  tls:
-    certResolver: myresolver
+# spec:
+#   entryPoints:
+#     - websecure
+#   routes:
+#     - match: Host(`sonarqube.christ-devops.duckdns.org`)
+#       kind: Rule
+#       services:
+#         - name: sonarqube
+#           port: 9000
+#   tls:
+#     certResolver: myresolver
 
----
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: prometheus-ingressroute
-  namespace: {{ .Values.namespace }}
+# ---
+# apiVersion: traefik.io/v1alpha1
+# kind: IngressRoute
+# metadata:
+#   name: prometheus-ingressroute
+#   namespace: {{ .Values.namespace }}
 
-spec:
-  entryPoints:
-    - websecure
-  routes:
-    - match: Host(`prometheus.christ-devops.duckdns.org`)
-      kind: Rule
-      services:
-        - name: prometheus
-          port: 9090
-  tls:
-    certResolver: myresolver
+# spec:
+#   entryPoints:
+#     - websecure
+#   routes:
+#     - match: Host(`prometheus.christ-devops.duckdns.org`)
+#       kind: Rule
+#       services:
+#         - name: prometheus
+#           port: 9090
+#   tls:
+#     certResolver: myresolver
 
----
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: grafana-ingressroute
-  namespace: {{ .Values.namespace }}
+# ---
+# apiVersion: traefik.io/v1alpha1
+# kind: IngressRoute
+# metadata:
+#   name: grafana-ingressroute
+#   namespace: {{ .Values.namespace }}
 
-spec:
-  entryPoints:
-    - websecure
-  routes:
-    - match: Host(`grafana.christ-devops.duckdns.org`)
-      kind: Rule
-      services:
-        - name: grafana
-          port: 3000
-  tls:
-    certResolver: myresolver
+# spec:
+#   entryPoints:
+#     - websecure
+#   routes:
+#     - match: Host(`grafana.christ-devops.duckdns.org`)
+#       kind: Rule
+#       services:
+#         - name: grafana
+#           port: 3000
+#   tls:
+#     certResolver: myresolver
 
 
 

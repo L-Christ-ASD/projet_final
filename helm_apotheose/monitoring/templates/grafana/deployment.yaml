@@ -15,6 +15,9 @@ spec:
     spec:
       nodeSelector:
         node-role.kubernetes.io/worker: "true"
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: grafana
           image: {{ .Values.grafana.image }}
@@ -40,10 +43,7 @@ spec:
             - containerPort: 3000
           volumeMounts:
             - name: grafana-storage
-              mountPath: /var/lib/grafana
-          securityContext:
-            runAsUser: 1000
-            fsGroup: 2000
+              mountPath: /var/lib/grafana          
       volumes:
         - name: grafana-storage
           persistentVolumeClaim: 

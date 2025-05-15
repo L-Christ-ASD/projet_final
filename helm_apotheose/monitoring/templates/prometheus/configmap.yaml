@@ -4,7 +4,7 @@ metadata:
   name: prometheus-config
   namespace: apotheose
 data:
-  prometheus.yaml: |
+  prometheus.yml: |
     global:
       scrape_interval: 30s
       scrape_timeout: 10s
@@ -43,19 +43,19 @@ data:
               summary: "{{`Instance {{ $labels.instance }} down`}}"
               description: "{{`L'instance {{ $labels.instance }} ne répond plus depuis 1 minute.`}}"
 
-  alertmanager.yml: |
-    global:
-      smtp_smarthost: 'smtp.gmail.com:587'
-      smtp_from: 'ton.email@gmail.com'
-      smtp_auth_username: 'ton.email@gmail.com'
-      smtp_auth_password: 'ton-mdp-ou-app-pass'
-      smtp_require_tls: true
+  # alertmanager.yml: |
+  #   global:
+  #     smtp_smarthost: 'smtp.gmail.com:587'
+  #     smtp_from: 'ton.email@gmail.com'
+  #     smtp_auth_username: 'ton.email@gmail.com'
+  #     smtp_auth_password: 'ton-mdp-ou-app-pass'
+  #     smtp_require_tls: true
 
-    route:
-      receiver: 'mail-alert'
+  #   route:
+  #     receiver: 'mail-alert'
 
-    receivers:
-      - name: 'mail-alert'
-        email_configs:
-          - to: 'ton.email@gmail.com'
-            send_resolved: true
+  #   receivers:
+  #     - name: 'mail-alert'
+  #       email_configs:
+  #         - to: 'ton.email@gmail.com'
+  #           send_resolved: true

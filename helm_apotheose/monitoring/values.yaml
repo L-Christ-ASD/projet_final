@@ -4,7 +4,7 @@ prometheus:
   pvc:
     dataStorage: 5Gi
   deployment:
-    image: prom/prometheus:v2.52.0
+    image: prom/prometheus:v3.4
     replicas: 1
   ingress:
     host: prometheus.christ-devops.duckdns.org

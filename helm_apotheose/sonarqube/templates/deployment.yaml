@@ -15,6 +15,11 @@ spec:
     spec:
       nodeSelector:
         node-role.kubernetes.io/worker: "true"
+
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        
       containers:
         - name: sonarqube
           image: {{ .Values.deployment.image }}
@@ -49,9 +54,12 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: sonarqube-data
+          #defaultMode: 0775
         - name: extensions
           persistentVolumeClaim:
             claimName: sonarqube-extensions
+          #defaultMode: 0775
         - name: logs
           persistentVolumeClaim:
             claimName: sonarqube-logs
+          #defaultMode: 0775

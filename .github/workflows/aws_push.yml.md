@@ -396,8 +396,8 @@ jobs:
         
   #======== monitoring - GrafanA & PROMETHEUS =======================================
   #================================================================
-    - name: Ajouter le repo
-      run: |
+    # - name: Ajouter le repo
+    #   run: |
 
 
   #======== Valider tous les charts) =======================================
@@ -467,6 +467,7 @@ jobs:
     - name: Lister le svc traefik  déployés dans apotheose 
       run: |
         export KUBECONFIG=.kube/config-rke2
+        
         kubectl get svc -n apotheose traefik -o wide
 
         echo "Vérifier que la StorageClass est bien créée"

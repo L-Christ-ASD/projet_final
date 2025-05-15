@@ -17,7 +17,7 @@ spec:
         node-role.kubernetes.io/worker: "true"
       containers:
         - name: mysql
-          image: mysql:5.7
+          image: mysql:latest
           env:
             - name: MYSQL_DATABASE
               valueFrom:
