@@ -69,7 +69,7 @@
     group: ubuntu
     mode: '0755'
 
-- name: Afficher le contenu de acme.json
+- name: Vérifier le contenu de acme.json
   command: cat /home/ubuntu/letsencrypt/acme.json
   register: acme_content
   changed_when: false
@@ -82,29 +82,29 @@
 
 
 
-- name: Copier le fichier de config prometheus.yml
-  copy:
-    src: templates/prometheus.yml
-    dest: /home/ubuntu/prometheus/
-    owner: ubuntu
-    group: ubuntu
-    mode: '0644'
+# - name: Copier le fichier de config prometheus.yml
+#   copy:
+#     src: templates/prometheus.yml
+#     dest: /home/ubuntu/prometheus/
+#     owner: ubuntu
+#     group: ubuntu
+#     mode: '0644'
 
-- name: Copier le fichier alert.yml
-  copy:
-    src: templates/alert.yml
-    dest: /home/ubuntu/prometheus/
-    owner: ubuntu
-    group: ubuntu
-    mode: '0644'
+# - name: Copier le fichier alert.yml
+#   copy:
+#     src: templates/alert.yml
+#     dest: /home/ubuntu/prometheus/
+#     owner: ubuntu
+#     group: ubuntu
+#     mode: '0644'
 
-- name: Copier le fichier alertmanager.yml
-  copy:
-    src: templates/alertmanager.yml
-    dest: /home/ubuntu/alertmanager/
-    owner: ubuntu
-    group: ubuntu
-    mode: '0644'
+# - name: Copier le fichier alertmanager.yml
+#   copy:
+#     src: templates/alertmanager.yml
+#     dest: /home/ubuntu/alertmanager/
+#     owner: ubuntu
+#     group: ubuntu
+#     mode: '0644'
 
 #- name: Copier le fichier apache-config.conf pour wp
 #  copy:

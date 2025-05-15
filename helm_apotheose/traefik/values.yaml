@@ -38,5 +38,3 @@ certificatesResolvers: myresolver
 
 # L' eip et le sg sont approvisionnées dynamiquement via terraform!
 
-eipAllocationId: eipalloc-090d9e06d34f2f714
-sg: sg-0e43e6707da07815e

@@ -10,4 +10,4 @@ spec:
     storage: /letsencrypt/acme.json
     dnsChallenge:
       provider: duckdns
-      delayBeforeCheck: 2
+      delayBeforeCheck: 10
