@@ -4,7 +4,7 @@ additionalArguments:
 - "--certificatesresolvers.myresolver.acme.dnschallenge.provider=duckdns"
 - "--certificatesresolvers.myresolver.acme.email={{ .Values.ingress.email }}"
 - "--certificatesresolvers.myresolver.acme.dnschallenge.resolvers=1.1.1.1"
-- "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+- "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/data/acme.json"
 
 
 #- "--log.level=DEBUG"
@@ -42,35 +42,40 @@ ingressRoute:
     enabled: false
 
 #persistentVolumeClaim
-# persistent:
-#   enabled: true
+
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
 #   name: traefik-letsencrypt
-#   size: 1Gi
-#   path: /letsencrypt/*
+#   namespace: apotheose
+# spec:
+#   storageClassName: openebs-cstor-repl2
+#   accessModes:
+#     - ReadWriteOnce
+#   resources:
+#     requests:
+#       storage: 1Gi
 
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
+
+persistence:
+  enabled: true
   name: traefik-letsencrypt
-  #namespace: {{ .Values.namespace }}
-spec:
-  storageClassName: openebs-cstor-repl2
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
-
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  storageClass: openebs-cstor-repl2
+  path: /data/letsencrypt
       
 deployment:
   initContainers:
     - name: volume-permissions
       image: busybox:1.31.1
-      command: ["sh", "-c", "chmod -Rv 600 /letsencrypt/*"]
+      command: ["sh", "-c", "chmod -Rv 600 /data/letsencrypt || true"]
       volumeMounts:
         - name: traefik-letsencrypt
-          mountPath: /letsencrypt
-  Volumes:
+          mountPath: /data/letsencrypt
+      # securityContext:
+      #   runAsUser: 0
+  volumes:
     - name: traefik-letsencrypt
       persistentVolumeClaim:
         claimName: traefik-letsencrypt

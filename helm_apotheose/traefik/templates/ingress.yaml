@@ -10,7 +10,7 @@ spec:
     - websecure  # Définit l'entrypoint sécurisé (HTTPS)
     
   routes:
-    - match: Host{{ .Values.domain }}
+    - match: Host(`{{ .Values.domain }}`)
     #- match: Host(`traefik.{{ .Values.domain }}`) # && PathPrefix(`/dashboard`) # Le domaine et le chemin pour accéder au tableau de bord
       kind: Rule
       services:
