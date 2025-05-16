@@ -1,0 +1,81 @@
+additionalArguments:
+
+
+- "--certificatesresolvers.myresolver.acme.dnschallenge.provider=duckdns"
+- "--certificatesresolvers.myresolver.acme.email={{ .Values.ingress.email }}"
+- "--certificatesresolvers.myresolver.acme.dnschallenge.resolvers=1.1.1.1"
+- "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+
+
+#- "--log.level=DEBUG"
+
+
+env:
+  - name: DUCKDNS_EMAIL
+    valueFrom:
+      secretKeyRef:
+        name: traefik-env-secrets
+        key: email
+  - name: DUCKDNS_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: traefik-env-secrets
+        key: token
+
+logs:
+  general:
+    level: DEBUG
+
+ports:
+  web:
+    rederectTo: websecure
+
+  websecure:
+    tls:
+      enabled: true
+      certResolver: myresolver
+
+
+
+ingressRoute:
+  dashboard:
+    enabled: false
+
+#persistentVolumeClaim
+# persistent:
+#   enabled: true
+#   name: traefik-letsencrypt
+#   size: 1Gi
+#   path: /letsencrypt/*
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: traefik-letsencrypt
+  #namespace: {{ .Values.namespace }}
+spec:
+  storageClassName: openebs-cstor-repl2
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+      
+deployment:
+  initContainers:
+    - name: volume-permissions
+      image: busybox:1.31.1
+      command: ["sh", "-c", "chmod -Rv 600 /letsencrypt/*"]
+      volumeMounts:
+        - name: traefik-letsencrypt
+          mountPath: /letsencrypt
+  Volumes:
+    - name: traefik-letsencrypt
+      persistentVolumeClaim:
+        claimName: traefik-letsencrypt
+
+
+ingressClass:
+  enabled: true
+  isDefaultClass: true

@@ -25,13 +25,22 @@ spec:
             limits:
               cpu: {{ .Values.resources.limits.cpu }}
               memory: {{ .Values.resources.limits.memory }}
+          
+          env:
+            - name: DUCKDNS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: traefik-env-secrets
+                  key: DUCKDNS_TOKEN
+
           ports:
             - containerPort: 80
             - containerPort: 443
             - containerPort: 8080
-          envFrom:
-            - secretRef:
-                name: traefik-env-secrets
+          # envFrom:
+          #   - secretRef:
+          #       name: traefik-env-secrets
+          #       key: DUCKDNS_TOKEN
           volumeMounts:
             - name: docker-socket
               mountPath: /var/run/docker.sock
@@ -60,7 +69,7 @@ spec:
             - "--certificatesresolvers.myresolver.acme.email={{ .Values.ingress.email }}"
             - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
            
-            - "--certificatesresolvers.myresolver.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53"
+            - "--certificatesresolvers.myresolver.acme.dnschallenge.resolvers=1.1.1.1"
 #            - "--certificatesresolvers.myresolver.acme.domains=*.christ-devops.duckdns.org"
 #            - "--certificatesresolvers.myresolver.acme.domains=christ-devops.duckdns.org" 
 #            - "--providers.file.filename=/etc/traefik/traefik-dynamic.yaml"   

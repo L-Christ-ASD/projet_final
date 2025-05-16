@@ -10,13 +10,12 @@ spec:
     - websecure  # Définit l'entrypoint sécurisé (HTTPS)
     
   routes:
-    - match: Host(`traefik.{{ .Values.domain }}`) # && PathPrefix(`/dashboard`) # Le domaine et le chemin pour accéder au tableau de bord
+    - match: Host{{ .Values.domain }}
+    #- match: Host(`traefik.{{ .Values.domain }}`) # && PathPrefix(`/dashboard`) # Le domaine et le chemin pour accéder au tableau de bord
       kind: Rule
       services:
         - name: api@internal
           kind: TraefikService
-        # - name: traefik
-          # port: 8080 # Le port du service Traefik
       middlewares:
         - name: dashboard-auth
           namespace: {{ .Values.namespace }}  # Le middleware d'authentification

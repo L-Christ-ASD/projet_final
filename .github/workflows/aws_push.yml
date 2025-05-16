@@ -421,6 +421,9 @@ jobs:
       run: |
         export KUBECONFIG=.kube/config-rke2
 
+        echo "Créer le ns APOTHEOSE"
+        kubectl create ns apotheose
+
         echo "Déploiement de traefik...( Chart officiel)"
         helm upgrade --install traefik traefik/traefik --namespace apotheose --create-namespace
 
