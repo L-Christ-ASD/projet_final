@@ -81,6 +81,29 @@ deployment:
         claimName: traefik-letsencrypt
 
 
+#---service
+#Avec eip:
+service:
+  annotations:
+    {{- with .values_dynamic }}
+    {{ toYaml . | nindent 4 }}
+    {{- end }}
+    {{- if .values_dynamic.eipAllocationId }}
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-subnets: "{{ .values_dynamic.subnet }}"
+    service.beta.kubernetes.io/aws-load-balancer-security-groups: "{{ .values_dynamic.sg }}"
+    service.beta.kubernetes.io/aws-load-balancer-eip-allocations: "{{ .values_dynamic.eipAllocationId }}"
+    {{- end }}
+
+    type: LoadBalancer
+
+# selector:
+#   app: traefik
+
+#traefik2/values_dynamic.yaml
+
+
+#---
 ingressClass:
   enabled: true
   isDefaultClass: true

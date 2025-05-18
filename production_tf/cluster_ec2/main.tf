@@ -453,6 +453,8 @@ resource "null_resource" "update_traefik_values_yaml_sg" {
     command = <<EOT
 
       echo "sg: ${aws_security_group.admin_ssh_production.id}" >> ${path.module}/../../helm_apotheose/traefik/values.yaml
+      echo "sg: ${aws_security_group.admin_ssh_production.id}" > ${path.module}/../../traefik2/values_dynamic.yaml
+      echo "subnet: subnet-07ef8d731542349d5" > ${path.module}/../../traefik2/values_dynamic.yaml
 
     EOT
   }
@@ -552,6 +554,8 @@ resource "null_resource" "update_values_yaml" {
       mkdir -p ../../ansible_production
 
       echo "eipAllocationId: ${aws_eip.traefik_eip.id}" >> ${path.module}/../../helm_apotheose/traefik/values.yaml
+      echo "eipAllocationId: ${aws_eip.traefik_eip.id}" >> ${path.module}/../../traefik2/values_dynamic.yaml
+
 
     EOT
   }
