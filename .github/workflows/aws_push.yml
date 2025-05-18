@@ -422,6 +422,11 @@ jobs:
     - name: Appliquer les credentials dns
       run: |
         export KUBECONFIG=.kube/config-rke2
+
+        echo "Créer le ns APOTHEOSE"
+        kubectl create ns apotheose
+
+        echo "Appliquer les credentials"
         kubectl apply -f ./traefik2/duckdns_credentials.yaml
   
     - name: Ajouter le repo Helm Traefik (officiel)
@@ -431,11 +436,11 @@ jobs:
       run: |
         export KUBECONFIG=.kube/config-rke2
 
-        echo "Créer le ns APOTHEOSE"
-        kubectl create ns apotheose
-
         echo "Installation de traefik...( Chart officiel) + values (traefik2)"
-        helm upgrade --install traefik traefik/traefik -f ./traefik2/values.yaml --namespace apotheose --create-namespace
+        helm upgrade --install traefik traefik/traefik \
+        -f ./traefik2/values.yaml \
+        -f ./traefik2/values_dynamic.yaml \
+        --namespace apotheose --create-namespace
 
         echo "Donner le ns apotheose à helm pour traefik (au cas où !)"
         kubectl label namespace apotheose app.kubernetes.io/managed-by=Helm

@@ -453,9 +453,7 @@ resource "null_resource" "update_traefik_values_yaml_sg" {
     command = <<EOT
 
       echo "sg: ${aws_security_group.admin_ssh_production.id}" >> ${path.module}/../../helm_apotheose/traefik/values.yaml
-      echo "sg: ${aws_security_group.admin_ssh_production.id}" > ${path.module}/../../traefik2/values_dynamic.yaml
-      echo "subnet: subnet-07ef8d731542349d5" > ${path.module}/../../traefik2/values_dynamic.yaml
-
+ 
     EOT
   }
 }
@@ -554,8 +552,6 @@ resource "null_resource" "update_values_yaml" {
       mkdir -p ../../ansible_production
 
       echo "eipAllocationId: ${aws_eip.traefik_eip.id}" >> ${path.module}/../../helm_apotheose/traefik/values.yaml
-      echo "eipAllocationId: ${aws_eip.traefik_eip.id}" >> ${path.module}/../../traefik2/values_dynamic.yaml
-
 
     EOT
   }
@@ -564,7 +560,30 @@ resource "null_resource" "update_values_yaml" {
 
 
 
+# try traefik2
+variable "eip_allocation_id" {}
+variable "subnet_id" {}
+variable "security_group_id" {}
 
+
+locals {
+  values_dynamic_yaml = yamlencode({
+    service = {
+      annotations = {
+        "service.beta.kubernetes.io/aws-load-balancer-type"             = "nlb"
+        "service.beta.kubernetes.io/aws-load-balancer-subnets"          = var.subnet_id
+        "service.beta.kubernetes.io/aws-load-balancer-security-groups" = var.security_group_id
+        "service.beta.kubernetes.io/aws-load-balancer-eip-allocations" = var.eip_allocation_id
+      }
+    }
+  })
+}
+
+
+resource "local_file" "values_dynamic" {
+  filename = "${path.module}/../../traefik2/values_dynamic.yaml"
+  content  = local.values_dynamic_yaml
+}
 
 
 

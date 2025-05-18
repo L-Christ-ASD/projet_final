@@ -1,4 +1,0 @@
-service:
-  annotations: {}
-  type: LoadBalancer
-

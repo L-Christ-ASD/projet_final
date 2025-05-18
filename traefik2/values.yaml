@@ -7,9 +7,6 @@ additionalArguments:
 - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/data/acme.json"
 
 
-#- "--log.level=DEBUG"
-
-
 env:
   - name: DUCKDNS_EMAIL
     valueFrom:
@@ -36,27 +33,12 @@ ports:
       certResolver: myresolver
 
 
-
 ingressRoute:
   dashboard:
     enabled: false
 
+
 #persistentVolumeClaim
-
-# apiVersion: v1
-# kind: PersistentVolumeClaim
-# metadata:
-#   name: traefik-letsencrypt
-#   namespace: apotheose
-# spec:
-#   storageClassName: openebs-cstor-repl2
-#   accessModes:
-#     - ReadWriteOnce
-#   resources:
-#     requests:
-#       storage: 1Gi
-
-
 persistence:
   enabled: true
   name: traefik-letsencrypt
@@ -73,34 +55,15 @@ deployment:
       volumeMounts:
         - name: traefik-letsencrypt
           mountPath: /data/letsencrypt
-      # securityContext:
-      #   runAsUser: 0
   volumes:
     - name: traefik-letsencrypt
       persistentVolumeClaim:
         claimName: traefik-letsencrypt
 
 
-#---service
-#Avec eip:
+#---service---Avec eip:
 service:
-  annotations:
-    {{- with .values_dynamic }}
-    {{ toYaml . | nindent 4 }}
-    {{- end }}
-    {{- if .values_dynamic.eipAllocationId }}
-    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-    service.beta.kubernetes.io/aws-load-balancer-subnets: "{{ .values_dynamic.subnet }}"
-    service.beta.kubernetes.io/aws-load-balancer-security-groups: "{{ .values_dynamic.sg }}"
-    service.beta.kubernetes.io/aws-load-balancer-eip-allocations: "{{ .values_dynamic.eipAllocationId }}"
-    {{- end }}
-
-    type: LoadBalancer
-
-# selector:
-#   app: traefik
-
-#traefik2/values_dynamic.yaml
+  type: LoadBalancer
 
 
 #---
