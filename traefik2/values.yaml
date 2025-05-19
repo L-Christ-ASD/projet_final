@@ -4,15 +4,15 @@ additionalArguments:
 - "--certificatesresolvers.myresolver.acme.dnschallenge.provider=duckdns"
 - "--certificatesresolvers.myresolver.acme.email={{ .Values.ingress.email }}"
 - "--certificatesresolvers.myresolver.acme.dnschallenge.resolvers=1.1.1.1"
-- "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/data/acme.json"
+- "--certificatesresolvers.myresolver.acme.storage=/data/letsencrypt"
 
 
 env:
-  - name: DUCKDNS_EMAIL
-    valueFrom:
-      secretKeyRef:
-        name: traefik-env-secrets
-        key: email
+  # - name: DUCKDNS_EMAIL
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: traefik-env-secrets
+  #       key: email
   - name: DUCKDNS_TOKEN
     valueFrom:
       secretKeyRef:
@@ -32,11 +32,16 @@ ports:
       enabled: true
       certResolver: myresolver
 
+ingress:
+  email: christ.lumu@oclock.school
+
 
 ingressRoute:
   dashboard:
     enabled: false
 
+nodeSelector:
+  node-role.kubernetes.io/worker: "true"
 
 #persistentVolumeClaim
 persistence:
@@ -46,15 +51,32 @@ persistence:
   size: 1Gi
   storageClass: openebs-cstor-repl2
   path: /data/letsencrypt
-      
+
+
+# initContainers:
+#   volume-permissions:
+#     enabled: false
+
 deployment:
   initContainers:
     - name: volume-permissions
       image: busybox:1.31.1
-      command: ["sh", "-c", "chmod -Rv 600 /data/letsencrypt || true"]
+      command:
+        - sh
+        - -c
+        - |
+          echo "[InitContainer] Fixing permissions for /data/letsencrypt"
+          chmod 700 /data/letsencrypt
+          if [ "$(ls -A /data/letsencrypt 2>/dev/null)" ]; then
+            chmod 600 /data/letsencrypt/*
+          fi
+          chown -R 0:0 /data/letsencrypt
+          exec traefik "$@"
       volumeMounts:
         - name: traefik-letsencrypt
           mountPath: /data/letsencrypt
+      securityContext:
+        runAsUser: 0
   volumes:
     - name: traefik-letsencrypt
       persistentVolumeClaim:
