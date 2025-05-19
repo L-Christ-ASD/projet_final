@@ -559,21 +559,24 @@ resource "null_resource" "update_values_yaml" {
 
 
 
-
+#----------------------------------------------------------------------------
+#----------------------------------------------------------------------------
+#----------------------------------------------------------------------------
 # try traefik2
-variable "eip_allocation_id" {}
-variable "subnet_id" {}
-variable "security_group_id" {}
+#===============
 
+variable "subnet_id" {
+  default = "subnet-07ef8d731542349d5"
+}
 
 locals {
   values_dynamic_yaml = yamlencode({
     service = {
       annotations = {
-        "service.beta.kubernetes.io/aws-load-balancer-type"             = "nlb"
-        "service.beta.kubernetes.io/aws-load-balancer-subnets"          = var.subnet_id
-        "service.beta.kubernetes.io/aws-load-balancer-security-groups" = var.security_group_id
-        "service.beta.kubernetes.io/aws-load-balancer-eip-allocations" = var.eip_allocation_id
+        "service.beta.kubernetes.io/aws-load-balancer-type"            = "nlb"
+        "service.beta.kubernetes.io/aws-load-balancer-subnets"         = tostring(var.subnet_id)
+        "service.beta.kubernetes.io/aws-load-balancer-security-groups" = tostring(aws_security_group.admin_ssh_production.id)
+        "service.beta.kubernetes.io/aws-load-balancer-eip-allocations" = tostring(aws_eip.traefik_eip.id)
       }
     }
   })

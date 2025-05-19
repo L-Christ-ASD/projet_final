@@ -30,11 +30,6 @@ resources:
     cpu: "500m"      
     memory: "512Mi"
 
-# envFrom:
-#   - secretRef:
-#       name: traefik-env-secrets
-
 certificatesResolvers: myresolver
 
 # L' eip et le sg sont approvisionnées dynamiquement via terraform!
-
