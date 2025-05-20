@@ -426,8 +426,9 @@ jobs:
         echo "Créer le ns APOTHEOSE"
         kubectl create ns apotheose
 
-        echo "Appliquer les credentials"
+        echo "Appliquer les credentials et la configMap"
         kubectl apply -f ./traefik2/duckdns_credentials.yaml
+        kubectl apply -f ./traefik2/traefik_entrypoint.yaml
   
     - name: Ajouter le repo Helm Traefik (officiel)
       run: helm repo add traefik https://helm.traefik.io/traefik && helm repo update

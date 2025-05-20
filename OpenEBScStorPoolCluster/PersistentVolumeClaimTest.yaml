@@ -10,6 +10,3 @@ spec:
     requests:
       storage: 55Gi
 
-# remplacer la ligne de storageClassName dans tes charts Helm par
-# persistence:
-#   storageClass: openebs-cstor-repl3 
