@@ -2,10 +2,12 @@ additionalArguments:
 
 
 - "--certificatesresolvers.myresolver.acme.dnschallenge.provider=duckdns"
-- "--certificatesresolvers.myresolver.acme.email={{ .Values.ingress.email }}"
+- "--certificatesresolvers.myresolver.acme.email=christ.lumu@oclock.school"
 - "--certificatesresolvers.myresolver.acme.dnschallenge.resolvers=1.1.1.1"
 - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-
+# - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+# - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+# - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
 
 env:
   # - name: DUCKDNS_EMAIL
@@ -32,8 +34,20 @@ ports:
       enabled: true
       certResolver: myresolver
 
-ingress:
-  email: christ.lumu@oclock.school
+# ports:
+#   web:
+#     expose: true
+#     port: 80
+
+#   websecure:
+#     expose: true
+#     port: 443
+#     tls:
+#       enabled: true
+#       certResolver: myresolver
+
+# ingress:
+#   email: christ.lumu@oclock.school
 
 
 ingressRoute:
@@ -51,9 +65,6 @@ persistence:
   size: 1Gi
   storageClass: openebs-cstor-repl2
   
-
-
-
 deployment:
   containers:
     resources:

@@ -439,6 +439,7 @@ jobs:
 
         echo "Installation de traefik...( Chart officiel) + values (traefik2)"
         helm upgrade --install traefik traefik/traefik \
+        --version 33.0.0 \
         -f ./traefik2/values.yaml \
         -f ./traefik2/values_dynamic.yaml \
         --namespace apotheose --create-namespace

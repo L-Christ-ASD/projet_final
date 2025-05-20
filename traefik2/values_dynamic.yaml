@@ -1,6 +1,0 @@
-"service":
-  "annotations":
-    "service.beta.kubernetes.io/aws-load-balancer-eip-allocations": "eipalloc-09706c727377c4947"
-    "service.beta.kubernetes.io/aws-load-balancer-security-groups": "sg-0d08fbb4449714ea9"
-    "service.beta.kubernetes.io/aws-load-balancer-subnets": "subnet-07ef8d731542349d5"
-    "service.beta.kubernetes.io/aws-load-balancer-type": "nlb"
