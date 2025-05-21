@@ -12,7 +12,21 @@ ingress:
   email: christ.lumu@oclock.school
 
 domain: christ-devops.duckdns.org
-
+certResolvers:
+  myresolver:
+    acme:
+      email: christ.lumu@oclock.school
+      storage: /letsencrypt/acme.json
+      dnsChallenge:
+        provider: duckdns
+        resolvers:
+          - "1.1.1.1:53"
+        delayBeforeCheck: 0
+      domains:
+        - main: '*.christ-devops.duckdns.org'
+          sans:
+            - christ-devops.duckdns.org
+#---------------------------
 
 dashboardAuth: christ:monmotdepasstraefik
 
@@ -30,24 +44,7 @@ resources:
     cpu: "500m"      
     memory: "512Mi"
 
-#certificatesResolvers: myresolver
 
-# entryPoints:
-#   web:
-#     address: ":80"
-#   websecure:
-#     address: ":443"
-#     tls:
-#       certResolver: myresolver
-
-# certificatesResolvers:
-#   myresolver:
-#     acme:
-#       email: christ.lumu@oclock.school
-#       storage: /letsencrypt/acme.json
-#       dnsChallenge:
-#         provider: duckdns
-      
 ingressClass:
   enabled: true
   isDefaultClass: true

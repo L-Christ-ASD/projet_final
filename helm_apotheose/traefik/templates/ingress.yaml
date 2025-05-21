@@ -1,6 +1,27 @@
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
+  name: traefik-default-catchall
+  namespace: {{ .Values.namespace }}
+
+spec:
+  entryPoints:
+    - web
+    - websecure  # Définit l'entrypoint sécurisé (HTTPS)
+    
+  routes:
+    - match: Host(`*.christ-devops.duckdns.org`)
+      kind: Rule
+      services:
+        - name: default-catchall
+          port: 80
+  tls:
+    certResolver: myresolver
+
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
   name: traefik-dashboard
   namespace: {{ .Values.namespace }}
 
@@ -22,29 +43,28 @@ spec:
         - name: default-redirectscheme
           namespace: {{ .Values.namespace }} # Si tu veux rediriger les requêtes HTTP vers HTTPS
   tls:
-    secretName: wildcard-tls
-    #certResolver: myresolver # Utiliser le certResolver pour générer un certificat SSL (Let's Encrypt)
+    certResolver: myresolver # Utiliser le certResolver pour générer un certificat SSL (Let's Encrypt)
+    #secretName: wildcard-tls
 
 
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: wordpress-ingressroute1
+  namespace: {{ .Values.namespace }}
 
-# ---
-# apiVersion: traefik.io/v1alpha1
-# kind: IngressRoute
-# metadata:
-#   name: wordpress-ingressroute
-#   namespace: {{ .Values.namespace }}
-
-# spec:
-#   entryPoints:
-#     - websecure
-#   routes:
-#     - match: Host(`wordpress.christ-devops.duckdns.org`)
-#       kind: Rule
-#       services:
-#         - name: wordpress
-#           port: 80
-#   tls:
-#     certResolver: myresolver
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`wordpress.christ-devops.duckdns.org`)
+      kind: Rule
+      services:
+        - name: wordpress
+          port: 80
+  # tls:
+  #   certResolver: myresolver
 
 # ---
 # apiVersion: traefik.io/v1alpha1

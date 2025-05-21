@@ -24,7 +24,7 @@ metadata:
   namespace: {{ .Values.namespace }}
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    traefik.ingress.kubernetes.io/router.tls.certresolver: myresolver
+    #traefik.ingress.kubernetes.io/router.tls.certresolver: myresolver
     traefik.ingress.kubernetes.io/router.middlewares: apotheose-default-redirectscheme@kubernetescrd
 spec:
   ingressClassName: traefik
@@ -39,6 +39,6 @@ spec:
                 name: prometheus
                 port:
                   number: 9090
-  tls:
-    - hosts:
-        - {{ .Values.prometheus.ingress.host }}
+  # tls:
+  #   - hosts:
+  #       - {{ .Values.prometheus.ingress.host }}

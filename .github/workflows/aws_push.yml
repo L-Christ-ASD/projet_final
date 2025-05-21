@@ -665,12 +665,13 @@ jobs:
 
 
 
+
     # wildcard_tls/wildcard_secret_tls.sh
-    - name:  Crée ou met à jour un Secret TLS wildcard-tls dans le namespace apotheose
-      run: |
-        export KUBECONFIG=.kube/config-rke2
-        chmod +x ./wildcard_tls/wildcard_secret_tls.sh
-        ./wildcard_tls/wildcard_secret_tls.sh
+    # - name:  Crée ou met à jour un Secret TLS wildcard-tls dans le namespace apotheose
+    #   run: |
+    #     export KUBECONFIG=.kube/config-rke2
+    #     chmod +x ./wildcard_tls/wildcard_secret_tls.sh
+    #     ./wildcard_tls/wildcard_secret_tls.sh
 
 
 
