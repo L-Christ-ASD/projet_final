@@ -30,6 +30,26 @@ resources:
     cpu: "500m"      
     memory: "512Mi"
 
-certificatesResolvers: myresolver
+#certificatesResolvers: myresolver
+
+# entryPoints:
+#   web:
+#     address: ":80"
+#   websecure:
+#     address: ":443"
+#     tls:
+#       certResolver: myresolver
+
+# certificatesResolvers:
+#   myresolver:
+#     acme:
+#       email: christ.lumu@oclock.school
+#       storage: /letsencrypt/acme.json
+#       dnsChallenge:
+#         provider: duckdns
+      
+ingressClass:
+  enabled: true
+  isDefaultClass: true
 
 # L' eip et le sg sont approvisionnées dynamiquement via terraform!

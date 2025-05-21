@@ -5,9 +5,9 @@ additionalArguments:
 - "--certificatesresolvers.myresolver.acme.email=christ.lumu@oclock.school"
 - "--certificatesresolvers.myresolver.acme.dnschallenge.resolvers=1.1.1.1"
 - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-# - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-# - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-# - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+- "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+- "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+- "--entrypoints.web.http.redirections.entrypoint.permanent=true"
 
 env:
   # - name: DUCKDNS_EMAIL
@@ -25,26 +25,28 @@ logs:
   general:
     level: DEBUG
 
-ports:
-  web:
-    redirectTo: websecure
-
-  websecure:
-    tls:
-      enabled: true
-      certResolver: myresolver
-
 # ports:
 #   web:
-#     expose: true
-#     port: 80
+#     redirectTo: websecure
 
 #   websecure:
-#     expose: true
-#     port: 443
 #     tls:
 #       enabled: true
 #       certResolver: myresolver
+
+ports:
+  web:
+    expose:
+      default: true
+    port: 80
+
+  websecure:
+    expose:
+      default: true
+    port: 443
+    tls:
+      enabled: true
+      certResolver: myresolver
 
 # ingress:
 #   email: christ.lumu@oclock.school
@@ -57,48 +59,102 @@ ingressRoute:
 nodeSelector:
   node-role.kubernetes.io/worker: "true"
 
+
 #persistentVolumeClaim
 persistence:
   enabled: true
-  name: traefik-letsencrypt
+  name: traefik
   accessMode: ReadWriteOnce
   size: 1Gi
   storageClass: openebs-cstor-repl2
-  
-deployment:
-  containers:
-    resources:
-            requests:
-              cpu: "100m"
-              memory: "128Mi"
-            limits:
-              cpu: "200m"
-              memory: "256Mi"
+  path: /letsencrypt
+
+extraInitContainers:
+  - name: init-letsencrypt
+    image: busybox:1.36
+    command:
+      - sh
+      - -c
+      - |
+        mkdir -p /letsencrypt
+        touch /letsencrypt/acme.json
+        chmod 600 /letsencrypt/acme.json
     volumeMounts:
-            - name: docker-socket
-              mountPath: /var/run/docker.sock
-              readOnly: true
-            - name: letsencrypt
-              mountPath: /letsencrypt
-            - name: entrypoint-script
-              mountPath: /traefik_entrypoint.sh
-              subPath: traefik_entrypoint.sh
-              readOnly: true
-    command: ["/traefik_entrypoint.sh"]
-  volumes:
-    - name: docker-socket
-      hostPath:
-        path: /var/run/docker.sock
-    - name: letsencrypt
-      persistentVolumeClaim:
-        claimName: traefik-letsencrypt
-    - name: entrypoint-script
-      configMap:
-        name: traefik-entrypoint-script
-        defaultMode: 0755
-        items:
-          - key: traefik_entrypoint.sh
-            path: traefik_entrypoint.sh
+      - name: letsencrypt
+        mountPath: /letsencrypt
+
+extraVolumeMounts:
+  - name: letsencrypt
+    mountPath: /letsencrypt
+  - name: entrypoint-script
+    mountPath: /traefik_entrypoint.sh
+    subPath: traefik_entrypoint.sh
+    readOnly: true
+
+extraVolumes:
+  - name: letsencrypt
+    persistentVolumeClaim:
+      claimName: traefik
+  - name: entrypoint-script
+    configMap:
+      name: traefik-entrypoint-script
+      defaultMode: 0755
+      items:
+        - key: traefik_entrypoint.sh
+          path: traefik_entrypoint.sh
+
+deployment:
+  initContainers: []  # inutile ici mais pas bloquant
+  containers:
+    command:
+      - /traefik_entrypoint.sh
+
+
+
+# #persistentVolumeClaim
+# persistence:
+#   enabled: true
+#   name: letsencrypt
+#   accessMode: ReadWriteOnce
+#   size: 1Gi
+#   storageClass: openebs-cstor-repl2
+
+
+
+# deployment:
+#   containers:
+#     resources:
+#             requests:
+#               cpu: "100m"
+#               memory: "128Mi"
+#             limits:
+#               cpu: "200m"
+#               memory: "256Mi"
+#     volumeMounts:
+#             - name: docker-socket
+#               mountPath: /var/run/docker.sock
+#               readOnly: true
+#             - name: letsencrypt
+#               mountPath: /letsencrypt
+#             - name: entrypoint-script
+#               mountPath: /traefik_entrypoint.sh
+#               subPath: traefik_entrypoint.sh
+#               readOnly: true
+#     command: ["/traefik_entrypoint.sh"]
+#   volumes:
+#     - name: docker-socket
+#       hostPath:
+#         path: /var/run/docker.sock
+#     - name: letsencrypt
+#       persistentVolumeClaim:
+#         claimName: traefik-letsencrypt
+#     - name: entrypoint-script
+#       configMap:
+#         name: traefik-entrypoint-script
+#         defaultMode: 0755
+#         items:
+#           - key: traefik_entrypoint.sh
+#             path: traefik_entrypoint.sh
 
 
 #---service---Avec eip:

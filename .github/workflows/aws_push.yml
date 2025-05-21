@@ -412,24 +412,74 @@ jobs:
         done
 
 
-#======== Test- Traeffik (Officiel-charts) ===============
-#========================================================================
-    - name: Vérifier le dessier traefik2
-      run: |
-        ls ./traefik2/
-        cat ./traefik2/values_dynamic.yaml
+# #======== Test- Traeffik (Officiel-charts) ===============
+# #========================================================================
+#     - name: Vérifier le dessier traefik2
+#       run: |
+#         ls ./traefik2/
+#         cat ./traefik2/values_dynamic.yaml
 
-    - name: Appliquer les credentials dns
-      run: |
-        export KUBECONFIG=.kube/config-rke2
+#     - name: Appliquer les credentials dns
+#       run: |
+#         export KUBECONFIG=.kube/config-rke2
 
-        echo "Créer le ns APOTHEOSE"
-        kubectl create ns apotheose
+#         echo "Créer le ns APOTHEOSE"
+#         kubectl create ns apotheose
 
-        echo "Appliquer les credentials et la configMap"
-        kubectl apply -f ./traefik2/duckdns_credentials.yaml
-        kubectl apply -f ./traefik2/traefik_entrypoint.yaml
+#         echo "Appliquer les credentials et la configMap"
+#         kubectl apply -f ./traefik2/duckdns_credentials.yaml
+#         kubectl apply -f ./traefik2/traefik_entrypoint.yaml
   
+#     - name: Ajouter le repo Helm Traefik (officiel)
+#       run: helm repo add traefik https://helm.traefik.io/traefik && helm repo update
+
+#     - name: Déploiement apotheose avec Helm Charts 
+#       run: |
+#         export KUBECONFIG=.kube/config-rke2
+
+#         echo "Installation de traefik...( Chart officiel) + values (traefik2)"
+#         helm upgrade --install traefik traefik/traefik \
+#         -f ./traefik2/values.yaml \
+#         -f ./traefik2/values_dynamic.yaml \
+#         --namespace apotheose --create-namespace
+
+#         echo "Donner le ns apotheose à helm pour traefik (au cas où !)"
+#         kubectl label namespace apotheose app.kubernetes.io/managed-by=Helm
+#         kubectl annotate namespace apotheose meta.helm.sh/release-name=traefik
+#         kubectl annotate namespace apotheose meta.helm.sh/release-namespace=apotheose
+
+#     - name: Appliquer et bind les roles k8s ( full acces pour les logs)
+#       run: |
+#         export KUBECONFIG=.kube/config-rke2
+#         kubectl apply -f ./rke2_Roles/
+
+#         echo "Vérifier les pods OPENEBS"
+#         kubectl get pods -n openebs
+#         kubectl get svc -n openebs
+
+#     - name: Lister le svc traefik  déployé dans apotheose 
+#       run: |
+#         export KUBECONFIG=.kube/config-rke2
+        
+#         kubectl get svc -n apotheose traefik -o wide
+
+#         echo "Vérifier que la StorageClass est bien créée"
+#         kubectl get storageclass 
+
+  
+#     - name: Voir l’IP publique de Traefik (EIP)
+#       run: |
+#         export KUBECONFIG=.kube/config-rke2
+#         aws ec2 describe-addresses
+
+#         echo "Service Traefik exposé avec l’EIP :"
+#         kubectl get svc traefik -n apotheose -o=custom-columns=NAME:.metadata.name,EXTERNAL-IP:.status.loadBalancer.ingress[*].ip,PORTS:.spec.ports[*].port
+    
+    
+
+
+  #======== Deployer apotheose - Traeffik (Officiel-charts) ===============
+  #========================================================================
     - name: Ajouter le repo Helm Traefik (officiel)
       run: helm repo add traefik https://helm.traefik.io/traefik && helm repo update
 
@@ -437,18 +487,30 @@ jobs:
       run: |
         export KUBECONFIG=.kube/config-rke2
 
-        echo "Installation de traefik...( Chart officiel) + values (traefik2)"
-        helm upgrade --install traefik traefik/traefik \
-        --version 33.0.0 \
-        -f ./traefik2/values.yaml \
-        -f ./traefik2/values_dynamic.yaml \
-        --namespace apotheose --create-namespace
+        echo "Créer le ns APOTHEOSE"
+        kubectl create ns apotheose
+
+        echo "Installation de traefik...( Chart officiel)"
+        helm upgrade --install traefik traefik/traefik --namespace apotheose --create-namespace
+
+    - name: Supprimer le "deployment" officiel pour déployer traefik ( custum Chart )
+      run: |
+        export KUBECONFIG=.kube/config-rke2
+
+        echo "Delete (officiel) deployment traefik"
+        kubectl delete deployment traefik -n apotheose || echo "deployment Traefik (officiel) déjà supprimé"
 
         echo "Donner le ns apotheose à helm pour traefik (au cas où !)"
         kubectl label namespace apotheose app.kubernetes.io/managed-by=Helm
         kubectl annotate namespace apotheose meta.helm.sh/release-name=traefik
         kubectl annotate namespace apotheose meta.helm.sh/release-namespace=apotheose
 
+        
+
+  #======== Deployer apotheose - Traefik (custum-chart) ======================
+  #===========================================================================
+  #======== Accorder tous les droits sur toutes les ressources dans le namespace apotheose pour dignostique!
+  #===========================================================================
     - name: Appliquer et bind les roles k8s ( full acces pour les logs)
       run: |
         export KUBECONFIG=.kube/config-rke2
@@ -458,7 +520,21 @@ jobs:
         kubectl get pods -n openebs
         kubectl get svc -n openebs
 
-    - name: Lister le svc traefik  déployé dans apotheose 
+        echo "Déploiement de Traefik (custum-chart)"
+        helm upgrade --install traefik ./helm_apotheose/traefik/ -f ./helm_apotheose/traefik/values.yaml --namespace apotheose --create-namespace
+
+        echo "attendre 30s"
+        sleep 30s
+
+    - name: Mettre à jour basicAuth (dashboard-traefik)
+      run: |
+        export KUBECONFIG=.kube/config-rke2
+        kubectl -n apotheose delete secret dashboard-auth-secret
+        kubectl -n apotheose create secret generic dashboard-auth-secret \
+        --from-literal=users='christ:$2y$05$bGGQIoxw.yuA.7ZEuGmh1eFabKFKQ9/gWr.9pp24AIUMTRKwF2CfK'
+        kubectl -n apotheose rollout restart deployment traefik
+
+    - name: Lister le svc traefik  déployés dans apotheose 
       run: |
         export KUBECONFIG=.kube/config-rke2
         
@@ -475,83 +551,6 @@ jobs:
 
         echo "Service Traefik exposé avec l’EIP :"
         kubectl get svc traefik -n apotheose -o=custom-columns=NAME:.metadata.name,EXTERNAL-IP:.status.loadBalancer.ingress[*].ip,PORTS:.spec.ports[*].port
-    
-    
-
-
-  # #======== Deployer apotheose - Traeffik (Officiel-charts) ===============
-  # #========================================================================
-  #   - name: Ajouter le repo Helm Traefik (officiel)
-  #     run: helm repo add traefik https://helm.traefik.io/traefik && helm repo update
-
-  #   - name: Déploiement apotheose avec Helm Charts 
-  #     run: |
-  #       export KUBECONFIG=.kube/config-rke2
-
-  #       echo "Créer le ns APOTHEOSE"
-  #       kubectl create ns apotheose
-
-  #       echo "Installation de traefik...( Chart officiel)"
-  #       helm upgrade --install traefik traefik/traefik --namespace apotheose --create-namespace
-
-  #   - name: Supprimer le "deployment" officiel pour déployer traefik ( custum Chart )
-  #     run: |
-  #       export KUBECONFIG=.kube/config-rke2
-
-  #       echo "Delete (officiel) deployment traefik"
-  #       kubectl delete deployment traefik -n apotheose || echo "deployment Traefik (officiel) déjà supprimé"
-
-  #       echo "Donner le ns apotheose à helm pour traefik (au cas où !)"
-  #       kubectl label namespace apotheose app.kubernetes.io/managed-by=Helm
-  #       kubectl annotate namespace apotheose meta.helm.sh/release-name=traefik
-  #       kubectl annotate namespace apotheose meta.helm.sh/release-namespace=apotheose
-
-        
-
-  # #======== Deployer apotheose - Traefik (custum-chart) ======================
-  # #===========================================================================
-  # #======== Accorder tous les droits sur toutes les ressources dans le namespace apotheose pour dignostique!
-  # #===========================================================================
-  #   - name: Appliquer et bind les roles k8s ( full acces pour les logs)
-  #     run: |
-  #       export KUBECONFIG=.kube/config-rke2
-  #       kubectl apply -f ./rke2_Roles/
-
-  #       echo "Vérifier les pods OPENEBS"
-  #       kubectl get pods -n openebs
-  #       kubectl get svc -n openebs
-
-  #       echo "Déploiement de Traefik (custum-chart)"
-  #       helm upgrade --install traefik ./helm_apotheose/traefik/ -f ./helm_apotheose/traefik/values.yaml --namespace apotheose --create-namespace
-
-  #       echo "attendre 30s"
-  #       sleep 30s
-
-  #   - name: Mettre à jour basicAuth (dashboard-traefik)
-  #     run: |
-  #       export KUBECONFIG=.kube/config-rke2
-  #       kubectl -n apotheose delete secret dashboard-auth-secret
-  #       kubectl -n apotheose create secret generic dashboard-auth-secret \
-  #       --from-literal=users='christ:$2y$05$bGGQIoxw.yuA.7ZEuGmh1eFabKFKQ9/gWr.9pp24AIUMTRKwF2CfK'
-  #       kubectl -n apotheose rollout restart deployment traefik
-
-  #   - name: Lister le svc traefik  déployés dans apotheose 
-  #     run: |
-  #       export KUBECONFIG=.kube/config-rke2
-        
-  #       kubectl get svc -n apotheose traefik -o wide
-
-  #       echo "Vérifier que la StorageClass est bien créée"
-  #       kubectl get storageclass 
-
-  
-  #   - name: Voir l’IP publique de Traefik (EIP)
-  #     run: |
-  #       export KUBECONFIG=.kube/config-rke2
-  #       aws ec2 describe-addresses
-
-  #       echo "Service Traefik exposé avec l’EIP :"
-  #       kubectl get svc traefik -n apotheose -o=custom-columns=NAME:.metadata.name,EXTERNAL-IP:.status.loadBalancer.ingress[*].ip,PORTS:.spec.ports[*].port
     
 
     - name: Déployer les autres charts
@@ -663,7 +662,15 @@ jobs:
 #      run: |
 #        echo "${{ secrets.SSH_CHRIST }" > ~/.ssh/id_rsa
 #        chmod 600 ~/.ssh/id_rsa
-#
+
+
+
+    # wildcard_tls/wildcard_secret_tls.sh
+    - name:  Crée ou met à jour un Secret TLS wildcard-tls dans le namespace apotheose
+      run: |
+        export KUBECONFIG=.kube/config-rke2
+        chmod +x ./wildcard_tls/wildcard_secret_tls.sh
+        ./wildcard_tls/wildcard_secret_tls.sh
 
 
 
