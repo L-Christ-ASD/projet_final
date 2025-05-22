@@ -1,7 +1,7 @@
 #!/bin/bash
 
 NAMESPACE="apotheose"
-DOMAIN="traefik.christ-devops.duckdns.org"
+DOMAIN="christ-devops.duckdns.org"
 TMP_DIR="/tmp/wildcard_cert"
 ACME_PATH="/letsencrypt/acme.json"
 
@@ -31,8 +31,8 @@ echo "📥 Récupération de $ACME_PATH depuis le pod..."
 kubectl cp "$NAMESPACE/${TRAEFIK_POD#pod/}:$ACME_PATH" ./acme.json
 
 # Extraire cert et key en base64 et les décoder
-CERT=$(jq -r ".letsencrypt.Certificates[] | select(.domain.main == \"$DOMAIN\") | .certificate" acme.json)
-KEY=$(jq -r ".letsencrypt.Certificates[] | select(.domain.main == \"$DOMAIN\") | .key" acme.json)
+CERT=$(jq -r ".myresolver.Certificates[] | select(.domain.main == \"$DOMAIN\") | .certificate" acme.json)
+KEY=$(jq -r ".myresolver.Certificates[] | select(.domain.main == \"$DOMAIN\") | .key" acme.json)
 
 if [[ -z "$CERT" || -z "$KEY" ]]; then
   echo "❌ Impossible de trouver les données du certificat pour $DOMAIN dans acme.json"

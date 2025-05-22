@@ -18,33 +18,32 @@
 #     certResolver: myresolver
 
 
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: phpmyadmin-ingress
-  namespace: {{ .Values.namespace }}
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    traefik.ingress.kubernetes.io/router.tls.certresolver: myresolver
-    traefik.ingress.kubernetes.io/router.middlewares: default-redirectscheme@kubernetescrd
-spec:
-  type: clusterIp
-  ingressClassName: traefik
-  rules:
-    - host: {{ .Values.ingress.host }}
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: phpmyadmin
-                port:
-                  number: 80
-  tls:
-    - hosts:
-        - {{ .Values.ingress.host }}
-      secretName: wildcard-christ-devops-tls
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: phpmyadmin-ingress
+#   namespace: {{ .Values.namespace }}
+#   # annotations:
+#   #   traefik.ingress.kubernetes.io/router.entrypoints: websecure
+#   #   traefik.ingress.kubernetes.io/router.tls.certresolver: myresolver
+#   #   traefik.ingress.kubernetes.io/router.middlewares: default-redirectscheme@kubernetescrd
+# spec:
+#   ingressClassName: traefik
+#   rules:
+#     - host: {{ .Values.ingress.host }}
+#       http:
+#         paths:
+#           - path: /
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: phpmyadmin
+#                 port:
+#                   number: 80
+#   tls:
+#     - hosts:
+#         - {{ .Values.ingress.host }}
+#       secretName: wildcard-tls
 
 
 # apiVersion: traefik.io/v1alpha1 

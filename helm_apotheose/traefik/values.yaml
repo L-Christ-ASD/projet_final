@@ -11,11 +11,12 @@ deployment:
 ingress:
   email: christ.lumu@oclock.school
 
-#domain: christ-devops.duckdns.org
-domain:
-  - main: '*.christ-devops.duckdns.org'
-    sans:
-      - christ-devops.duckdns.org
+domain: christ-devops.duckdns.org
+
+# domains:
+#   - main: christ-devops.duckdns.org 
+#     sans:
+#       - '*.christ-devops.duckdns.org'
 
 # certResolvers:
 #   myresolver:
@@ -54,4 +55,7 @@ ingressClass:
   enabled: true
   isDefaultClass: true
 
-# L' eip et le sg sont approvisionnées dynamiquement via terraform!
+# L' eip et le sg sont approvisionnées dynamiquement via terraform, exemple:
+# eipAllocationId: eipalloc-0c42152a6a162c720
+# sg: sg-086680bec58667890
+

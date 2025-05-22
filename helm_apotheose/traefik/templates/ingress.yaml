@@ -9,10 +9,9 @@ metadata:
 spec:
   entryPoints:
     - web
-    - websecure  # Définit l'entrypoint sécurisé (HTTPS)
+    - websecure  
     
   routes:
-    #- match: Host(`{{ .Values.domain }}`)
     - match: Host(`traefik.{{ .Values.domain }}`) # && PathPrefix(`/dashboard`) # Le domaine et le chemin pour accéder au tableau de bord
       kind: Rule
       services:
@@ -22,14 +21,13 @@ spec:
         - name: dashboard-auth
           namespace: {{ .Values.namespace }}  # Le middleware d'authentification
         - name: default-redirectscheme
-          namespace: {{ .Values.namespace }} # Si tu veux rediriger les requêtes HTTP vers HTTPS
+          namespace: {{ .Values.namespace }}  # Si tu veux rediriger les requêtes HTTP vers HTTPS
   tls:
-    - certResolver: myresolver # Utiliser le certResolver pour générer un certificat SSL (Let's Encrypt)
-      domain:
-        - main: christ-devops.duckdns.org
-          sans: '*.christ-devops.duckdns.org'
-    
-    #secretName: wildcard-tls
+    certResolver: myresolver                  # Utiliser le certResolver pour générer un certificat SSL (Let's Encrypt)
+    # domains:
+    #   - main: christ-devops.duckdns.org 
+    #     sans:
+    #       - '*.christ-devops.duckdns.org'
 
 
 ---
@@ -41,6 +39,7 @@ metadata:
 
 spec:
   entryPoints:
+    - web
     - websecure
   routes:
     - match: Host(`wordpress.christ-devops.duckdns.org`)
@@ -48,6 +47,9 @@ spec:
       services:
         - name: wordpress
           port: 80
+      middlewares: 
+        - name: default-redirectscheme
+          namespace: {{ .Values.namespace }}
   tls:
     certResolver: myresolver
 
@@ -151,31 +153,7 @@ spec:
 #   --from-literal=users='christ:$2y$05$bGGQIoxw.yuA.7ZEuGmh1eFabKFKQ9/gWr.9pp24AIUMTRKwF2CfK'
 # kubectl -n apotheose rollout restart deployment traefik
 # ---
-# apiVersion: traefik.io/v1alpha1
-# kind: IngressRoute
-# metadata:
-#   name: traefik-dashboard
-#   namespace: {{ .Values.namespace }}
-
-# spec:
-#   entryPoints:
-#     - web
-#     - websecure  # Définit l'entrypoint sécurisé (HTTPS)
-    
-#   routes:
-#     - match: Host(`traefik.{{ .Values.domain }}`) # && PathPrefix(`/dashboard`) # Le domaine et le chemin pour accéder au tableau de bord
-#       kind: Rule
-#       services:
-#         - name: api@internal
-#           kind: TraefikService
-#         # - name: traefik
-#           # port: 8080 # Le port du service Traefik
-#       middlewares:
-#         - name: dashboard-auth
-#           namespace: {{ .Values.namespace }}  # Le middleware d'authentification
-#         - name: default-redirectscheme
-#           namespace: {{ .Values.namespace }} # Si tu veux rediriger les requêtes HTTP vers HTTPS
-    
+#
     
 #   tls:
 #     certResolver: myresolver

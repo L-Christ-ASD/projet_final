@@ -31,3 +31,25 @@
 #       secretName: wildcard-tls
 
 
+# ---
+# apiVersion: traefik.io/v1alpha1
+# kind: IngressRoute
+# metadata:
+#   name: grafana-ingressroute
+#   namespace: {{ .Values.namespace }}
+
+# spec:
+#   entryPoints:
+#     - web
+#     - websecure
+#   routes:
+#     - match: Host(`grafana.christ-devops.duckdns.org`)
+#       kind: Rule
+#       services:
+#         - name: grafana
+#           port: 3000
+#       middlewares: 
+#         - name: default-redirectscheme
+#           namespace: {{ .Values.namespace }}
+#   tls:
+#     certResolver: myresolver

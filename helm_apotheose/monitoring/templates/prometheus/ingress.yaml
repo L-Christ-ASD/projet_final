@@ -46,3 +46,27 @@
 #     - hosts:
 #         - {{ .Values.prometheus.ingress.host }}
 #       secretName: duckdns-api-secret
+
+
+# ---
+# apiVersion: traefik.io/v1alpha1
+# kind: IngressRoute
+# metadata:
+#   name: prometheus-ingressroute
+#   namespace: {{ .Values.namespace }}
+
+# spec:
+#   entryPoints:
+#     - web
+#     - websecure
+#   routes:
+#     - match: Host(`prometheus.christ-devops.duckdns.org`)
+#       kind: Rule
+#       services:
+#         - name: prometheus
+#           port: 9090
+#       middlewares: 
+#         - name: default-redirectscheme
+#           namespace: {{ .Values.namespace }}
+#   tls:
+#     certResolver: myresolver
