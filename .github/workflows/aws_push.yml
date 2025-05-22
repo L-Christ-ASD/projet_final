@@ -581,42 +581,15 @@ jobs:
           fi
         done
 
-    - name: pause de 180s
+    - name: pause de 20s + ec2 describe-addresses!
       run: |
-        sleep 180s
+        sleep 20s
         aws ec2 describe-addresses --query "Addresses[*].{PublicIp:PublicIp, AllocationId:AllocationId, Associated:AssociationId != null}" --output table
     
-    # - name: Vérifier l'état du cluster
-    #   run: |
-    #     export KUBECONFIG=.kube/config-rke2
-    #     kubectl get nodes
-    #     kubectl get pods -n apotheose
-        
-
-    # - name: Lister tous les pods dans le namespace apotheose
-    #   run: |
-    #     export KUBECONFIG=.kube/config-rke2
-    #     kubectl get pods -n apotheose -o wide
-
-    # - name: Lister services_apotheose
-    #   run: |
-    #     export KUBECONFIG=.kube/config-rke2
-    #     kubectl get svc -n apotheose
-
-    # - name: Lister Ingress déployés_apotheose
-    #   run: |
-    #     export KUBECONFIG=.kube/config-rke2
-    #     kubectl get ing -n apotheose
-
-    # - name: Lister  les statuts des PVC et pods déployés_apotheose
-    #   run: |
-    #     export KUBECONFIG=.kube/config-rke2
-    #     kubectl get pvc -n apotheose
-        
 
     - name: Apothéos déployé avec succès!! Bravo Christ !!
       run: |
-        sleep 30s
+        sleep 10s
 
     - name: En fin, lister les PVC, pods et svc déployés dans le ns apotheose !
       run: |
@@ -678,31 +651,42 @@ jobs:
 
     # - name: Ajouter le repo cert-manager pour traefik
     #   run: |
-    #     helm repo add jetstack https://charts.jetstack.io --force-update
+        # helm repo add jetstack https://charts.jetstack.io --force-update
 
-    #     echo "Installer cert-manager pour traefik"
-    #     helm install \
-    #     cert-manager jetstack/cert-manager \
-    #     --namespace cert-manager \
-    #     --create-namespace \
-    #     --version v1.17.2 \
-    #     --set crds.enabled=true
+        # echo "Installer cert-manager pour traefik"
+        # helm install \
+        # cert-manager jetstack/cert-manager \
+        # --namespace cert-manager \
+        # --create-namespace \
+        # --version v1.17.2 \
+        # --set crds.enabled=true
 
     # # - name: Ajouter la clé API DuckDNS dans un Secret pour traefik
     # #   run: |
     # #     export KUBECONFIG=.kube/config-rke2
     # #     kubectl create secret generic duckdns-api-secret \
-    # #     --from-literal=token='<LE_TOKEN_DUCKDNS>' \
+    # #     --from-literal=token='c6a818a2-196d-436d-9866-1a67795a03de' \
     # #     --namespace cert-manager
 
     # - name: Installer le webhook DuckDNS pour cert-manager
     #   run: |
-    #     helm repo add k8s-at-home https://k8s-at-home.com/charts/
+    #     helm repo add csp33 https://csp33.github.io/cert-manager-duckdns-webhook
     #     helm repo update
 
-    #     helm install cert-manager-webhook-duckdns k8s-at-home/cert-manager-webhook-duckdns \
-    #       --namespace cert-manager \
-    #       --set groupName=acme.duckdns.org
+        # echo "Installer cert-manager + crds"
+          # helm upgrade --install cert-manager-duckdns-webhook csp33/cert-manager-duckdns-webhook \
+          # --namespace cert-manager \
+          # --create-namespace \
+          # --set installCRDs=true \
+          # -f ./cert_manager/duckdns_values.yaml
+
+    #     helm install cert-manager-duckdns-webhook csp33/cert-manager-duckdns-webhook -f ./cert_manager/duckdns_values.yaml --namespace cert-manager
+
+
+
+          
+
+
     # # DuckDNS n'est pas supporté nativement par cert-manager. Il faut un webhook de DNS challenge DuckDNS
     # # groupName doit correspondre au groupName du ClusterIssuer.
 

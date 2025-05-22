@@ -12,6 +12,7 @@ ingress:
   email: christ.lumu@oclock.school
 
 domain: christ-devops.duckdns.org
+
 certResolvers:
   myresolver:
     acme:

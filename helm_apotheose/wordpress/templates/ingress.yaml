@@ -17,50 +17,50 @@
 #   tls:
 #     certResolver: myresolver
 
-# apiVersion: networking.k8s.io/v1
-# kind: Ingress
-# metadata:
-#   name: wordpress-ingress
-#   namespace: {{ .Values.namespace }}
-#   annotations:
-#     traefik.ingress.kubernetes.io/router.entrypoints: websecure
-#     traefik.ingress.kubernetes.io/router.tls.certresolver: myresolver
-#     traefik.ingress.kubernetes.io/router.middlewares: default-redirectscheme@kubernetescrd
-#     #kubernetes.io/ingress.class: traefik  # <- optionnel si déjà spec.ingressClassName
-# spec:
-#   ingressClassName: traefik
-#   rules:
-#     - host: {{ .Values.ingress.host }}
-#       http:
-#         paths:
-#           - path: /
-#             pathType: Prefix
-#             backend:
-#               service:
-#                 name: wordpress
-#                 port:
-#                   number: 80
-#   tls:
-#     - hosts:
-#         - {{ .Values.ingress.host }}
-#       #secretName: 
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wordpress-ingress
+  namespace: {{ .Values.namespace }}
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls.certresolver: myresolver
+    traefik.ingress.kubernetes.io/router.middlewares: default-redirectscheme@kubernetescrd
+    #kubernetes.io/ingress.class: traefik  # <- optionnel si déjà spec.ingressClassName
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: wordpress
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host }}
+      #secretName: 
   
 
 
 
-apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRoute
-metadata:
-  name: wordpress
-  namespace: apotheose
-spec:
-  entryPoints:
-    - websecure
-  routes:
-    - match: Host(`wordpress.christ-devops.duckdns.org`)
-      kind: Rule
-      services:
-        - name: wordpress
-          port: 80
-  tls:
-    certResolver: myresolver
+# apiVersion: traefik.containo.us/v1alpha1
+# kind: IngressRoute
+# metadata:
+#   name: wordpress
+#   namespace: apotheose
+# spec:
+#   entryPoints:
+#     - websecure
+#   routes:
+#     - match: Host(`wordpress.christ-devops.duckdns.org`)
+#       kind: Rule
+#       services:
+#         - name: wordpress
+#           port: 80
+#   tls:
+#     certResolver: myresolver
