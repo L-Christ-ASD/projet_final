@@ -666,6 +666,7 @@ jobs:
 
 
 
+#-----------------------------------------------------------------
     # wildcard_tls/wildcard_secret_tls.sh
     # - name:  Crée ou met à jour un Secret TLS wildcard-tls dans le namespace apotheose
     #   run: |
@@ -673,7 +674,37 @@ jobs:
     #     chmod +x ./wildcard_tls/wildcard_secret_tls.sh
     #     ./wildcard_tls/wildcard_secret_tls.sh
 
+#-----------------------------------------------------------------
 
+    # - name: Ajouter le repo cert-manager pour traefik
+    #   run: |
+    #     helm repo add jetstack https://charts.jetstack.io --force-update
+
+    #     echo "Installer cert-manager pour traefik"
+    #     helm install \
+    #     cert-manager jetstack/cert-manager \
+    #     --namespace cert-manager \
+    #     --create-namespace \
+    #     --version v1.17.2 \
+    #     --set crds.enabled=true
+
+    # # - name: Ajouter la clé API DuckDNS dans un Secret pour traefik
+    # #   run: |
+    # #     export KUBECONFIG=.kube/config-rke2
+    # #     kubectl create secret generic duckdns-api-secret \
+    # #     --from-literal=token='<LE_TOKEN_DUCKDNS>' \
+    # #     --namespace cert-manager
+
+    # - name: Installer le webhook DuckDNS pour cert-manager
+    #   run: |
+    #     helm repo add k8s-at-home https://k8s-at-home.com/charts/
+    #     helm repo update
+
+    #     helm install cert-manager-webhook-duckdns k8s-at-home/cert-manager-webhook-duckdns \
+    #       --namespace cert-manager \
+    #       --set groupName=acme.duckdns.org
+    # # DuckDNS n'est pas supporté nativement par cert-manager. Il faut un webhook de DNS challenge DuckDNS
+    # # groupName doit correspondre au groupName du ClusterIssuer.
 
     - name: Fermerl'accès au port 6443!!
       run: |
