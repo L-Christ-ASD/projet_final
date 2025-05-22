@@ -1,22 +1,3 @@
-# apiVersion: traefik.io/v1alpha1
-# kind: IngressRoute
-# metadata:
-#   name: traefik-default-catchall
-#   namespace: {{ .Values.namespace }}
-
-# spec:
-#   entryPoints:
-#     - web
-#     - websecure  # Définit l'entrypoint sécurisé (HTTPS)
-    
-#   routes:
-#     - match: Host(`*.christ-devops.duckdns.org`)
-#       kind: Rule
-#       services:
-#         - name: default-catchall
-#           port: 80
-#   tls:
-#     certResolver: myresolver
 
 ---
 apiVersion: traefik.io/v1alpha1
@@ -43,66 +24,78 @@ spec:
         - name: default-redirectscheme
           namespace: {{ .Values.namespace }} # Si tu veux rediriger les requêtes HTTP vers HTTPS
   tls:
-    certResolver: myresolver # Utiliser le certResolver pour générer un certificat SSL (Let's Encrypt)
+    - certResolver: myresolver # Utiliser le certResolver pour générer un certificat SSL (Let's Encrypt)
+      domain:
+        - main: christ-devops.duckdns.org
+          sans: '*.christ-devops.duckdns.org'
+    
     #secretName: wildcard-tls
 
 
-# ---
-# apiVersion: traefik.io/v1alpha1
-# kind: IngressRoute
-# metadata:
-#   name: wordpress-ingressroute1
-#   namespace: {{ .Values.namespace }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: wordpress-ingressroute1
+  namespace: {{ .Values.namespace }}
 
-# spec:
-#   entryPoints:
-#     - websecure
-#   routes:
-#     - match: Host(`wordpress.christ-devops.duckdns.org`)
-#       kind: Rule
-#       services:
-#         - name: wordpress
-#           port: 80
-  # tls:
-  #   certResolver: myresolver
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`wordpress.christ-devops.duckdns.org`)
+      kind: Rule
+      services:
+        - name: wordpress
+          port: 80
+  tls:
+    certResolver: myresolver
 
-# ---
-# apiVersion: traefik.io/v1alpha1
-# kind: IngressRoute
-# metadata:
-#   name: phpmyadmin-ingressroute
-#   namespace: {{ .Values.namespace }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: phpmyadmin-ingressroute
+  namespace: {{ .Values.namespace }}
 
-# spec:
-#   entryPoints:
-#     - websecure
-#   routes:
-#     - match: Host(`phpmyadmin.christ-devops.duckdns.org`)
-#       kind: Rule
-#       services:
-#         - name: phpmyadmin
-#           port: 80
-#   tls:
-#     certResolver: myresolver
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host(`phpmyadmin.christ-devops.duckdns.org`)
+      kind: Rule
+      services:
+        - name: phpmyadmin
+          port: 80
+      middlewares: 
+        - name: default-redirectscheme
+          namespace: {{ .Values.namespace }}
+  tls:
+    certResolver: myresolver
 
-# ---
-# apiVersion: traefik.io/v1alpha1
-# kind: IngressRoute
-# metadata:
-#   name: sonarqube-ingressroute
-#   namespace: {{ .Values.namespace }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: sonarqube-ingressroute
+  namespace: {{ .Values.namespace }}
 
-# spec:
-#   entryPoints:
-#     - websecure
-#   routes:
-#     - match: Host(`sonarqube.christ-devops.duckdns.org`)
-#       kind: Rule
-#       services:
-#         - name: sonarqube
-#           port: 9000
-#   tls:
-#     certResolver: myresolver
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host(`sonarqube.christ-devops.duckdns.org`)
+      kind: Rule
+      services:
+        - name: sonarqube
+          port: 9000
+      middlewares: 
+        - name: default-redirectscheme
+          namespace: {{ .Values.namespace }}
+  tls:
+    certResolver: myresolver
 
 ---
 apiVersion: traefik.io/v1alpha1
@@ -113,6 +106,7 @@ metadata:
 
 spec:
   entryPoints:
+    - web
     - websecure
   routes:
     - match: Host(`prometheus.christ-devops.duckdns.org`)
@@ -120,27 +114,34 @@ spec:
       services:
         - name: prometheus
           port: 9090
+      middlewares: 
+        - name: default-redirectscheme
+          namespace: {{ .Values.namespace }}
   tls:
     certResolver: myresolver
 
-# ---
-# apiVersion: traefik.io/v1alpha1
-# kind: IngressRoute
-# metadata:
-#   name: grafana-ingressroute
-#   namespace: {{ .Values.namespace }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: grafana-ingressroute
+  namespace: {{ .Values.namespace }}
 
-# spec:
-#   entryPoints:
-#     - websecure
-#   routes:
-#     - match: Host(`grafana.christ-devops.duckdns.org`)
-#       kind: Rule
-#       services:
-#         - name: grafana
-#           port: 3000
-#   tls:
-#     certResolver: myresolver
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host(`grafana.christ-devops.duckdns.org`)
+      kind: Rule
+      services:
+        - name: grafana
+          port: 3000
+      middlewares: 
+        - name: default-redirectscheme
+          namespace: {{ .Values.namespace }}
+  tls:
+    certResolver: myresolver
 
 
 
