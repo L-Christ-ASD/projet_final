@@ -683,12 +683,20 @@ jobs:
     #     helm install cert-manager-duckdns-webhook csp33/cert-manager-duckdns-webhook -f ./cert_manager/duckdns_values.yaml --namespace cert-manager
 
 
-
-          
-
-
     # # DuckDNS n'est pas supporté nativement par cert-manager. Il faut un webhook de DNS challenge DuckDNS
     # # groupName doit correspondre au groupName du ClusterIssuer.
+
+
+    - name: SUpprimer le pod traefik pour recharger acme.json 
+      run: |
+        export KUBECONFIG=.kube/config-rke2
+
+        echo "Attendre 10s avant le redemarrage de traefik"
+        sleep 10s
+
+        chmod +x ./traefik2/reload_traefik_Pod.sh
+        ./traefik2/reload_traefik_Pod.sh
+
 
     - name: Fermerl'accès au port 6443!!
       run: |

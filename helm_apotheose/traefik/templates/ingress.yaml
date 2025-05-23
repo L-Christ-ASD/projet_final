@@ -3,14 +3,12 @@
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: traefik-dashboard
+  name: traefik-dashboard-http
   namespace: {{ .Values.namespace }}
 
 spec:
   entryPoints:
     - web
-    - websecure  
-    
   routes:
     - match: Host(`traefik.{{ .Values.domain }}`) # && PathPrefix(`/dashboard`) # Le domaine et le chemin pour accéder au tableau de bord
       kind: Rule
@@ -22,24 +20,64 @@ spec:
           namespace: {{ .Values.namespace }}  # Le middleware d'authentification
         - name: default-redirectscheme
           namespace: {{ .Values.namespace }}  # Si tu veux rediriger les requêtes HTTP vers HTTPS
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-dashboard-https
+  namespace: {{ .Values.namespace }}
+
+spec:
+  entryPoints:
+    - websecure   
+  routes:
+    - match: Host(`traefik.{{ .Values.domain }}`) # && PathPrefix(`/dashboard`) # Le domaine et le chemin pour accéder au tableau de bord
+      kind: Rule
+      services:
+        - name: api@internal
+          kind: TraefikService
+      middlewares:
+        - name: dashboard-auth
+          namespace: {{ .Values.namespace }}  # Le middleware d'authentification
   tls:
-    certResolver: myresolver                  # Utiliser le certResolver pour générer un certificat SSL (Let's Encrypt)
+    certResolver: myresolver                   # Utiliser le certResolver pour générer un certificat SSL (Let's Encrypt)
+    
     # domains:
     #   - main: christ-devops.duckdns.org 
     #     sans:
     #       - '*.christ-devops.duckdns.org'
 
+#===========================================================
 
+# wordpress
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: wordpress-ingressroute1
+  name: wordpress-ingressroute-http
   namespace: {{ .Values.namespace }}
 
 spec:
   entryPoints:
     - web
+  routes:
+    - match: Host(`wordpress.christ-devops.duckdns.org`)
+      kind: Rule
+      services:
+        - name: wordpress
+          port: 80
+      middlewares: 
+        - name: default-redirectscheme
+          namespace: {{ .Values.namespace }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: wordpress-ingressroute-https
+  namespace: {{ .Values.namespace }}
+
+spec:
+  entryPoints:
     - websecure
   routes:
     - match: Host(`wordpress.christ-devops.duckdns.org`)
@@ -53,17 +91,19 @@ spec:
   tls:
     certResolver: myresolver
 
+
+
+# phpmyadmin
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: phpmyadmin-ingressroute
+  name: phpmyadmin-ingressroute-http
   namespace: {{ .Values.namespace }}
 
 spec:
   entryPoints:
     - web
-    - websecure
   routes:
     - match: Host(`phpmyadmin.christ-devops.duckdns.org`)
       kind: Rule
@@ -73,20 +113,37 @@ spec:
       middlewares: 
         - name: default-redirectscheme
           namespace: {{ .Values.namespace }}
-  tls:
-    certResolver: myresolver
-
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: sonarqube-ingressroute
+  name: phpmyadmin-ingressroute-htpps
+  namespace: {{ .Values.namespace }}
+
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`phpmyadmin.christ-devops.duckdns.org`)
+      kind: Rule
+      services:
+        - name: phpmyadmin
+          port: 80
+  tls:
+    certResolver: myresolver
+
+
+#sonarqube
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: sonarqube-ingressroute-http
   namespace: {{ .Values.namespace }}
 
 spec:
   entryPoints:
     - web
-    - websecure
   routes:
     - match: Host(`sonarqube.christ-devops.duckdns.org`)
       kind: Rule
@@ -96,20 +153,37 @@ spec:
       middlewares: 
         - name: default-redirectscheme
           namespace: {{ .Values.namespace }}
-  tls:
-    certResolver: myresolver
-
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: prometheus-ingressroute
+  name: sonarqube-ingressroute-https
+  namespace: {{ .Values.namespace }}
+
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`sonarqube.christ-devops.duckdns.org`)
+      kind: Rule
+      services:
+        - name: sonarqube
+          port: 9000
+  tls:
+    certResolver: myresolver
+
+
+# prometheus
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: prometheus-ingressroute-http
   namespace: {{ .Values.namespace }}
 
 spec:
   entryPoints:
     - web
-    - websecure
   routes:
     - match: Host(`prometheus.christ-devops.duckdns.org`)
       kind: Rule
@@ -119,20 +193,37 @@ spec:
       middlewares: 
         - name: default-redirectscheme
           namespace: {{ .Values.namespace }}
-  tls:
-    certResolver: myresolver
-
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: grafana-ingressroute
+  name: prometheus-ingressroute-https
+  namespace: {{ .Values.namespace }}
+
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`prometheus.christ-devops.duckdns.org`)
+      kind: Rule
+      services:
+        - name: prometheus
+          port: 9090
+  tls:
+    certResolver: myresolver
+
+
+# grafana
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: grafana-ingressroute-http
   namespace: {{ .Values.namespace }}
 
 spec:
   entryPoints:
     - web
-    - websecure
   routes:
     - match: Host(`grafana.christ-devops.duckdns.org`)
       kind: Rule
@@ -142,9 +233,24 @@ spec:
       middlewares: 
         - name: default-redirectscheme
           namespace: {{ .Values.namespace }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: grafana-ingressroute-https
+  namespace: {{ .Values.namespace }}
+
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`grafana.christ-devops.duckdns.org`)
+      kind: Rule
+      services:
+        - name: grafana
+          port: 3000
   tls:
     certResolver: myresolver
-
 
 
 # Basic auth

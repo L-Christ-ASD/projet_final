@@ -7,7 +7,7 @@ secrets:
   dbUser: wordpress
   dbPassword: wordpressp
   dbName: wordpress
-  dbHost: db:3306
+  dbHost: wordpress-mysql:3306 #db:3306
   rootPassword: rootpass
 
 deployment:

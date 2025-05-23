@@ -23,19 +23,13 @@ spec:
             - sh
             - -c
             - |
-              if [ "$(ls -A /var/www/html | grep -v '^lost+found$' | wc -l)" -eq 0 ]; then
+              if [ ! -f /var/www/html/index.php ]; then
                 cp -r /usr/src/wordpress/* /var/www/html/ && \
                 chown -R www-data:www-data /var/www/html
               else
                 echo "Les fichiers WordPress sont présent, pas de copie!"
               fi
 
-              echo "Attendre MySQL at $WORDPRESS_DB_HOST..."
-              until nc -z -v -w30 $WORDPRESS_DB_HOST 3306; do
-                echo "Attente de la disponibilité de la db..."
-                sleep 5
-              done
-              echo "MySQL est démarée!"
           env:
             - name: WORDPRESS_DB_HOST
               valueFrom:
@@ -51,7 +45,7 @@ spec:
               # wc -l : compte le nombre de fichiers restants.
               # -eq 0 : vérifie que rien d’autre que lost+found n’est présent.
               # pour eviter: You don't have permission to access this resource (appache).
-              # [ ! -f /var/www/html/index.php ]
+              # [ "$(ls -A /var/www/html | grep -v '^lost+found$' | wc -l)" -eq 0 ]
       containers:
         - name: wordpress
           image: {{ .Values.deployment.image }}
@@ -112,3 +106,10 @@ spec:
 # Résoud: Erreur 500 lors de l'accès à WordPress via le dns
 
 
+
+              # echo "Attendre MySQL at $WORDPRESS_DB_HOST..."
+              # until nc -z -v -w30 $WORDPRESS_DB_HOST 3306; do
+              #   echo "Attente de la disponibilité de la db..."
+              #   sleep 5
+              # done
+              # echo "MySQL est démarée!"
