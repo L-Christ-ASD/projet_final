@@ -94,6 +94,7 @@ spec:
 
 
 # phpmyadmin
+# HTTP - Redirection vers HTTPS
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
@@ -113,11 +114,12 @@ spec:
       middlewares: 
         - name: default-redirectscheme
           namespace: {{ .Values.namespace }}
+# HTTPS
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: phpmyadmin-ingressroute-htpps
+  name: phpmyadmin-ingressroute-https
   namespace: {{ .Values.namespace }}
 
 spec:

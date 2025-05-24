@@ -16,7 +16,7 @@ fi
 echo "📦 Pod Traefik trouvé : $TRAEFIK_POD"
 
 echo "suppression du pod pour recharger acme.json"
-kubectl delete pods "$TRAEFIK_POD" -n "$NAMESPACE"
+kubectl delete "$TRAEFIK_POD" -n "$NAMESPACE"
 
 echo "Pod traefik supprimé avec succès!"
 

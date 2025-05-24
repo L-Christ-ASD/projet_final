@@ -15,19 +15,23 @@ spec:
       labels:
         app: cadvisor
     spec:
-      # nodeSelector:
-      #   kubernetes.io/worker: "true"
+      nodeSelector:
+        node-role.kubernetes.io/worker: "true"
+      # pour eviter: error mounting "/var/lib/kubelet/pods/.../volumes/kubernetes.io~projected/kube-api-access-..." to rootfs at "/var/run/secrets/kubernetes.io/serviceaccount":
+      automountServiceAccountToken: false
       containers:
         - name: cadvisor
           image: {{ .Values.deployment.image }}
           securityContext:
             privileged: true
+          # args:
+          #   - --rootfs=/host
           ports:
             - containerPort: {{ .Values.service.port }}
           volumeMounts:
-            - name: rootfs
-              mountPath: /rootfs
-              readOnly: true
+            # - name: rootfs
+            #   mountPath: /host
+            #   readOnly: true
             - name: var-run
               mountPath: /var/run
               readOnly: true
@@ -37,6 +41,8 @@ spec:
             - name: docker
               mountPath: /var/lib/docker
               readOnly: false #true
+            - name: writable-run   # <- ce mount permet d'écrire dans /run/secrets
+              mountPath: /run      
           resources:
             limits:
               memory: {{ .Values.deployment.resources.limits.memory }}
@@ -45,9 +51,9 @@ spec:
               memory: {{ .Values.deployment.resources.requests.memory }}
               cpu: {{ .Values.deployment.resources.requests.cpu }}
       volumes:
-        - name: rootfs
-          hostPath:
-            path: /
+        # - name: rootfs
+        #   hostPath:
+        #     path: /
         - name: var-run
           hostPath:
             path: /var/run
@@ -57,3 +63,5 @@ spec:
         - name: docker
           hostPath:
             path: /var/lib/docker
+        - name: writable-run
+          emptyDir: {}

@@ -17,8 +17,8 @@ grafana:
   ingress:
     host: grafana.christ-devops.duckdns.org
   adminCredentials:
-    adminUser: "YWRtaW4=" # base64
-    adminPassword: "cGFzc3dvcmQ=" # base64
+    adminUser: "YWRtaW4=" # base64 admin
+    adminPassword: "cGFzc3dvcmQ=" # base64 password
 
 resources:
   requests:

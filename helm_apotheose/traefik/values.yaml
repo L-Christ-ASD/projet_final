@@ -27,7 +27,7 @@ certResolvers:
         provider: duckdns
         resolvers:
           - "1.1.1.1:53"
-        delayBeforeCheck: 0
+        delayBeforeCheck: 2
       domains:
         - main: '*.christ-devops.duckdns.org'
           sans:
