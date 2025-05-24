@@ -1,8 +1,8 @@
 namespace: apotheose
 
-# secrets:
-#   pmaHost: wordpress-mysql
-#   mysqlRootPassword: cm9vdHBhc3N3b3Jk
+secrets:
+  pmaHost: d29yZHByZXNzLW15c3Fs #wordpress-mysql
+  mysqlRootPassword: cm9vdHBhc3N3b3Jk #rootpassword
 
 deployment:
   replicas: 1
