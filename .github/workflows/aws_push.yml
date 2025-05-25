@@ -687,7 +687,7 @@ jobs:
     # # groupName doit correspondre au groupName du ClusterIssuer.
 
 
-    - name: SUpprimer le pod traefik pour recharger acme.json (Tous les dns)
+    - name: Supprimer le pod traefik pour recharger acme.json (Tous les dns)
       run: |
         export KUBECONFIG=.kube/config-rke2
 

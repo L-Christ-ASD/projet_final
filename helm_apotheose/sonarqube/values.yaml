@@ -6,8 +6,8 @@ pvc:
   logsStorage: 10Gi
 
 secrets:
-  jdbcUsername: "c29uYXJ1"
-  jdbcPassword: "c29uYXJw"
+  jdbcUsername: "c29uYXJ1" #sonaru
+  jdbcPassword: "c29uYXJw" #sonarp
 
 deployment:
   replicas: 1
