@@ -3,19 +3,21 @@
 # Définition des variables
 BACKUP_DIR="/backup"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-BACKUP_NAME="wordpress_backup_${TIMESTAMP}.tar.gz"
+BACKUP_NAME="wordpress_backup_${TIMESTAMP}.tar.gz" # Nom du fichier d’archive contenant les données WordPress et la base MySQL.
 CONTAINER_DB="mysql"
 CONTAINER_WP="wordpress"
+
+# Informations d’accès à la base de données MySQL (mot de passe fictif ici, à remplacer).
 DB_NAME="wordpress"
 DB_USER="wordpress"
 DB_PASSWORD="wordpress"  # À remplacer par le vrai mot de passe
 
-# Informations pour la machine locale
+# Informations pour la machine locale de destination : utilisateur, IP locale, dossier cible.
 LOCAL_USER="christ"
 LOCAL_HOST="192.168.1.100"  # Remplace par l'IP de ta machine locale
 LOCAL_DEST="/home/christ/wordpress_backups"
 
-# Création du dossier de sauvegarde s'il n'existe pas
+# Création du dossier de sauvegarde s'il n'existe pas  (avec droits root).
 sudo mkdir -p "$BACKUP_DIR"
 
 echo "Sauvegarde des fichiers WordPress..."
@@ -30,12 +32,15 @@ tar -czf "$BACKUP_DIR/$BACKUP_NAME" -C "$BACKUP_DIR" wp-content db_backup.sql
 echo "Transfert de la sauvegarde vers la machine locale..."
 scp -r "$BACKUP_DIR/wp-content" "$BACKUP_DIR/$BACKUP_NAME" "$LOCAL_USER@$LOCAL_HOST:$LOCAL_DEST"
 
+# Vérification du transfert:
+# Teste si la commande précédente (scp) a réussi (0) et Affiche un message selon le résultat.
 if [ $? -eq 0 ]; then
     echo "Transfert réussi vers $LOCAL_USER@$LOCAL_HOST:$LOCAL_DEST"
 else
     echo "Erreur lors du transfert."
 fi
 
+# Fin du script
 echo "Sauvegarde et transfert terminés !"
 
 echo "Sauvegarde terminée : $BACKUP_DIR/$BACKUP_NAME"
@@ -48,7 +53,7 @@ echo "Sauvegarde terminée : $BACKUP_DIR/$BACKUP_NAME"
 # 
 # Ajoute le bon mot de passe MySQL : Remplace your_db_password par le mot de passe MySQL réel.
 # 
-# Rends le script exécutable :
+# Rendre le script exécutable :
 # 
 # bash
 # 
@@ -58,13 +63,14 @@ echo "Sauvegarde terminée : $BACKUP_DIR/$BACKUP_NAME"
 # bash
 #
 # ./backup_wordpress.sh
-# 🔄 Automatisation
+# 
+# Automatisation:
 # Ajoute une tâche cron pour une sauvegarde quotidienne :
 # 
 # bash
 #
 # crontab -e
-# Ajoute cette ligne (sauvegarde à 3h du matin chaque jour) :
+# (sauvegarde à 3h du matin chaque jour) :
 # 
 # bash
 #
