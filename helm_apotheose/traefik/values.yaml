@@ -25,9 +25,9 @@ certResolvers:
       storage: /letsencrypt/acme.json
       dnsChallenge:
         provider: duckdns
-        resolvers:
-          - "1.1.1.1:53"
-        delayBeforeCheck: 10
+        # resolvers:
+        #   - "1.1.1.1:53"
+        delayBeforeCheck: 60
       domains:
         - main: '*.christ-devops.duckdns.org'
           sans:

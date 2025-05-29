@@ -1,9 +1,7 @@
 #!/bin/bash
 
+# Variable
 NAMESPACE="apotheose"
-# DOMAIN="christ-devops.duckdns.org"
-# TMP_DIR="/tmp/wildcard_cert"
-# ACME_PATH="/letsencrypt/acme.json"
 
 # Récupérer le nom du pod Traefik
 # | head -n 1 --> Ne garde que la première ligne correspondante (au cas où il y a plusieurs pods Traefik).
@@ -23,8 +21,8 @@ echo "suppression du pod pour recharger acme.json"
 kubectl delete "$TRAEFIK_POD" -n "$NAMESPACE"
 echo "Pod traefik supprimé avec succès!"
 
-echo "Attendre le redémarrage du nouveau pod traefik: 10s"
-sleep 10s
+echo "Attendre le redémarrage du nouveau pod traefik: 60s"
+sleep 60s
 
 # Vérifier les pods:
 echo "Vérifier l'état de tous les pods avec les détails"
@@ -33,6 +31,7 @@ kubectl get pods -n "$NAMESPACE" -o wide
 # Vérifier le certificat acme dans le nouveau pod traefik
 echo "Vérifier le certificat acme.json"
 NEW_POD=$(kubectl get pods -n "$NAMESPACE" -o name | grep traefik | head -n 1)
+echo "Nouveau Pod Traefik trouvé : $NEW_POD"
 kubectl exec -it -n "$NAMESPACE" "$NEW_POD" -- sh -c 'cat /letsencrypt/acme.json'
 
 

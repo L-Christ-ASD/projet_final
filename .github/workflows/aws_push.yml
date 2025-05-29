@@ -687,27 +687,20 @@ jobs:
     # # groupName doit correspondre au groupName du ClusterIssuer.
 
 
-    - name: Supprimer le pod traefik pour recharger acme.json (Tous les dns)
-      run: |
-        export KUBECONFIG=.kube/config-rke2
+    # - name: Supprimer le pod traefik pour recharger acme.json (Tous les dns)
+    #   run: |
+    #     export KUBECONFIG=.kube/config-rke2
 
-        echo "Attendre 10s avant le redemarrage de traefik"
-        sleep 10s
-        chmod +x ./traefik2/reload_traefik_Pod.sh
-        ./traefik2/reload_traefik_Pod.sh
-
-        echo "Attendre 5s "
-        sleep 5s
-
+    #     echo "Attendre 60s avant le redemarrage de traefik"
+    #     sleep 60s
+    #     chmod +x ./traefik2/reload_traefik_Pod.sh
+    #     ./traefik2/reload_traefik_Pod.sh
 
     - name: Vérier les pods dans le ns apotheose !
       run: |
         export KUBECONFIG=.kube/config-rke2
         kubectl get pods -n apotheose -o wide
 
-        echo "Vérifier le certificat acme.json"
-        POD=$(kubectl get pods -n "$NAMESPACE" -o name | grep traefik | head -n 1)
-        kubectl exec -it -n "$NAMESPACE" "$POD" -- sh -c 'cat /letsencrypt/acme.json'
 
 
 
