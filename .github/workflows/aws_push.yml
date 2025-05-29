@@ -696,18 +696,18 @@ jobs:
         chmod +x ./traefik2/reload_traefik_Pod.sh
         ./traefik2/reload_traefik_Pod.sh
 
-        echo "Attendre 10s avant le redemarrage de traefik"
-        sleep 10s
+        echo "Attendre 20s avant le redemarrage de traefik"
+        sleep 20s
         chmod +x ./traefik2/reload_traefik_Pod.sh
         ./traefik2/reload_traefik_Pod.sh
 
-        echo "Attendre 10s encore et redémarrage de traefik"
-        sleep 10s
+        echo "Attendre 00s encore et redémarrage de traefik"
+        sleep 20s
         chmod +x ./traefik2/reload_traefik_Pod.sh
         ./traefik2/reload_traefik_Pod.sh
 
-        echo "Attendre 10s encore et redémarrage de traefik"
-        sleep 10s
+        echo "Attendre 20s encore et redémarrage de traefik"
+        sleep 20s
         chmod +x ./traefik2/reload_traefik_Pod.sh
         ./traefik2/reload_traefik_Pod.sh
 
