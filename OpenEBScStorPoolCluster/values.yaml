@@ -37,3 +37,7 @@ snapshotOperator:
 admissionServer:
   nodeSelector:
     node-role.kubernetes.io/worker: "true"
+
+# permet de limiter tous les crds à tourner uniquement sur les workers, 
+# permettant aux masters de s'occuper uniquement à la gestion (managenet du cluster)
+# pour la HA.

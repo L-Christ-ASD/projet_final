@@ -1,4 +1,4 @@
-namespace: apotheose
+namespace: thechosen
 
 pvc:
   dataStorage: 5Gi

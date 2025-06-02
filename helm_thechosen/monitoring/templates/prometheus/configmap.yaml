@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: prometheus-config
-  namespace: apotheose
+  namespace: {{ .Values.namespace }}
 data:
   prometheus.yml: |
     global:

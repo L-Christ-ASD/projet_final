@@ -16,12 +16,12 @@ spec:
 EOF
 
 # Supprimer les block devices inactifs
-# echo "🗑️ Suppression des block devices inactifs..."
+# echo "Suppression des block devices inactifs..."
 # kubectl get blockdevices -n openebs -o wide | awk '{print $1}' | xargs -I {} kubectl delete blockdevice {} -n openebs
 # sleep 5
 
 for NODE in "${NODES[@]}"; do
-  echo "🔍 Recherche des block devices pour $NODE..."
+  echo "Recherche des block devices pour $NODE..."
 
   # Récupérer les blockdevices actifs sur chaque nœud
   BLOCK_DEVICES=$(kubectl get blockdevices -n openebs -o wide | grep "$NODE" | awk '{print $1}')
@@ -72,5 +72,3 @@ kubectl apply -f cstor-pool.yaml
 
 # permettra de redémarrer le processus de gestion du périphérique par OpenEBS et de forcer l'état "Active":
 # kubectl patch blockdevice <blockdevice-name> -n openebs -p '{"spec":{"claimed":true}}'
-
-#aws iam delete-instance-profile   --instance-profile-name EC2LoadBalancerInstanceProfile

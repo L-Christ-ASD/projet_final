@@ -12,3 +12,4 @@ parameters:
 reclaimPolicy: Retain
 volumeBindingMode: WaitForFirstConsumer
 
+# 2 repliques pour les 2 workers

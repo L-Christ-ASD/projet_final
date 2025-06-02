@@ -5,6 +5,7 @@ echo "=========================="
 echo "  Étape : Attendre les ressources RKE2 + Corriger les annotations CRDs OpenEBS"
 echo "=========================="
 
+# Permet ainsi d'éviter les conflits entre les crds de openebs et ceux de k8s.
 # Liste des CRDs attendues
 CRDS=(
   volumesnapshotclasses.snapshot.storage.k8s.io
@@ -12,16 +13,16 @@ CRDS=(
   volumesnapshots.snapshot.storage.k8s.io
 )
 
-# Fonction d'attente pour les CRDs
-echo "⏳ Attente que les CRDs volumesnapshot* soient créées..."
+# Fonction d'attente pour les CRDs, avec un timout de 60s
+echo "Attente que les CRDs volumesnapshot* soient créées..."
 for crd in "${CRDS[@]}"; do
-  echo -n "🕒 En attente de $crd ... "
+  echo -n "En attente de $crd ... "
   timeout 60 bash -c "until kubectl get crd $crd &>/dev/null; do sleep 2; done" \
     && echo "✅ OK" || echo "❌ Timeout (60s)"
 done
 
 # Correction des annotations des CRDs
-echo -e "\n🔧 Correction des annotations CRDs volumesnapshot..."
+echo -e "\n Correction des annotations CRDs volumesnapshot..."
 for crd in "${CRDS[@]}"; do
   if kubectl get crd "$crd" &>/dev/null; then
     echo "✅ CRD $crd trouvée - correction des annotations"
@@ -33,16 +34,16 @@ for crd in "${CRDS[@]}"; do
 done
 
 # Attente du deployment rke2-snapshot-controller (éventuel)
-echo -e "\n⏳ Attente du deployment rke2-snapshot-controller..."
+echo -e "\n Attente du deployment rke2-snapshot-controller..."
 timeout 60 bash -c "until kubectl get deployment rke2-snapshot-controller -n kube-system &>/dev/null; do sleep 2; done"
 
 # Annoter le deployment si trouvé
 if kubectl get deployment rke2-snapshot-controller -n kube-system &>/dev/null; then
-  echo "🔧 Annotation du deployment rke2-snapshot-controller"
+  echo "Annotation du deployment rke2-snapshot-controller"
   kubectl annotate deployment rke2-snapshot-controller meta.helm.sh/release-name=openebs --overwrite -n kube-system
   kubectl annotate deployment rke2-snapshot-controller meta.helm.sh/release-namespace=openebs --overwrite -n kube-system
 else
-  echo "⚠️ Deployment rke2-snapshot-controller non trouvé après 60s — peut être trop lent à démarrer"
+  echo "Deployment rke2-snapshot-controller non trouvé après 60s — peut être trop lent à démarrer"
 fi
 
 echo -e "\n✅ Toutes les annotations nécessaires ont été appliquées"

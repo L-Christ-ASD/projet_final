@@ -1,4 +1,4 @@
-namespace: apotheose
+namespace: thechosen
 
 pvc:
   storage: 2Gi
@@ -25,9 +25,9 @@ certResolvers:
       storage: /letsencrypt/acme.json
       dnsChallenge:
         provider: duckdns
-        # resolvers:
-        #   - "1.1.1.1:53"
-        delayBeforeCheck: 60
+        resolvers:
+          - "1.1.1.1:53"
+        delayBeforeCheck: 10
       domains:
         - main: '*.christ-devops.duckdns.org'
           sans:

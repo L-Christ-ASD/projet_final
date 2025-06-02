@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NAMESPACE="apotheose"
+NAMESPACE="thechosen"
 DOMAIN="christ-devops.duckdns.org"
 TMP_DIR="/tmp/wildcard_cert"
 ACME_PATH="/letsencrypt/acme.json"

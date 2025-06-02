@@ -1,4 +1,4 @@
-namespace: apotheose
+namespace: thechosen
 
 secrets:
   pmaHost: d29yZHByZXNzLW15c3Fs #wordpress-mysql

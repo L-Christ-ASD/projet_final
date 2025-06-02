@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: traefik-entrypoint-script
-  namespace: apotheose
+  namespace: thechosen
 data:
   traefik_entrypoint.sh: |
     #!/bin/sh

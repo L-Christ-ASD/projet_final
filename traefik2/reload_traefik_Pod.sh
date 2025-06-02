@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Variable
-NAMESPACE="apotheose"
+NAMESPACE="thechosen"
 
 # Récupérer le nom du pod Traefik
 # | head -n 1 --> Ne garde que la première ligne correspondante (au cas où il y a plusieurs pods Traefik).

@@ -72,7 +72,7 @@ spec:
 #
             - "--certificatesresolvers.myresolver.acme.dnschallenge=true"
             - "--certificatesresolvers.myresolver.acme.dnschallenge.provider=duckdns"
-            - "--certificatesresolvers.myresolver.acme.dnschallenge.propagation.delayBeforeChecks=60s"
+            - "--certificatesresolvers.myresolver.acme.dnschallenge.propagation.delayBeforeChecks=10s"
             - "--certificatesresolvers.myresolver.acme.email={{ .Values.ingress.email }}"
             - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
             - "--certificatesresolvers.myresolver.acme.dnschallenge.resolvers=1.1.1.1,8.8.8.8"

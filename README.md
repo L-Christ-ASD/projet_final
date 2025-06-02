@@ -2,7 +2,7 @@
 
 #### Prérequis  
 
-* *Logiciels* : Docker et Docker Compose installés sur votre machine.
+* *Logiciels* : Docker et Docker Compose installés sur la machine.
 
 * *Connaissances* : Notions de base sur Docker, la gestion des volumes et des réseaux.
 

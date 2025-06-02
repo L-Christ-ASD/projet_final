@@ -202,7 +202,7 @@ jobs:
 
     
     
-#================ Déploiement du projet apotheose (CD)===========================================
+#================ Déploiement du projet The Chosen (CD)===========================================
 #================================================================================================
     - name: Extraire l'IP de master1 depuis l'inventaire (copier rke2.yml et changer l'ip)
       run: |
@@ -268,7 +268,7 @@ jobs:
         aws ec2 authorize-security-group-ingress --group-name admin_ssh_production \
           --protocol tcp --port 6443 --cidr 0.0.0.0/0 --region us-east-1
 
-    - name: Labeliser les nodes et les patcher entre aws & k8s
+    - name: Labeliser les nodes et les patcher avec aws & k8s
       run: |
         export KUBECONFIG=.kube/config-rke2
 
@@ -363,7 +363,7 @@ jobs:
         kubectl get node --show-labels
 
         
-        echo "Vérifier si les bd sont "clamed" avant de déployer apotheose"
+        echo "Vérifier si les bd sont "clamed" avant de déployer The Chosen"
         echo "Block-devices détectés :"
         kubectl get blockdevices -n openebs -o wide
         
@@ -380,6 +380,8 @@ jobs:
         echo "Voir le STATUS des Block-devices disponibles des workers:"
         kubectl get blockdevices -n openebs -o wide || echo "Aucun block trouvé"
 
+  #======== Vérifs ================================================
+  #================================================================
 
     - name: Vérifier que le ServiceAccount cloud-controller-manager a bien été créé dans le namespace kube-system
       run: |
@@ -390,21 +392,16 @@ jobs:
         kubectl get pods -n kube-system
 
 
-    - name: Vérifier "eipAllocationId" dans /helm_apotheose/traefik/values.yaml
+    - name: Vérifier "eipAllocationId" dans /helm_thechosen/traefik/values.yaml
       run: |
-        cat ./helm_apotheose/traefik/values.yaml
+        cat ./helm_thechosen/traefik/values.yaml
         
-  #======== monitoring - GrafanA & PROMETHEUS =======================================
-  #================================================================
-    # - name: Ajouter le repo
-    #   run: |
-
 
   #======== Valider tous les charts) =======================================
-  #================================================================
-    - name: Lint de tous les charts Helm du projet apotheose
+  #=========================================================================
+    - name: Lint de tous les charts Helm du projet thechosen
       run: |
-        for chart in ./helm_apotheose/*; do
+        for chart in ./helm_thechosen/*; do
           if [ -d "$chart" ]; then
             echo "Lint de $chart..."
             helm lint "$chart"
@@ -412,7 +409,7 @@ jobs:
         done
 
 
-# #======== Test- Traeffik (Officiel-charts) ===============
+# #======== Test- Traeffik (Officiel-charts) ==============================
 # #========================================================================
 #     - name: Vérifier le dessier traefik2
 #       run: |
@@ -423,8 +420,8 @@ jobs:
 #       run: |
 #         export KUBECONFIG=.kube/config-rke2
 
-#         echo "Créer le ns APOTHEOSE"
-#         kubectl create ns apotheose
+#         echo "Créer le ns thechosen"
+#         kubectl create ns thechosen
 
 #         echo "Appliquer les credentials et la configMap"
 #         kubectl apply -f ./traefik2/duckdns_credentials.yaml
@@ -433,7 +430,7 @@ jobs:
 #     - name: Ajouter le repo Helm Traefik (officiel)
 #       run: helm repo add traefik https://helm.traefik.io/traefik && helm repo update
 
-#     - name: Déploiement apotheose avec Helm Charts 
+#     - name: Déploiement thechosen avec Helm Charts 
 #       run: |
 #         export KUBECONFIG=.kube/config-rke2
 
@@ -441,12 +438,12 @@ jobs:
 #         helm upgrade --install traefik traefik/traefik \
 #         -f ./traefik2/values.yaml \
 #         -f ./traefik2/values_dynamic.yaml \
-#         --namespace apotheose --create-namespace
+#         --namespace thechosen --create-namespace
 
-#         echo "Donner le ns apotheose à helm pour traefik (au cas où !)"
-#         kubectl label namespace apotheose app.kubernetes.io/managed-by=Helm
-#         kubectl annotate namespace apotheose meta.helm.sh/release-name=traefik
-#         kubectl annotate namespace apotheose meta.helm.sh/release-namespace=apotheose
+#         echo "Donner le ns thechosen à helm pour traefik (au cas où !)"
+#         kubectl label namespace thechosen app.kubernetes.io/managed-by=Helm
+#         kubectl annotate namespace thechosen meta.helm.sh/release-name=traefik
+#         kubectl annotate namespace thechosen meta.helm.sh/release-namespace=thechosen
 
 #     - name: Appliquer et bind les roles k8s ( full acces pour les logs)
 #       run: |
@@ -457,11 +454,11 @@ jobs:
 #         kubectl get pods -n openebs
 #         kubectl get svc -n openebs
 
-#     - name: Lister le svc traefik  déployé dans apotheose 
+#     - name: Lister le svc traefik  déployé dans thechosen 
 #       run: |
 #         export KUBECONFIG=.kube/config-rke2
         
-#         kubectl get svc -n apotheose traefik -o wide
+#         kubectl get svc -n thechosen traefik -o wide
 
 #         echo "Vérifier que la StorageClass est bien créée"
 #         kubectl get storageclass 
@@ -473,43 +470,43 @@ jobs:
 #         aws ec2 describe-addresses
 
 #         echo "Service Traefik exposé avec l’EIP :"
-#         kubectl get svc traefik -n apotheose -o=custom-columns=NAME:.metadata.name,EXTERNAL-IP:.status.loadBalancer.ingress[*].ip,PORTS:.spec.ports[*].port
+#         kubectl get svc traefik -n thechosen -o=custom-columns=NAME:.metadata.name,EXTERNAL-IP:.status.loadBalancer.ingress[*].ip,PORTS:.spec.ports[*].port
     
     
 
 
-  #======== Deployer apotheose - Traeffik (Officiel-charts) ===============
+  #======== Deployer The Chosen - Traeffik (Officiel-charts) ===============
   #========================================================================
     - name: Ajouter le repo Helm Traefik (officiel)
       run: helm repo add traefik https://helm.traefik.io/traefik && helm repo update
 
-    - name: Déploiement apotheose avec Helm Charts 
+    - name: Déploiement de "The Chosen" avec Helm Charts 
       run: |
         export KUBECONFIG=.kube/config-rke2
 
-        echo "Créer le ns APOTHEOSE"
-        kubectl create ns apotheose
+        echo "Créer le ns The Chosen"
+        kubectl create ns thechosen
 
         echo "Installation de traefik...( Chart officiel)"
-        helm upgrade --install traefik traefik/traefik --namespace apotheose --create-namespace
+        helm upgrade --install traefik traefik/traefik --namespace thechosen --create-namespace
 
     - name: Supprimer le "deployment" officiel pour déployer traefik ( custum Chart )
       run: |
         export KUBECONFIG=.kube/config-rke2
 
-        echo "Delete (officiel) deployment traefik"
-        kubectl delete deployment traefik -n apotheose || echo "deployment Traefik (officiel) déjà supprimé"
+        echo "Delete (officiel) traefik deployment"
+        kubectl delete deployment traefik -n thechosen || echo "deployment Traefik (officiel) déjà supprimé"
 
-        echo "Donner le ns apotheose à helm pour traefik (au cas où !)"
-        kubectl label namespace apotheose app.kubernetes.io/managed-by=Helm
-        kubectl annotate namespace apotheose meta.helm.sh/release-name=traefik
-        kubectl annotate namespace apotheose meta.helm.sh/release-namespace=apotheose
+        echo "Donner le ns thechosen à helm pour traefik (au cas où !)"
+        kubectl label namespace thechosen app.kubernetes.io/managed-by=Helm
+        kubectl annotate namespace thechosen meta.helm.sh/release-name=traefik
+        kubectl annotate namespace thechosen meta.helm.sh/release-namespace=thechosen
 
         
 
-  #======== Deployer apotheose - Traefik (custum-chart) ======================
+  #======== Deployer thechosen - Traefik (custum-chart) ======================
   #===========================================================================
-  #======== Accorder tous les droits sur toutes les ressources dans le namespace apotheose pour dignostique!
+  #======== Accorder tous les droits sur toutes les ressources dans le namespace thechosen pour dignostique!
   #===========================================================================
     - name: Appliquer et bind les roles k8s ( full acces pour les logs)
       run: |
@@ -521,7 +518,7 @@ jobs:
         kubectl get svc -n openebs
 
         echo "Déploiement de Traefik (custum-chart)"
-        helm upgrade --install traefik ./helm_apotheose/traefik/ -f ./helm_apotheose/traefik/values.yaml --namespace apotheose --create-namespace
+        helm upgrade --install traefik ./helm_thechosen/traefik/ -f ./helm_thechosen/traefik/values.yaml --namespace thechosen --create-namespace
 
         echo "attendre 30s"
         sleep 30s
@@ -529,16 +526,16 @@ jobs:
     - name: Mettre à jour basicAuth (dashboard-traefik)
       run: |
         export KUBECONFIG=.kube/config-rke2
-        kubectl -n apotheose delete secret dashboard-auth-secret
-        kubectl -n apotheose create secret generic dashboard-auth-secret \
+        kubectl -n thechosen delete secret dashboard-auth-secret
+        kubectl -n thechosen create secret generic dashboard-auth-secret \
         --from-literal=users='christ:$2y$05$bGGQIoxw.yuA.7ZEuGmh1eFabKFKQ9/gWr.9pp24AIUMTRKwF2CfK'
-        kubectl -n apotheose rollout restart deployment traefik
+        kubectl -n thechosen rollout restart deployment traefik
 
-    - name: Lister le svc traefik  déployés dans apotheose 
+    - name: Lister le svc traefik  déployés dans thechosen 
       run: |
         export KUBECONFIG=.kube/config-rke2
         
-        kubectl get svc -n apotheose traefik -o wide
+        kubectl get svc -n thechosen traefik -o wide
 
         echo "Vérifier que la StorageClass est bien créée"
         kubectl get storageclass 
@@ -550,16 +547,16 @@ jobs:
         aws ec2 describe-addresses
 
         echo "Service Traefik exposé avec l’EIP :"
-        kubectl get svc traefik -n apotheose -o=custom-columns=NAME:.metadata.name,EXTERNAL-IP:.status.loadBalancer.ingress[*].ip,PORTS:.spec.ports[*].port
+        kubectl get svc traefik -n thechosen -o=custom-columns=NAME:.metadata.name,EXTERNAL-IP:.status.loadBalancer.ingress[*].ip,PORTS:.spec.ports[*].port
     
 
     - name: Déployer les autres charts
       run: |
         export KUBECONFIG=.kube/config-rke2
 
-        echo "Donner le ns apotheose à helm"
-        kubectl label namespace apotheose app.kubernetes.io/managed-by=Helm --overwrite
-        kubectl annotate namespace apotheose meta.helm.sh/release-namespace=apotheose --overwrite
+        echo "Donner le ns thechosen à helm"
+        kubectl label namespace thechosen app.kubernetes.io/managed-by=Helm --overwrite
+        kubectl annotate namespace thechosen meta.helm.sh/release-namespace=thechosen --overwrite
 
         echo "Supprimer les webhooks NGINX de RKE2 pour traefik"
         kubectl delete validatingwebhookconfiguration rke2-ingress-nginx-admission
@@ -571,12 +568,12 @@ jobs:
         chmod +x ./OpenEBScStorPoolCluster/wait_for_admision_pods.sh
         ./OpenEBScStorPoolCluster/wait_for_admision_pods.sh
 
-        for chart in ./helm_apotheose/*; do
+        for chart in ./helm_thechosen/*; do
           name=$(basename "$chart")
           if [[ -d "$chart" && "$name" != "traefik" ]]; then
             echo "Déploiement de $name..."
             helm upgrade --install "$name" "$chart" \
-              --namespace apotheose \
+              --namespace thechosen \
               --values "$chart/values.yaml"
           fi
         done
@@ -591,25 +588,25 @@ jobs:
       run: |
         sleep 10s
 
-    - name: En fin, lister les PVC, pods et svc déployés dans le ns apotheose !
+    - name: En fin, lister les PVC, pods et svc déployés dans le ns thechosen !
       run: |
         export KUBECONFIG=.kube/config-rke2
-        kubectl get pvc -n apotheose
-        kubectl get pods -n apotheose -o wide
-        kubectl get svc -n apotheose
-        kubectl get svc -n apotheose traefik -o wide
+        kubectl get pvc -n thechosen
+        kubectl get pods -n thechosen -o wide
+        kubectl get svc -n thechosen
+        kubectl get svc -n thechosen traefik -o wide
 
         echo "Afficher Values de treafik"
-        helm get values traefik -n apotheose
+        helm get values traefik -n thechosen
 
         echo "Afficher les annotations du svc traefik"
-        kubectl get svc traefik -n apotheose -o yaml | grep -A 10 annotations
+        kubectl get svc traefik -n thechosen -o yaml | grep -A 10 annotations
 
 
     # - name: Scaler automatiquement le nombre de pods du déploiement TRAEFIK
     #   run: |
     #     export KUBECONFIG=.kube/config-rke2
-    #     kubectl autoscale deployment traefik -n apotheose \
+    #     kubectl autoscale deployment traefik -n thechosen \
     #       --cpu-percent=50 \
     #       --min=2 \
     #       --max=5
@@ -641,7 +638,7 @@ jobs:
 
 #-----------------------------------------------------------------
     # wildcard_tls/wildcard_secret_tls.sh
-    # - name:  Crée ou met à jour un Secret TLS wildcard-tls dans le namespace apotheose
+    # - name:  Crée ou met à jour un Secret TLS wildcard-tls dans le namespace thechosen
     #   run: |
     #     export KUBECONFIG=.kube/config-rke2
     #     chmod +x ./wildcard_tls/wildcard_secret_tls.sh
@@ -696,10 +693,10 @@ jobs:
     #     chmod +x ./traefik2/reload_traefik_Pod.sh
     #     ./traefik2/reload_traefik_Pod.sh
 
-    - name: Vérier les pods dans le ns apotheose !
+    - name: Vérier les pods dans le ns thechosen !
       run: |
         export KUBECONFIG=.kube/config-rke2
-        kubectl get pods -n apotheose -o wide
+        kubectl get pods -n thechosen -o wide
 
 
 
