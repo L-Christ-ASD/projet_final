@@ -452,7 +452,7 @@ resource "null_resource" "update_traefik_values_yaml_sg" {
   provisioner "local-exec" {
     command = <<EOT
 
-      echo "sg: ${aws_security_group.admin_ssh_production.id}" >> ${path.module}/../../helm_apotheose/traefik/values.yaml
+      echo "sg: ${aws_security_group.admin_ssh_production.id}" >> ${path.module}/../../helm_thechosen/traefik/values.yaml
  
     EOT
   }
@@ -551,7 +551,7 @@ resource "null_resource" "update_values_yaml" {
     command = <<EOT
       mkdir -p ../../ansible_production
 
-      echo "eipAllocationId: ${aws_eip.traefik_eip.id}" >> ${path.module}/../../helm_apotheose/traefik/values.yaml
+      echo "eipAllocationId: ${aws_eip.traefik_eip.id}" >> ${path.module}/../../helm_thechosen/traefik/values.yaml
 
     EOT
   }

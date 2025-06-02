@@ -1,53 +1,7 @@
 ---
 #=================================================================
-# - name: Preparer les disks EBS pour OpenEBS et containerd
-#   hosts: all #workers
-#   become: true
-#   vars:
-#     containerd_disk: /dev/nvme1n1
-#     containerd_mount_point: /var/lib/containerd
-#   tasks:
-
-#     - name: Lister tous les disques disponibles sur l’hôte
-#       shell: lsblk -o NAME,KNAME,FSTYPE,SIZE,MOUNTPOINT,LABEL
-#       register: lsblk_output
-
-#     - name: Afficher les disques détectés
-#       debug:
-#         var: lsblk_output.stdout_lines
-
-#     - name: Vérifier si le disque containerd existe
-#       stat:
-#         path: "{{ containerd_disk }}"
-#       register: containerd_disk_stat
-
-#     - name: Formater le disque containerd en ext4
-#       filesystem:
-#         fstype: ext4
-#         dev: "{{ containerd_disk }}"
-#       when: containerd_disk_stat.stat.exists
-
-#     - name: Créer le point de montage de containerd s'il n'existe pas
-#       file:
-#         path: "{{ containerd_mount_point }}"
-#         state: directory
-#         mode: '0755'
-
-#     - name: Monter le disque containerd
-#       mount:
-#         path: "{{ containerd_mount_point }}"
-#         src: "{{ containerd_disk }}"
-#         fstype: ext4
-#         opts: defaults
-#         state: mounted
-
-#     - name: Ajouter à fstab pour montage au démarrage
-#       mount:
-#         path: "{{ containerd_mount_point }}"
-#         src: "{{ containerd_disk }}"
-#         fstype: ext4
-#         opts: defaults
-#         state: present
+#        Preparer les disks EBS pour OpenEBS et containerd
+#=================================================================
 - name: Vérification des dossier var/lib/* et var/log/*
   hosts: master1 
   become: true
@@ -69,7 +23,7 @@
         var: var_log_output.stdout_lines
 
 - name: Preparer les disks EBS pour OpenEBS et containerd
-  hosts: all #workers
+  hosts: all #workers .github/workflows/aws_push.yml
   become: true
   vars:
     ebs_disk: /dev/nvme1n1
