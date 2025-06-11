@@ -1,4 +1,4 @@
-name: CI/CD --> The Chosen (Deploy to AWS) full (Face A & B)
+name: CI/CD --> APOTHEOSE (Deploy to AWS)
 
 on:
   push:
@@ -549,47 +549,6 @@ jobs:
         echo "Service Traefik exposé avec l’EIP :"
         kubectl get svc traefik -n thechosen -o=custom-columns=NAME:.metadata.name,EXTERNAL-IP:.status.loadBalancer.ingress[*].ip,PORTS:.spec.ports[*].port
     
-    # Installer Argo-CD avant le deploiement des autres services
-    # Par défaut, l'utilisateur admin de argo-cd est initialisé avec un secret
-    # Et doit etre modisié à la première connexion.
-    - name: Installer Argo-CD avant le deploiement des autres services
-      run: |
-        export KUBECONFIG=.kube/config-rke2
-
-        echo "Créer le namespace argocd"
-        kubectl create namespace argocd
-
-        echo "Ajouter le repo argocd et update"
-        helm repo add argo https://argoproj.github.io/argo-helm
-        helm repo update
-
-        echo "Installer argocd"
-        helm install argocd argo/argo-cd \
-        --namespace argocd \
-        --set server.service.type=ClusterIP \
-        --set server.ingress.enabled=false
-
-        echo "Attendre 10s et vérifier les pods et svc argo-cd"
-        kubectl get pods -n argocd -o wide
-        kubectl get svc -n argocd
-
-
-        echo "Appliquer l’IngressRoute Traefik pour exposer l'ui de argo-cd"
-        kubectl apply -f ./argo_CD/argocd-ingressroute.yaml
-
-        echo "Déployer WordPress depuis un Helm chart dans Git"
-        kubectl apply -f ./argo_CD/WordPress _argo_CD
-
-        echo "Vérifier wordpress dans le ns thechosen"
-        kubectl get pods -n thechosen -o wide
-        kubectl get svc -n thechosen
-
-
-        echo "Récupérer le mot de passe admin"
-        kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && echo
-
-
-
 
     - name: Déployer les autres charts
       run: |

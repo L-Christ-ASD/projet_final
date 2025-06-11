@@ -503,7 +503,7 @@ resource "aws_volume_attachment" "apotheose_volume_attachment" {
 }
 
 #-----------------------------------------------------------------
-# EBS pour Cstor
+# EBS pour Cstor des workers
 locals {
   all_instances_workers = concat(aws_instance.workers[*])
   device_letters        = ["g", "h"]
@@ -562,7 +562,7 @@ resource "null_resource" "update_values_yaml" {
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
-# try traefik2
+# try traefik2 dynamic config
 #===============
 
 variable "subnet_id" {

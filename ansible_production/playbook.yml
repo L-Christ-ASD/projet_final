@@ -65,7 +65,7 @@
         mode: '0755'
       
 
-    - name: Monter les points de montage sur aws-EBS (disk)
+    - name: Monter les points de montage sur le disk aws-EBS 
       mount:
         path: "{{ rke2_mount_point }}"
         src: "{{ ebs_disk }}"
