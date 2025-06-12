@@ -13,8 +13,8 @@ spec:
         - name: argocd-server
           port: 443
           scheme: https
-  tls:
-    certResolver: myresolver
+  # tls:
+  #   certResolver: myresolver
 
 
 ---
@@ -34,4 +34,4 @@ spec:
           port: 80
       middlewares:
         - name: default-redirectscheme
-          namespace: thechosen
+          namespace: argocd
