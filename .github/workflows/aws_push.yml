@@ -569,7 +569,8 @@ jobs:
         --set server.service.type=ClusterIP \
         --set server.ingress.enabled=false
 
-        echo "Attendre 10s et vérifier les pods et svc argo-cd"
+        echo "Attendre 20s et vérifier les pods et svc argo-cd"
+        sleep 20s
         kubectl get pods -n argocd -o wide
         kubectl get svc -n argocd
 
