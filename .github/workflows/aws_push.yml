@@ -552,6 +552,7 @@ jobs:
     # Installer Argo-CD avant le deploiement des autres services
     # Par défaut, l'utilisateur admin de argo-cd est initialisé avec un secret
     # Et doit etre modisié à la première connexion.
+    # --set server.ingress.enabled=false
     - name: Installer Argo-CD avant le deploiement des autres services
       run: |
         export KUBECONFIG=.kube/config-rke2
@@ -567,7 +568,7 @@ jobs:
         helm install argocd argo/argo-cd \
         --namespace argocd \
         --set server.service.type=ClusterIP \
-        --set server.ingress.enabled=false
+
 
         echo "Attendre 20s et vérifier les pods et svc argo-cd"
         sleep 20s
@@ -590,7 +591,7 @@ jobs:
         export KUBECONFIG=.kube/config-rke2
 
         echo "Déployer WordPress depuis un Helm chart dans Git"
-        kubectl apply -f ./argo_CD/WordPress_argo_CD
+        kubectl apply -f ./argo_CD/WordPress_argoCD.yaml
 
         echo "Attendre 10s et Vérifier wordpress dans le ns thechosen"
         sleep 10s
