@@ -70,6 +70,10 @@ spec:
             - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
             - "--certificatesresolvers.myresolver.acme.dnschallenge.resolvers=1.1.1.1"
     
+            - "--certificatesresolvers.myresolver.acme.tlschallenge=false"
+            - "--certificatesresolvers.myresolver.acme.httpchallenge=false"
+            - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+
             - "--log.level=DEBUG"
 
             # - "--certificatesresolvers.myresolver.acme.domains.sans=*.christ-devops.duckdns.org"
