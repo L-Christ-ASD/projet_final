@@ -549,54 +549,54 @@ jobs:
         echo "Service Traefik exposé avec l’EIP :"
         kubectl get svc traefik -n thechosen -o=custom-columns=NAME:.metadata.name,EXTERNAL-IP:.status.loadBalancer.ingress[*].ip,PORTS:.spec.ports[*].port
     
-    # Installer Argo-CD avant le deploiement des autres services
-    # Par défaut, l'utilisateur admin de argo-cd est initialisé avec un secret
-    # Et doit etre modisié à la première connexion.
-    # --set server.ingress.enabled=false
-    - name: Installer Argo-CD avant le deploiement des autres services
-      run: |
-        export KUBECONFIG=.kube/config-rke2
+    # # Installer Argo-CD avant le deploiement des autres services
+    # # Par défaut, l'utilisateur admin de argo-cd est initialisé avec un secret
+    # # Et doit etre modisié à la première connexion.
+    # # --set server.ingress.enabled=false
+    # - name: Installer Argo-CD avant le deploiement des autres services
+    #   run: |
+    #     export KUBECONFIG=.kube/config-rke2
 
-        echo "Créer le namespace argocd"
-        kubectl create namespace argocd
+    #     echo "Créer le namespace argocd"
+    #     kubectl create namespace argocd
 
-        echo "Ajouter le repo argocd et update"
-        helm repo add argo https://argoproj.github.io/argo-helm
-        helm repo update
+    #     echo "Ajouter le repo argocd et update"
+    #     helm repo add argo https://argoproj.github.io/argo-helm
+    #     helm repo update
 
-        echo "Installer argocd"
-        helm install argocd argo/argo-cd \
-        --namespace argocd \
-        --set server.service.type=ClusterIP \
-
-
-        echo "Attendre 20s et vérifier les pods et svc argo-cd"
-        sleep 20s
-        kubectl get pods -n argocd -o wide
-        kubectl get svc -n argocd
+    #     echo "Installer argocd"
+    #     helm install argocd argo/argo-cd \
+    #     --namespace argocd \
+    #     --set server.service.type=ClusterIP \
 
 
-        echo "Appliquer l’IngressRoute Traefik pour exposer l'ui de argo-cd"
-        kubectl apply -f ./argo_CD/argocd-ingressroute.yaml
+    #     echo "Attendre 20s et vérifier les pods et svc argo-cd"
+    #     sleep 20s
+    #     kubectl get pods -n argocd -o wide
+    #     kubectl get svc -n argocd
 
-        echo "Appliquer l’Ingress default-midleware http-https"
-        kubectl apply -f ./argo_CD/ingress_default_midleware.yaml
 
-        echo "Récupérer le mot de passe admin"
-        kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && echo
+    #     echo "Appliquer l’IngressRoute Traefik pour exposer l'ui de argo-cd"
+    #     kubectl apply -f ./argo_CD/argocd-ingressroute.yaml
+
+    #     echo "Appliquer l’Ingress default-midleware http-https"
+    #     kubectl apply -f ./argo_CD/ingress_default_midleware.yaml
+
+    #     echo "Récupérer le mot de passe admin"
+    #     kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && echo
 
       
-    - name: Synchroniser et Déployer WordPress avec argo
-      run: |
-        export KUBECONFIG=.kube/config-rke2
+    # - name: Synchroniser et Déployer WordPress avec argo
+    #   run: |
+    #     export KUBECONFIG=.kube/config-rke2
 
-        echo "Déployer WordPress depuis un Helm chart dans Git"
-        kubectl apply -f ./argo_CD/WordPress_argoCD.yaml
+    #     echo "Déployer WordPress depuis un Helm chart dans Git"
+    #     kubectl apply -f ./argo_CD/WordPress_argoCD.yaml
 
-        echo "Attendre 10s et Vérifier wordpress dans le ns thechosen"
-        sleep 10s
-        kubectl get pods -n thechosen -o wide
-        kubectl get svc -n thechosen
+    #     echo "Attendre 10s et Vérifier wordpress dans le ns thechosen"
+    #     sleep 10s
+    #     kubectl get pods -n thechosen -o wide
+    #     kubectl get svc -n thechosen
 
 
     - name: Déployer les autres charts
@@ -686,13 +686,6 @@ jobs:
 
 
 #-----------------------------------------------------------------
-    # wildcard_tls/wildcard_secret_tls.sh
-    # - name:  Crée ou met à jour un Secret TLS wildcard-tls dans le namespace thechosen
-    #   run: |
-    #     export KUBECONFIG=.kube/config-rke2
-    #     chmod +x ./wildcard_tls/wildcard_secret_tls.sh
-    #     ./wildcard_tls/wildcard_secret_tls.sh
-
 #-----------------------------------------------------------------
 
     # - name: Ajouter le repo cert-manager pour traefik
@@ -743,17 +736,51 @@ jobs:
     #     ./traefik2/reload_traefik_Pod.sh
 
 
-    # - name: Synchroniser et Déployer WordPress avec argo
-    #   run: |
-    #     export KUBECONFIG=.kube/config-rke2
 
-    #     echo "Déployer WordPress depuis un Helm chart dans Git"
-    #     kubectl apply -f ./argo_CD/WordPress_argo_CD
+    # Installer Argo-CD avant le deploiement des autres services
+    # Par défaut, l'utilisateur admin de argo-cd est initialisé avec un secret
+    # Et doit etre modisié à la première connexion.
+    # --set server.ingress.enabled=false
+    - name: Installer Argo-CD 
+      run: |
+        export KUBECONFIG=.kube/config-rke2
 
-    #     echo "Attendre 10s et Vérifier wordpress dans le ns thechosen"
-    #     sleep 10s
-    #     kubectl get pods -n thechosen -o wide
-    #     kubectl get svc -n thechosen
+        echo "Ajouter le repo argocd et update"
+        helm repo add argo https://argoproj.github.io/argo-helm
+        helm repo update
+
+        echo "Installer argocd"
+        helm install argocd argo/argo-cd \
+        --namespace thechosen \
+        --set server.service.type=ClusterIP \
+
+
+        echo "Attendre 20s et vérifier les pods et svc argo-cd"
+        sleep 20s
+        kubectl get pods -n thechosen -o wide
+        kubectl get svc -n thechosen
+
+
+        echo "Appliquer l’IngressRoute Traefik pour exposer l'ui de argo-cd"
+        kubectl apply -f ./argo_CD/argocd-ingressroute.yaml
+
+        echo "Appliquer l’Ingress default-midleware http-https"
+        kubectl apply -f ./argo_CD/ingress_default_midleware.yaml
+
+        echo "Récupérer le mot de passe admin"
+        kubectl -n thechosen get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && echo
+
+      
+    - name: Synchroniser et Déployer WordPress avec argo
+      run: |
+        export KUBECONFIG=.kube/config-rke2
+
+        echo "Déployer WordPress depuis un Helm chart dans Git"
+        kubectl apply -f ./argo_CD/WordPress_argoCD.yaml
+
+        echo "Attendre 10s"
+        sleep 10s
+      
 
     - name: Vérier les pods dans le ns thechosen !
       run: |
