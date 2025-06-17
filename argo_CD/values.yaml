@@ -1,0 +1,7 @@
+server:
+  service:
+    type: ClusterIP
+
+nodeSelector:
+  node-role.kubernetes.io/worker: "true"
+

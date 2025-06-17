@@ -740,7 +740,12 @@ jobs:
     # Installer Argo-CD avant le deploiement des autres services
     # Par défaut, l'utilisateur admin de argo-cd est initialisé avec un secret
     # Et doit etre modisié à la première connexion.
-    # --set server.ingress.enabled=false
+
+    # echo "Installer argocd"
+    #     helm install argocd argo/argo-cd \
+    #     --namespace thechosen \
+    #     --set server.service.type=ClusterIP \
+  
     - name: Installer Argo-CD 
       run: |
         export KUBECONFIG=.kube/config-rke2
@@ -752,7 +757,7 @@ jobs:
         echo "Installer argocd"
         helm install argocd argo/argo-cd \
         --namespace thechosen \
-        --set server.service.type=ClusterIP \
+        --values ./argo_CD/values.yaml
 
 
         echo "Attendre 20s et vérifier les pods et svc argo-cd"
