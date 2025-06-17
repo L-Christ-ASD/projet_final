@@ -85,8 +85,6 @@ spec:
             # - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
 
 #-----------------------------------------------------------
-            # - "--certificatesresolvers.myresolver.acme.tlschallenge=false"
-            # - "--certificatesresolvers.myresolver.acme.httpchallenge=false"
             # - "--certificatesresolvers.myresolver.acme.dnschallenge.disablePropagationCheck=true"
           
 
