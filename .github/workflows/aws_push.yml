@@ -764,9 +764,6 @@ jobs:
         echo "Appliquer l’IngressRoute Traefik pour exposer l'ui de argo-cd"
         kubectl apply -f ./argo_CD/argocd-ingressroute.yaml
 
-        echo "Appliquer l’Ingress default-midleware http-https"
-        kubectl apply -f ./argo_CD/ingress_default_midleware.yaml
-
         echo "Récupérer le mot de passe admin"
         kubectl -n thechosen get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && echo
 
