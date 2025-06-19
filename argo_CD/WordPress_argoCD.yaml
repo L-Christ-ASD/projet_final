@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: 'https://github.com/L-Christ-ASD/projet_final.git'
     targetRevision: HEAD
-    path: helm_thechosen/charts/ #wordpress
+    path: helm_thechosen/charts/wordpress
     helm:
       valueFiles:
         - values.yaml
@@ -19,3 +19,4 @@ spec:
     automated:
       prune: true
       selfHeal: true
+
